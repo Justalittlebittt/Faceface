@@ -17,6 +17,7 @@ export default function App() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [cameraAspect, setCameraAspect] = useState<number | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
 
   const stopCamera = useCallback(() => {
@@ -33,8 +34,13 @@ export default function App() {
     setError("");
     setShowMeasurements(false);
     setTiming(null);
+    setCameraAspect(null);
     const canvas = canvasRef.current;
-    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas) {
+      // Resetting the backing size releases pixel data, not just the visible drawing.
+      canvas.width = 0;
+      canvas.height = 0;
+    }
   };
 
   useEffect(() => () => {
@@ -44,11 +50,40 @@ export default function App() {
     landmarkerRef.current = null;
   }, [stopCamera]);
 
+  // Suspend camera access and discard temporary captures whenever the page is hidden.
+  // Mobile browsers can otherwise leave the camera active while switching apps.
+  useEffect(() => {
+    const discardOnLeave = () => {
+      requestRef.current += 1;
+      stopCamera();
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+      setPhase("idle");
+      setAnalysis(null);
+      setTiming(null);
+      setCameraAspect(null);
+      setError("");
+    };
+    const onVisibility = () => {
+      if (document.hidden) discardOnLeave();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", discardOnLeave);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", discardOnLeave);
+    };
+  }, [stopCamera]);
+
   const begin = async () => {
     const request = ++requestRef.current;
     setError("");
     setAnalysis(null);
     setTiming(null);
+    setCameraAspect(null);
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError("摄像头需要 HTTPS（或本地 localhost）以及支持摄像头的浏览器。");
       return;
@@ -56,7 +91,7 @@ export default function App() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } }
       });
       if (request !== requestRef.current) {
         stream.getTracks().forEach(track => track.stop());
@@ -184,12 +219,21 @@ export default function App() {
             <div><span className="step-label">01 / CAMERA</span><h2>拍摄正面照片</h2></div>
             <span className="privacy-mark">◌ 设备本地分析</span>
           </div>
-          <div className="camera-stage">
+          <div
+            className="camera-stage"
+            style={cameraAspect !== null && phase !== "idle" ? { aspectRatio: cameraAspect } : undefined}
+          >
             <video
               ref={videoRef}
               autoPlay
               muted
               playsInline
+              onLoadedMetadata={() => {
+                const video = videoRef.current;
+                if (video?.videoWidth && video.videoHeight) {
+                  setCameraAspect(video.videoWidth / video.videoHeight);
+                }
+              }}
               className={phase === "camera" ? "camera-video" : "offscreen"}
               aria-label="前置摄像头预览"
             />
@@ -209,7 +253,7 @@ export default function App() {
             {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
           </div>
-          <p className="privacy-detail">相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">切换到其他应用或隐藏页面时会停止相机并清除临时画面。相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
         </section>
 
         {analysis && phase === "result" && (
