@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="color-scheme" content="dark">
+  <title>Faceface · Privacy / 隐私说明（测试版）</title>
+  <style>
+    body{font:16px/1.8 system-ui,sans-serif;background:#101918;color:#e8efe8;margin:0;padding:30px 18px}
+    main{max-width:740px;margin:auto}h1,h2{line-height:1.3}h2{margin-top:28px}
+    a{color:#bfe6c8}p{color:#c1d3c8}small{color:#9bafa3}
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="./">← Faceface</a></p>
+  <h1>Privacy notice / 隐私说明</h1>
+  <p><strong>Experimental test site · 技术测试站点</strong> — last updated November 13, 2026. This is not a complete commercial service or scientific personality analysis.</p>
+  <h2>Camera and image processing / 摄像头与照片处理</h2>
+  <p>Camera permission is requested only when you tap the camera button. Video frames are processed locally in your browser using MediaPipe Face Landmarker. We do not provide a face-photo upload endpoint, user account, or server-side face-photo database. Image frames, landmarks and report data are not deliberately uploaded by the Faceface application. You may choose to save or share a text report using your own device.</p>
+  <p>只有主动点击按钮才会申请摄像头权限。面部照片在浏览器内使用 MediaPipe 本地分析。Faceface 当前没有照片上传接口、用户账号或服务端照片数据库；本应用不会主动上传照片、面部关键点或报告。只有你主动选择保存或分享时，文字报告才会交给设备上的下载或分享功能。</p>
+  <h2>External requests / 第三方网络请求</h2>
+  <p>The test site is served by GitHub Pages; loading it may disclose ordinary connection details such as your IP address to the hosting service. MediaPipe runtime files are requested from jsDelivr and the model is downloaded from Google-hosted storage. These services can receive network metadata. We have not fully audited all SDK telemetry or providers' retention behavior; do not interpret “local inference” as a guarantee of absolutely no third-party data processing.</p>
+  <p>测试站点由 GitHub Pages 提供网页服务，网站请求可能将 IP 等连接信息交给托管商。模型运行文件来自 jsDelivr，模型权重从 Google 托管服务下载。相关服务可能处理网络元数据；SDK 遥测及第三方保留政策尚待完整审查，因此“本地分析”不等于没有任何第三方网络信息处理。</p>
+  <h2>Storage, advertising and analytics / 存储、广告与分析</h2>
+  <p>Faceface does not intentionally write your photo, landmarks or reports to localStorage, sessionStorage or an application database. Clearing or leaving the page discards the in-memory photo and report, except a text file you explicitly downloaded or shared. We do not currently include advertising or product analytics scripts. A browser or service provider may maintain its normal cache and access logs.</p>
+  <p>本应用不主动把照片、关键点或报告写入浏览器持久化存储或数据库。清除/离开页面会丢弃应用内的临时内容，用户主动保存到设备的文件除外。当前不接广告或产品分析脚本；浏览器缓存及托管商访问日志不在应用控制范围内。</p>
+  <h2>Content limitation / 内容限制</h2>
+  <p>Face-reading references are historical and cultural. Appearance does not scientifically establish a person's character, health or fate. Any geometric labels are early experimental classifications, not population-calibrated measurements.</p>
+  <p>面相材料仅作历史文化介绍，不代表外貌能够科学预测人格、健康或命运。当前几何分类阈值为未完成多设备与人群标定的实验值。</p>
+  <p><small>Faceface · Test preview · No photo upload by the app · No ads</small></p>
+</main>
+</body>
+</html>
