@@ -1,6 +1,6 @@
 # Faceface — Traditional Face Reading, Reimagined for the Web
 
-> **Project phase: an English-first, Chinese-switchable M1/M2 experimental website has passed GitHub CI (20/20 unit tests) and Chromium/WebKit real-model browser integration with bilingual source-linked reports.** The **HTTPS technical preview is now publicly deployed**, but this is **not yet a verified iOS/Android product, a complete classical face-reading engine, or a production-certified service**.
+> **Project phase: an English-first, Chinese-switchable M1/M2 experimental website now renders eight cross-face geometry observations and condition-dependent classical source links; GitHub CI (24/24 unit tests), Chromium/WebKit real-model integration and HTTPS deployment checks have passed.** The **HTTPS technical preview is now publicly deployed**, but this is **not yet a verified iOS/Android product, a complete classical face-reading engine, or a production-certified service**.
 
 **项目定位（中文）**：Faceface 是一款面向国际用户的免费、手机优先的传统面相文化解读网站。用户使用浏览器摄像头实时拍摄正脸，按需补拍可见耳部；系统将可观察的面部形态转为结构化、可读的描述，并与《麻衣相法》（历史版本有时称《麻衣神相》）及《易传·说卦》的传统取象知识关联，生成**简洁版报告**与**详细版报告**。报告包含历史相术观点、生活情境与可执行的人生启发。它不是科学人格诊断，也不是命运事实预测。
 
@@ -49,6 +49,6 @@ The UI requests browser camera permission on a secure origin (localhost or HTTPS
 
 The repository contains the project's **canonical planning/handoff documents plus experimental M1 Web source code**. Legacy V0.x–V2.8 research packages are referenced by status but have not been automatically imported or declared validated. Future source-data imports require provenance and acceptance.
 
-CI verification: [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4) (first source-linked reports), [PR #5](https://github.com/Justalittlebittt/Faceface/pull/5) (HTTPS test-site pipeline; Pages enablement required), [PR #6](https://github.com/Justalittlebittt/Faceface/pull/6) (WebKit file fallback), [PR #7](https://github.com/Justalittlebittt/Faceface/pull/7) (geometry boundary stability), [PR #8](https://github.com/Justalittlebittt/Faceface/pull/8) (English-first UI, Chinese toggle and 20/20 bilingual report tests).
+CI verification: [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4) (first source-linked reports), [PR #5](https://github.com/Justalittlebittt/Faceface/pull/5) (HTTPS test-site pipeline; Pages enablement required), [PR #6](https://github.com/Justalittlebittt/Faceface/pull/6) (WebKit file fallback), [PR #7](https://github.com/Justalittlebittt/Faceface/pull/7) (geometry boundary stability), [PR #8](https://github.com/Justalittlebittt/Faceface/pull/8) (English-first UI, Chinese toggle), [PR #9](https://github.com/Justalittlebittt/Faceface/pull/9) (eight descriptors, conditional historical associations, 24/24 tests; [HTTPS deploy](https://github.com/Justalittlebittt/Faceface/actions/runs/43400492099)).
 
 **Last updated:** 2026-11-13.
