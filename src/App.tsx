@@ -83,7 +83,9 @@ export default function App() {
       setError("");
     };
     const onVisibility = () => {
-      if (document.hidden) discardOnLeave();
+      // A native share sheet may background the browser; keep an already
+      // generated report readable when the user returns.
+      if (document.hidden && phase !== "result") discardOnLeave();
     };
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", discardOnLeave);
@@ -91,7 +93,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", discardOnLeave);
     };
-  }, [stopCamera]);
+  }, [stopCamera, phase]);
 
   const begin = async () => {
     const request = ++requestRef.current;
@@ -279,7 +281,7 @@ export default function App() {
             {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
           </div>
-          <p className="privacy-detail">切换到其他应用或隐藏页面时会停止相机并清除临时画面。相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
         </section>
 
         {analysis && phase === "result" && (
