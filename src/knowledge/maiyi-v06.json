@@ -1,0 +1,81 @@
+{
+  "dataset": "faceface-maiyi-v06-first-links",
+  "revision": "2026-11-13",
+  "provenance": {
+    "original_record": "五官原文规则卡_V0.6.json",
+    "version": "0.6.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "edition": "1925年文明书局秦慎安校勘本",
+    "volume": "卷一",
+    "section": "五官总论",
+    "pdf_page_zero_based": 27,
+    "verification": "original page re-inspected on 2026-11-13; terminology is historical evidence, NOT a facial trait inference"
+  },
+  "policy": {
+    "no_fate_prediction": true,
+    "no_automatic_classification_from_unvalidated_thresholds": true,
+    "no_side_to_front_metric_substitution": true
+  },
+  "cards": [
+    {
+      "id": "MY25-EYE-01",
+      "organ": "眼",
+      "traditional_name": "监察官",
+      "source_phrase": "或細長",
+      "modern_observation": "眼部宽高比例",
+      "mode": "geometry_only",
+      "linked_metric": "eye_aspect_ratio",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "现代眼部宽高比只能作为相关观测，不等于古籍细长标准"
+    },
+    {
+      "id": "MY25-MOUTH-01",
+      "organ": "口",
+      "traditional_name": "出纳官",
+      "source_phrase": "口須方大",
+      "modern_observation": "口部轮廓及宽度",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "可展示口宽比例，但古籍未给出现代“方大”数值判定"
+    },
+    {
+      "id": "MY25-NOSE-01",
+      "organ": "鼻",
+      "traditional_name": "审辨官",
+      "source_phrase": "梁柱端直",
+      "modern_observation": "鼻梁的直线形态",
+      "mode": "not_measured",
+      "linked_metric": null,
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "鼻尖中线偏移不能代替整条鼻梁的端直判断"
+    }
+  ]
+}
