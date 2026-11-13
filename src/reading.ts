@@ -124,7 +124,38 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
   };
 }
 
-export function readingAsText(reading: FaceReading): string {
+export function readingAsText(reading: FaceReading, language: Language = "zh"): string {
+  if (language === "en") {
+    const sections = [
+      "Faceface — " + reading.heading,
+      "Historical-cultural preview only. Not a scientific personality, health or destiny analysis.",
+      "",
+      "SHORT REPORT",
+      reading.overview,
+      "",
+      ...reading.observations.map(d => d.region + ": " + d.text),
+      "",
+      "HISTORICAL REFERENCES (NOT CONFIRMED FACE TYPES)",
+      ...reading.sourceLinks.map(link => [
+        link.organ + " / " + link.traditionalName,
+        "Original wording: " + link.historicalTerm,
+        "English explanation (not a certified translation): " + (link.historicalGloss ?? ""),
+        "Match status: " + (link.status === "related-observation" ? "Related observation only" : "Insufficient evidence"),
+        "This image: " + link.observation,
+        link.explanation,
+        "Limit: " + link.caveat,
+        "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Qin Shen'an collation, vol. 1, 五官总论, PDF zero-based page " + link.source.pdf_page_zero_based,
+        "Original scan: " + link.source.source_url,
+        ""
+      ].join("\n")),
+      "MODERN REFLECTION (NOT AN ANCIENT QUOTE)",
+      reading.reflection,
+      "",
+      "SOURCES AND LIMITS",
+      reading.evidenceNotice
+    ];
+    return sections.join("\n");
+  }
   const parts = [
     "Faceface — " + reading.heading,
     "文化参考／技术验证：不用于科学人格、健康或命运判断。",
