@@ -11,7 +11,7 @@ function sample() {
   set(362,.57,.42);set(263,.7,.42);set(386,.635,.405);set(374,.635,.435);
   set(98,.42,.58);set(327,.58,.58);set(61,.35,.69);set(291,.65,.69);
   set(172,.29,.74);set(397,.71,.74);
-  set(168,.5,.38);set(17,.5,.70);set(0,.5,.685);
+  set(168,.5,.38);set(17,.5,.70);set(0,.5,.685);set(13,.5,.687);set(14,.5,.697);
   return face;
 }
 const image = { width: 800, height: 800 };
@@ -20,10 +20,10 @@ test("reports no-face and multiple-face states rather than guessing", () => {
   assert.equal(describeLandmarks([], image).status, "no-face");
   assert.equal(describeLandmarks([sample(), sample()], image).status, "multiple-faces");
 });
-test("outputs nine independently measured features across the face", () => {
+test("outputs ten independently measured observations across the face", () => {
   const result = describeLandmarks([sample()], image);
   assert.equal(result.status, "ok");
-  assert.deepEqual(result.descriptors.map(d => d.region), ["整体脸型", "眼部", "鼻部", "口部", "下颌", "双眼间距", "鼻部纵向", "下巴纵向", "口角走势"]);
+  assert.deepEqual(result.descriptors.map(d => d.region), ["整体脸型", "眼部", "鼻部", "口部", "下颌", "双眼间距", "鼻部纵向", "下巴纵向", "口角走势", "唇部厚度"]);
   assert.ok(result.descriptors.every(d => d.ratio > 0 && d.text.length > 0 && d.measurement.length > 0));
 });
 test("repeated input is deterministic without using personality inference", () => {
@@ -135,5 +135,30 @@ test("mouth-corner reading responds to current smile shape without changing mout
 });
 test("missing mouth center coordinate cannot yield an invented mouth-shape description", () => {
   const face=sample();face[0]={x:Number.NaN,y:.68};
+  assert.equal(describeLandmarks([face],image).status,"poor-quality");
+});
+
+test("lip thickness is an observed ratio; smile or lip thickness can change it without inventing identity", () => {
+  const narrow=sample(), full=sample();
+  full[0]={x:.5,y:.668};full[13]={x:.5,y:.685};
+  full[14]={x:.5,y:.692};full[17]={x:.5,y:.727};
+  const a=describeLandmarks([narrow],image),b=describeLandmarks([full],image);
+  assert.equal(a.status,"ok");assert.equal(b.status,"ok");
+  const first=a.descriptors.find(d=>d.id==="mouth.lip");
+  const second=b.descriptors.find(d=>d.id==="mouth.lip");
+  assert.equal(first.usable,true);assert.equal(second.usable,true);
+  assert.ok(first.ratio<second.ratio);
+  assert.match(second.text,/偏丰/);
+});
+test("open mouth produces an explicit unusable lip descriptor, not a confident label", () => {
+  const face=sample();face[13]={x:.5,y:.63};face[14]={x:.5,y:.75};
+  const reading=describeLandmarks([face],image);
+  assert.equal(reading.status,"ok");
+  const lip=reading.descriptors.find(d=>d.id==="mouth.lip");
+  assert.equal(lip.usable,false);
+  assert.match(lip.text,/暂不判断唇部厚薄/);
+});
+test("missing upper or lower lip contour cannot be silently filled in", () => {
+  const face=sample();face[14]={x:Number.NaN,y:.7};
   assert.equal(describeLandmarks([face],image).status,"poor-quality");
 });
