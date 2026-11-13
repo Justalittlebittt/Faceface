@@ -395,6 +395,7 @@ export default function App() {
                           <span className="region">{link.organ} · {link.traditionalName}</span>
                           <strong>{t(language, "ancientPhrase")}: 「{link.historicalTerm}」{link.historicalGloss ? " — " + link.historicalGloss : ""}</strong>
                           <p>{link.observation}</p>
+                          <p className="source-tradition">{link.historicalView}</p>
                           <small>{t(language, "relatedFootnote")}</small>
                         </article>
                       ))}
@@ -426,6 +427,7 @@ export default function App() {
                           <h4>{link.organ}: {link.historicalTerm} {link.historicalGloss ? " — " + link.historicalGloss : ""} <span>({language === "en" ? (link.status === "related-observation" ? "Related observation" : "Insufficient evidence") : (link.status === "related-observation" ? "相关观察" : "条件不足")})</span></h4>
                           <p>{t(language, "observed")}: {link.observation}</p>
                           <p>{link.explanation}</p>
+                          <p className="source-tradition">{language === "en" ? "Historic cultural reading (not a factual prediction): " : "古籍文化释义（非现实预测）："}{link.historicalView}</p>
                           <p>{t(language, "caution")}: {link.caveat}</p>
                           <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
                             {t(language, "originalScan")}: 《{link.source.work}》{link.source.volume}《{link.source.section}》 ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
