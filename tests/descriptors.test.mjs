@@ -36,3 +36,17 @@ test("flags strong left/right framing asymmetry", () => {
   const face = sample(); face[4] = { x:.83, y:.51 };
   assert.equal(describeLandmarks([face], image).status, "poor-quality");
 });
+
+test("rejects an obviously tilted head before assigning face ratio labels", () => {
+  const face = sample();
+  // Simulate the right eye being noticeably lower, without changing face width.
+  face[362] = { x: .57, y: .55 };
+  face[263] = { x: .70, y: .55 };
+  assert.equal(describeLandmarks([face], image).status, "poor-quality");
+});
+
+test("rejects missing required landmark coordinates", () => {
+  const face = sample();
+  face[98] = { x: Number.NaN, y: .58 };
+  assert.equal(describeLandmarks([face], image).status, "poor-quality");
+});
