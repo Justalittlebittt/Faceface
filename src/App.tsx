@@ -383,6 +383,12 @@ export default function App() {
                       <h3>{t(language, "culturalTitle")} <span className="preview-label">{t(language, "culturalVersion")}</span></h3>
                     </div>
                     <p className="report-intro">{reading.overview}</p>
+                    <p className="report-intro">{reading.patternSummary}</p>
+                    {reading.sourceLinks.every(link => link.status !== "related-observation") && (
+                      <p className="privacy-detail">{language === "en"
+                        ? "No checked historical phrase has even a limited directional resemblance to this photo. The detailed source notes remain available for context."
+                        : "本次未找到满足局部形态相似条件的已核查古籍用语。仍可在详细报告中阅读原文及条件不足的原因。"}</p>
+                    )}
                     <div className="source-highlights">
                       {reading.sourceLinks.filter(link => link.status === "related-observation").map(link => (
                         <article className="source-highlight" key={link.cardId}>
