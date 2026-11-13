@@ -141,9 +141,9 @@ try {
   }));
   if (remoteFailures.length) console.log("Model/CDN failures:", remoteFailures.join(" | "));
   if (scriptErrors.length) console.log("Browser JS errors:", scriptErrors.join(" | "));
-  if (diagnostics.descriptionCount !== 5 || diagnostics.historicalHighlights !== 2 ||
+  if (diagnostics.descriptionCount !== 8 || diagnostics.historicalHighlights !== 1 ||
       diagnostics.historicalCards !== 3 ||
-      !diagnostics.detailedReport?.includes("不能用其他比例替代原文条件") ||
+      !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
   }
@@ -173,7 +173,7 @@ try {
   }
   await page.getByRole("button", { name: "Switch language / 切换语言" }).click();
   const englishObservations = await page.locator(".observation strong").allTextContents();
-  if (englishObservations.length !== 5 ||
+  if (englishObservations.length !== 8 ||
       englishObservations.some(x => !/[A-Za-z]/.test(x))) {
     throw new Error("English measurements not rendered after language switch");
   }
