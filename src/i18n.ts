@@ -188,7 +188,12 @@ const observationText: Record<string, string> = {
   "本次照片中双侧口角相对向下": "Both mouth corners appear relatively downturned in this photo",
   "本次照片中口角与唇中线接近水平": "Mouth corners appear approximately level with the lip center in this photo",
   "本次照片中双侧口角相对上扬": "Both mouth corners appear relatively upturned in this photo",
-  "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂": "Mouth-corner tilt is near an experimental boundary; no upturn or downturn is assigned"
+  "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂": "Mouth-corner tilt is near an experimental boundary; no upturn or downturn is assigned",
+  "本次照片中唇部可见厚度相对偏薄": "Visible lip thickness appears relatively thin in this photo",
+  "本次照片中唇部可见厚度处于中间区间": "Visible lip thickness is in the middle provisional range",
+  "本次照片中唇部可见厚度相对偏丰": "Visible lip thickness appears relatively full in this photo",
+  "唇厚比例接近实验分类边界，暂不做厚薄判定": "Visible lip thickness is near an experimental boundary; no category is assigned",
+  "照片中嘴唇有明显张开，暂不判断唇部厚薄": "The lips are parted in this image; lip fullness is not assessed"
 };
 
 const fields = {
@@ -200,7 +205,8 @@ const fields = {
   "eyes.spacing": ["Inner-eye spacing", "Distance between inner eye corners / average eye width"],
   "nose.length": ["Nose length", "Nose-root to nose-tip span / face height"],
   "chin.height": ["Chin height", "Lower-lip to chin-bottom span / face height"],
-  "mouth.corner": ["Mouth-corner shape", "0.5 + lip-center elevation relative to average mouth-corner line / mouth width"]
+  "mouth.corner": ["Mouth-corner shape", "0.5 + lip-center elevation relative to average mouth-corner line / mouth width"],
+  "mouth.lip": ["Visible lip thickness", "Upper and lower lip contour thickness / mouth width"]
 } as Record<string, [string, string]>;
 
 const measurementCaveat = "Experimental ratio boundaries are not population or device-calibrated. Pose, expression, perspective and makeup can change measurements.";
