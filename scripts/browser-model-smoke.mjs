@@ -76,7 +76,19 @@ try {
   const robots = await page.locator('meta[name="robots"]').getAttribute("content");
   if (!robots?.includes("noindex")) throw new Error("Preview must remain noindex");
   await page.getByRole("button", { name: "开启前置摄像头" }).click();
-  await page.getByRole("button", { name: "拍摄并本地分析" }).waitFor({ timeout: 15000 });
+  try {
+    await page.getByRole("button", { name: "拍摄并本地分析" }).waitFor({ timeout: 7000 });
+  } catch (cause) {
+    const cameraDebug = await page.evaluate(() => ({
+      error: document.querySelector(".workbench .error-message")?.textContent ?? null,
+      phase: document.querySelector(".camera-stage")?.textContent ?? null,
+      secure: window.isSecureContext,
+      mediaDevices: !!navigator.mediaDevices,
+      captureStreamSupported: "captureStream" in HTMLCanvasElement.prototype,
+      userAgent: navigator.userAgent
+    }));
+    throw new Error("Camera test failed before capture: " + JSON.stringify(cameraDebug) + "; " + cause);
+  }
   await page.waitForFunction(() => {
     const video = document.querySelector("video");
     return video instanceof HTMLVideoElement && video.readyState >= 2 && video.videoWidth > 0;
