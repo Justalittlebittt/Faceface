@@ -54,6 +54,16 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
   const faceWidth = d(234, 454);
   const faceHeight = d(10, 152);
   if (faceWidth < 24 || faceHeight < 24) return empty("poor-quality", "人脸太小，请靠近一点。");
+
+  // Compare both eye centers in pixel space. Rotated heads bias the raw
+  // horizontal/vertical face ratios; ask for a retake rather than guessing.
+  const leftEyeY = (p(33).y + p(133).y) / 2;
+  const rightEyeY = (p(362).y + p(263).y) / 2;
+  const eyeSpan = d(33, 263);
+  const rollRatio = Math.abs(leftEyeY - rightEyeY) * image.height / Math.max(eyeSpan, 1);
+  if (rollRatio > 0.16) {
+    return empty("poor-quality", "头部倾斜较明显，请保持双眼接近水平后重拍。");
+  }
   const midpoint = (p(234).x + p(454).x) / 2;
   const midOffset = Math.abs(p(4).x - midpoint) / Math.max(0.001, Math.abs(p(454).x - p(234).x));
   if (midOffset > 0.19) {
