@@ -71,3 +71,25 @@ test("changing observed eye and nose ratios changes the resulting descriptions",
 test("faces too small for meaningful pixel geometry are not labelled", () => {
   assert.equal(describeLandmarks([sample()], { width: 20, height: 20 }).status, "poor-quality");
 });
+
+test("nearly identical eye geometry on opposite sides of a provisional cutoff stays uncertain", () => {
+  function eyesAtRatio(ratio) {
+    const face = sample();
+    const halfHeight = ratio * .13 / 2;
+    for (const [upper, lower, x] of [[159, 145, .365], [386, 374, .635]]) {
+      face[upper] = { x, y: .42 - halfHeight };
+      face[lower] = { x, y: .42 + halfHeight };
+    }
+    return face;
+  }
+  const left = describeLandmarks([eyesAtRatio(.219)], image);
+  const right = describeLandmarks([eyesAtRatio(.221)], image);
+  assert.equal(left.status, "ok");
+  assert.equal(right.status, "ok");
+  const a = left.descriptors.find(d => d.id === "eyes.openness");
+  const b = right.descriptors.find(d => d.id === "eyes.openness");
+  assert.equal(a.ratio, .219);
+  assert.equal(b.ratio, .221);
+  assert.equal(a.text, b.text);
+  assert.match(a.text, /分类边界/);
+});

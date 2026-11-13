@@ -22,7 +22,13 @@ export type Analysis = {
 const empty = (status: Exclude<Analysis["status"], "ok">, message: string): Analysis =>
   ({ status, message, descriptors: [] });
 
-function category(value: number, lower: number, upper: number, low: string, middle: string, high: string): string {
+function category(
+  value: number, lower: number, upper: number, margin: number,
+  low: string, middle: string, high: string, borderline: string
+): string {
+  // A measured ratio just above/below a provisional cutoff can change between
+  // browsers. Prefer a neutral description instead of fabricating certainty.
+  if (Math.abs(value - lower) <= margin || Math.abs(value - upper) <= margin) return borderline;
   return value < lower ? low : value > upper ? high : middle;
 }
 
@@ -85,15 +91,15 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
 
   const descriptors = [
     make("face.aspect", "整体脸型", "脸部高度 / 颧部横向跨度", faceRatio,
-      category(faceRatio, 1.28, 1.53, "面部轮廓在画面中相对偏宽", "面部长宽比例相对均衡", "面部轮廓在画面中相对偏长")),
+      category(faceRatio, 1.28, 1.53, 0.02, "面部轮廓在画面中相对偏宽", "面部长宽比例相对均衡", "面部轮廓在画面中相对偏长", "脸部长宽比例接近实验分类边界，暂不判断偏宽或均衡")),
     make("eyes.openness", "眼部", "上下眼睑间距 / 横向眼宽（双眼均值）", eyeOpen,
-      category(eyeOpen, 0.22, 0.32, "当前眼部开合比例偏小", "当前眼部开合比例居中", "当前眼部开合比例偏大")),
+      category(eyeOpen, 0.22, 0.32, 0.015, "当前眼部开合比例偏小", "当前眼部开合比例居中", "当前眼部开合比例偏大", "眼部开合比例接近实验分类边界，暂不判定偏小、居中或偏大")),
     make("nose.width", "鼻部", "鼻翼两侧横向跨度 / 颧部横向跨度", noseWidth,
-      category(noseWidth, 0.27, 0.35, "鼻翼横向比例相对偏窄", "鼻翼横向比例处于中间区间", "鼻翼横向比例相对偏宽")),
+      category(noseWidth, 0.27, 0.35, 0.012, "鼻翼横向比例相对偏窄", "鼻翼横向比例处于中间区间", "鼻翼横向比例相对偏宽", "鼻翼横向比例接近实验分类边界，本次不做宽窄分档")),
     make("mouth.width", "口部", "双侧口角距离 / 颧部横向跨度", mouthWidth,
-      category(mouthWidth, 0.37, 0.48, "口部横向比例相对偏小", "口部横向比例处于中间区间", "口部横向比例相对偏大")),
+      category(mouthWidth, 0.37, 0.48, 0.015, "口部横向比例相对偏小", "口部横向比例处于中间区间", "口部横向比例相对偏大", "口部横向比例接近实验分类边界，本次不做大小分档")),
     make("jaw.width", "下颌", "下颌两侧跨度 / 颧部横向跨度", jawWidth,
-      category(jawWidth, 0.65, 0.77, "下颌相对颧部偏窄", "下颌与颧部宽度比例居中", "下颌相对颧部偏宽"))
+      category(jawWidth, 0.65, 0.77, 0.015, "下颌相对颧部偏窄", "下颌与颧部宽度比例居中", "下颌相对颧部偏宽", "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄"))
   ];
 
   if (descriptors.some(item => !Number.isFinite(item.ratio) || item.ratio <= 0 || item.ratio > 3)) {

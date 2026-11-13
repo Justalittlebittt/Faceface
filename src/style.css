@@ -53,8 +53,9 @@ button:focus-visible { outline: 3px solid #a9d4bf; outline-offset: 3px; }
    The full camera image stays visible; we deliberately avoid object-fit: cover cropping. */
 .camera-video, .photo-canvas {
   width: 100%; height: 100%; object-fit: contain; background: #0a1110;
-  transform: scaleX(-1);
 }
+/* Mirror selfie framing only. A selected local photo must retain its orientation. */
+.camera-video, .photo-canvas--selfie { transform: scaleX(-1); }
 .offscreen { display: none; }
 .camera-placeholder { text-align: center; color: #a6b9ae; }
 .camera-placeholder p { font-weight: 600; font-size: 18px; margin: 12px 0 5px; }
