@@ -78,6 +78,12 @@ try {
   await page.goto(origin, { waitUntil: "domcontentloaded", timeout: 30000 });
   const robots = await page.locator('meta[name="robots"]').getAttribute("content");
   if (!robots?.includes("noindex")) throw new Error("Preview must remain noindex");
+  // The actual international preview defaults to English, without persistent storage.
+  const initialHeading = await page.locator(".hero h1").textContent();
+  if (!initialHeading?.includes("Read facial features")) throw new Error("English must be default");
+  await page.getByRole("button", { name: "Switch language / 切换语言" }).click();
+  const localHeading = await page.locator(".hero h1").textContent();
+  if (!localHeading?.includes("让面部形态")) throw new Error("Chinese UI toggle failed");
   if (engine === "webkit") {
     // WebKit's headless CanvasCaptureStream fixture may not deliver frames.
     // This tests the real model on the actual picture via our optional local-file
@@ -165,7 +171,29 @@ try {
   if (persistence.localKeys.length || persistence.sessionKeys.length) {
     throw new Error("Unexpected persisted browser storage keys: " + JSON.stringify(persistence));
   }
-  await page.getByRole("link", { name: "隐私说明 / Privacy notice" }).click();
+  await page.getByRole("button", { name: "Switch language / 切换语言" }).click();
+  const englishObservations = await page.locator(".observation strong").allTextContents();
+  if (englishObservations.length !== 5 ||
+      englishObservations.some(x => !/[A-Za-z]/.test(x))) {
+    throw new Error("English measurements not rendered after language switch");
+  }
+  if (!(await page.locator(".cultural-reading").textContent())?.includes("Source:")) {
+    throw new Error("English cultural references were not displayed");
+  }
+  const [englishDownload] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    page.getByRole("button", { name: "Save or share the report" }).click()
+  ]);
+  const englishPath = await englishDownload.path();
+  if (!englishPath) throw new Error("Missing English downloaded file");
+  const englishReport = await readFile(englishPath, "utf8");
+  if (!englishReport.includes("SHORT REPORT") ||
+      !englishReport.includes("Original wording: 或細長") ||
+      !englishReport.includes("not a certified translation") ||
+      !englishReport.includes("PDF zero-based page 27")) {
+    throw new Error("English report export missing original phrases or source caveats");
+  }
+  await page.getByRole("link", { name: "Privacy notice / 隐私说明" }).click();
   await page.getByRole("heading", { name: "Privacy notice / 隐私说明" }).waitFor({ timeout: 10000 });
   console.log("PASS (" + engine + "): " + (engine === "webkit" ? "local file" : "camera fixture") + " -> real MediaPipe -> source report -> local download, privacy page, no network writes/storage.");
 } finally {
