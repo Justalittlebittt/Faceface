@@ -237,7 +237,7 @@ export default function App() {
     <div className="site-shell">
       <header className="masthead">
         <div className="brand">faceface<span className="brand-dot">.</span></div>
-        <span className="version-chip">M1 · 本地识别实验版</span>
+        <span className="version-chip">M1/M2 · HTTPS 技术测试版</span>
       </header>
 
       <main>
@@ -349,7 +349,7 @@ export default function App() {
           </section>
         )}
       </main>
-      <footer><span>Faceface · Research build 0.1</span><span>不注册 · 不设照片上传端点 · 无广告</span></footer>
+      <footer><span>Faceface · Technical preview · 不注册 / 无广告</span><a href="./privacy.html">隐私说明 / Privacy notice</a></footer>
     </div>
   );
 }
