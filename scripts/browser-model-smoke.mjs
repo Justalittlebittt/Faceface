@@ -142,9 +142,9 @@ try {
   }));
   if (remoteFailures.length) console.log("Model/CDN failures:", remoteFailures.join(" | "));
   if (scriptErrors.length) console.log("Browser JS errors:", scriptErrors.join(" | "));
-  if (diagnostics.descriptionCount !== 9 ||
-      diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 2 ||
-      diagnostics.historicalCards !== 4 || diagnostics.historicalFrameworks !== 2 ||
+  if (diagnostics.descriptionCount !== 10 ||
+      diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 3 ||
+      diagnostics.historicalCards !== 6 || diagnostics.historicalFrameworks !== 2 ||
       !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
@@ -161,8 +161,12 @@ try {
       !savedText.includes("口須方大") ||
       !savedText.includes("梁柱端直") ||
       !savedText.includes("仰月口") ||
+      !savedText.includes("牛眼") ||
+      !savedText.includes("牛口") ||
+      !savedText.includes("古籍文化解读（非现实预测）") ||
       !savedText.includes("【古籍取象背景") ||
       !savedText.includes("PDF 零起页86") ||
+      !savedText.includes("扫描 PDF 零起页87") ||
       !savedText.includes("扫描 PDF 零起页27")) {
     throw new Error("Local report export is missing observed content or source provenance");
   }
@@ -178,7 +182,7 @@ try {
   }
   await page.getByRole("button", { name: "Switch language / 切换语言" }).click();
   const englishObservations = await page.locator(".observation strong").allTextContents();
-  if (englishObservations.length !== 9 ||
+  if (englishObservations.length !== 10 ||
       englishObservations.some(x => !/[A-Za-z]/.test(x))) {
     throw new Error("English measurements not rendered after language switch");
   }
@@ -198,7 +202,9 @@ try {
       !englishReport.includes("PDF zero-based page 27") ||
       !englishReport.includes("仰月口") ||
       !englishReport.includes("Four Rivers") ||
-      !englishReport.includes("PDF zero-based page 86")) {
+      !englishReport.includes("PDF zero-based page 86") ||
+      !englishReport.includes("PDF zero-based page 87") ||
+      !englishReport.includes("What the historic text says")) {
     throw new Error("English report export missing original phrases or source caveats");
   }
   await page.getByRole("link", { name: "Privacy notice / 隐私说明" }).click();

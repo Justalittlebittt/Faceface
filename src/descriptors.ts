@@ -12,6 +12,7 @@ export type Descriptor = {
   ratio: number;
   text: string;
   caveat: string;
+  usable?: boolean; // false when the photo cannot support this specific observation
 };
 export type Analysis = {
   status: "ok" | "no-face" | "multiple-faces" | "poor-quality";
@@ -41,7 +42,7 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     return empty("poor-quality", "模型数据不足，无法可靠描述面部。");
   }
 
-  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397, 168, 17, 0];
+  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397, 168, 17, 0, 13, 14];
   if (required.some(i => !face[i] || !Number.isFinite(face[i].x) || !Number.isFinite(face[i].y))) {
     return empty("poor-quality", "部分关键点缺失，请重新拍摄。");
   }
@@ -89,6 +90,13 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
   const lipCenterY = (p(0).y + p(17).y) / 2;
   const cornerY = (p(61).y + p(291).y) / 2;
   const cornerIndex = 0.5 + ((lipCenterY - cornerY) * image.height) / Math.max(d(61, 291), 1);
+  // Outer and inner contour of the lips are independently mapped by MediaPipe:
+  // 0->13 upper and 14->17 lower. A visibly open mouth invalidates the
+  // photographed lip-fullness comparison instead of generating a permanent trait.
+  const lipFullness = (Math.abs(p(0).y - p(13).y) + Math.abs(p(14).y - p(17).y)) *
+    image.height / Math.max(d(61, 291), 1);
+  const mouthGap = d(13, 14) / Math.max(d(61, 291), 1);
+  const lipsUsable = mouthGap < 0.06;
   const jawWidth = d(172, 397) / faceWidth;
   // Additional visible, cross-region geometry. These describe proportions in
   // one near-frontal image only. Do NOT equate ratios with ancient physiognomy.
@@ -118,7 +126,13 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     make("chin.height", "下巴纵向", "下唇下缘至下巴底距离 / 脸部高度", chinRatio,
       category(chinRatio, 0.20, 0.29, 0.02, "照片中下巴纵向比例相对偏短", "照片中下巴纵向比例处于中间区间", "照片中下巴纵向比例相对偏长", "下巴纵向比例接近实验分类边界，本次不作长短判断")),
     make("mouth.corner", "口角走势", "0.5 + (唇部中心与双口角平均高度差) / 口宽", cornerIndex,
-      category(cornerIndex, 0.465, 0.535, 0.015, "本次照片中双侧口角相对向下", "本次照片中口角与唇中线接近水平", "本次照片中双侧口角相对上扬", "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂"))
+      category(cornerIndex, 0.465, 0.535, 0.015, "本次照片中双侧口角相对向下", "本次照片中口角与唇中线接近水平", "本次照片中双侧口角相对上扬", "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂")),
+    { ...make("mouth.lip", "唇部厚度", "上下唇可见厚度总和 / 口宽", lipFullness,
+        lipsUsable
+          ? category(lipFullness, 0.06, 0.11, 0.012,
+              "本次照片中唇部可见厚度相对偏薄", "本次照片中唇部可见厚度处于中间区间",
+              "本次照片中唇部可见厚度相对偏丰", "唇厚比例接近实验分类边界，暂不做厚薄判定")
+          : "照片中嘴唇有明显张开，暂不判断唇部厚薄"), usable: lipsUsable }
   ];
 
   if (descriptors.some(item => !Number.isFinite(item.ratio) || item.ratio <= 0 || item.ratio > 3)) {
