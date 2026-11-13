@@ -1,6 +1,6 @@
 # Faceface — Traditional Face Reading, Reimagined for the Web
 
-> **Project phase: an English-first, Chinese-switchable M1/M2 experimental website has passed GitHub CI (20/20 unit tests) and Chromium/WebKit real-model browser integration with bilingual source-linked reports.** This is **not yet a verified iOS/Android product, a full classical face-reading engine, or a deployed public website**.
+> **Project phase: an English-first, Chinese-switchable M1/M2 experimental website has passed GitHub CI (20/20 unit tests) and Chromium/WebKit real-model browser integration with bilingual source-linked reports.** The **HTTPS technical preview is now publicly deployed**, but this is **not yet a verified iOS/Android product, a complete classical face-reading engine, or a production-certified service**.
 
 **项目定位（中文）**：Faceface 是一款面向国际用户的免费、手机优先的传统面相文化解读网站。用户使用浏览器摄像头实时拍摄正脸，按需补拍可见耳部；系统将可观察的面部形态转为结构化、可读的描述，并与《麻衣相法》（历史版本有时称《麻衣神相》）及《易传·说卦》的传统取象知识关联，生成**简洁版报告**与**详细版报告**。报告包含历史相术观点、生活情境与可执行的人生启发。它不是科学人格诊断，也不是命运事实预测。
 
@@ -43,7 +43,7 @@ The UI requests browser camera permission on a secure origin (localhost or HTTPS
 
 ## Current top priority
 
-**Next:** enable GitHub Pages once via **Settings → Pages → Build and deployment → GitHub Actions** so the existing deploy workflow can publish a real HTTPS mobile test site; then validate iOS Safari and Android Chrome camera permissions and privacy requests/storage. Browser-model integration passes on Chromium camera simulation and WebKit file input only; thresholds remain experimental. Then add source-verifiable multi-condition ancient rules for useful content. A single public portrait passing Chromium does not validate shape thresholds across people. Full-book archival continues in parallel.
+**Live HTTPS test site:** https://justalittlebittt.github.io/Faceface/ — GitHub Actions deployed the site and independently verified HTTP responses for the homepage and privacy page ([deployment and verification](https://github.com/Justalittlebittt/Faceface/actions/runs/43397158717)). **Next:** use real iOS Safari and Android Chrome to validate camera permissions, face inference, report download and privacy requests/storage. Browser-model integration passes on Chromium camera simulation and WebKit file input only; thresholds remain experimental. Then add source-verifiable multi-condition ancient rules for useful content. A single public portrait passing Chromium does not validate shape thresholds across people. Full-book archival continues in parallel.
 
 ### Repository scope
 
