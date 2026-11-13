@@ -3,6 +3,21 @@ import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
 
 type Phase = "idle" | "camera" | "analyzing" | "result";
+
+function cameraFailure(cause: unknown): string {
+  if (cause instanceof DOMException) {
+    if (cause.name === "NotAllowedError" || cause.name === "PermissionDeniedError") {
+      return "未获得摄像头权限。请在浏览器的网站设置中允许相机后重新尝试。";
+    }
+    if (cause.name === "NotFoundError" || cause.name === "DevicesNotFoundError") {
+      return "没有检测到可用摄像头。请检查设备或连接外接摄像头。";
+    }
+    if (cause.name === "NotReadableError" || cause.name === "TrackStartError") {
+      return "摄像头可能正被其他应用占用。请关闭占用摄像头的应用后重试。";
+    }
+  }
+  return cause instanceof Error ? "无法打开相机：" + cause.message : "无法打开摄像头，请检查浏览器权限。";
+}
 const WASM_ROOT = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm";
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
@@ -110,7 +125,7 @@ export default function App() {
       if (request !== requestRef.current) return;
       stopCamera();
       setPhase("idle");
-      setError(cause instanceof Error ? "无法打开相机：" + cause.message : "无法打开摄像头，请检查浏览器权限。");
+      setError(cameraFailure(cause));
     }
   };
 
@@ -180,7 +195,7 @@ export default function App() {
     }
   };
 
-  const saveObservations = () => {
+  const saveObservations = async () => {
     if (!analysis || analysis.status !== "ok") return;
     const lines = [
       "Faceface — 面部形态观察（技术验证）",
@@ -190,7 +205,18 @@ export default function App() {
         item.region + "：" + item.text + "\n计算：" + item.measurement + " = " + item.ratio + "\n说明：" + item.caveat + "\n"
       )
     ];
-    const objectUrl = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" }));
+    const file = new File([lines.join("\n")], "faceface-observation.txt", { type: "text/plain;charset=utf-8" });
+    // iOS can use the native share sheet to save the text in Files.
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "Faceface 面部形态观察" });
+        return;
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        // Fall back to a regular browser download if native sharing fails.
+      }
+    }
+    const objectUrl = URL.createObjectURL(file);
     const anchor = document.createElement("a");
     anchor.href = objectUrl;
     anchor.download = "faceface-observation.txt";
@@ -272,7 +298,7 @@ export default function App() {
                   ))}
                 </div>
                 <div className="actions">
-                  <button className="primary" onClick={saveObservations}>保存文字观察结果</button>
+                  <button className="primary" onClick={() => void saveObservations()}>保存或分享文字结果</button>
                   <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{showMeasurements ? "隐藏" : "查看"}计算依据</button>
                 </div>
                 <p className="disclaimer">以上描述只表示此照片中测得的几何比例。单张自拍会受到姿态、光线、表情、相机透视与妆容影响；不能据此判断人格、健康、道德或命运。古籍规则尚未接入，不会伪造典籍出处。</p>
