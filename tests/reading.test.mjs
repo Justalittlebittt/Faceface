@@ -56,7 +56,7 @@ test("downloadable text includes concise/detailed source and explicit limitation
   assert.match(text, /条件不足/);
   assert.match(text, /1925年文明书局/);
   assert.match(text, /扫描 PDF 零起页27/);
-  assert.match(text, /当代几何阈值是项目实验设定/);
+  assert.match(text, /现代几何阈值是项目实验设定/);
 });
 
 test("historical excerpts are conditionally related only when measured direction supports them", () => {
