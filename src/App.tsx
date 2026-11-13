@@ -2,22 +2,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
 import { makeReading, readingAsText } from "./reading";
+import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from "./i18n";
 
 type Phase = "idle" | "camera" | "analyzing" | "result";
 
-function cameraFailure(cause: unknown): string {
+function cameraFailure(cause: unknown, language: Language): string {
   if (cause instanceof DOMException) {
     if (cause.name === "NotAllowedError" || cause.name === "PermissionDeniedError") {
-      return "未获得摄像头权限。请在浏览器的网站设置中允许相机后重新尝试。";
+      return t(language, "cameraDenied");
     }
     if (cause.name === "NotFoundError" || cause.name === "DevicesNotFoundError") {
-      return "没有检测到可用摄像头。请检查设备或连接外接摄像头。";
+      return t(language, "cameraMissing");
     }
     if (cause.name === "NotReadableError" || cause.name === "TrackStartError") {
-      return "摄像头可能正被其他应用占用。请关闭占用摄像头的应用后重试。";
+      return t(language, "cameraBusy");
     }
   }
-  return cause instanceof Error ? "无法打开相机：" + cause.message : "无法打开摄像头，请检查浏览器权限。";
+  return cause instanceof Error ? t(language, "cameraUnknown") + ": " + cause.message : t(language, "cameraUnknown");
 }
 const WASM_ROOT = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm";
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -30,6 +31,7 @@ export default function App() {
   const loadingRef = useRef<Promise<FaceLandmarker> | null>(null);
   const mountedRef = useRef(false);
   const requestRef = useRef(0);
+  const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<Phase>("idle");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [error, setError] = useState("");
@@ -37,7 +39,13 @@ export default function App() {
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
   const [photoSource, setPhotoSource] = useState<"camera" | "file" | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
-  const reading = analysis ? makeReading(analysis) : null;
+  const reading = analysis ? makeReading(analysis, language) : null;
+  const observations = analysis?.descriptors.map(d => localizeDescriptor(d, language)) ?? [];
+
+  useEffect(() => {
+    document.documentElement.lang = language === "en" ? "en" : "zh-CN";
+    document.title = language === "en" ? "Faceface · Face patterns and cultural history" : "Faceface · 面部形态观察";
+  }, [language]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -113,7 +121,7 @@ export default function App() {
     setCameraAspect(null);
     setPhotoSource(null);
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-      setError("摄像头需要 HTTPS（或本地 localhost）以及支持摄像头的浏览器。");
+      setError(t(language, "unsupported"));
       return;
     }
     try {
@@ -127,7 +135,7 @@ export default function App() {
       }
       streamRef.current = stream;
       const video = videoRef.current;
-      if (!video) throw new Error("相机预览未初始化");
+      if (!video) throw new Error(t(language, "cameraUnavailable"));
       video.srcObject = stream;
       setPhase("camera");
       // On mobile Safari, let React reveal the video before starting playback.
@@ -138,7 +146,7 @@ export default function App() {
       if (request !== requestRef.current) return;
       stopCamera();
       setPhase("idle");
-      setError(cameraFailure(cause));
+      setError(cameraFailure(cause, language));
     }
   };
 
@@ -192,7 +200,7 @@ export default function App() {
       setPhase("result");
     } catch (cause) {
       if (request !== requestRef.current) return;
-      setError(cause instanceof Error ? "本地模型运行失败：" + cause.message : "模型初始化失败，请检查网络和浏览器。");
+      setError(cause instanceof Error ? t(language, "modelFailure") + ": " + cause.message : t(language, "modelUnknown"));
       setPhase("result");
     }
   };
@@ -202,7 +210,7 @@ export default function App() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) {
-      setError("相机尚未准备好，请稍后再拍。");
+      setError(t(language, "cameraNotReady"));
       return;
     }
     const scale = Math.min(1, 960 / Math.max(video.videoWidth, video.videoHeight));
@@ -210,7 +218,7 @@ export default function App() {
     canvas.height = Math.round(video.videoHeight * scale);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) {
-      setError("浏览器无法读取相机画面。");
+      setError(t(language, "canvasFailure"));
       return;
     }
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -221,7 +229,7 @@ export default function App() {
   const selectLocalPhoto = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/") || file.size > 12 * 1024 * 1024) {
-      setError("请选择不超过 12MB 的本地图片。");
+      setError(t(language, "badPhoto"));
       return;
     }
     setAnalysis(null);
@@ -237,20 +245,20 @@ export default function App() {
       if (request !== requestRef.current) return;
       const canvas = canvasRef.current;
       if (!canvas || !image.naturalWidth || !image.naturalHeight) {
-        throw new Error("无法读取这张图片，请选择另一张。");
+        throw new Error(t(language, "badImage"));
       }
       const scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
       canvas.width = Math.round(image.naturalWidth * scale);
       canvas.height = Math.round(image.naturalHeight * scale);
       const context = canvas.getContext("2d", { willReadFrequently: true });
-      if (!context) throw new Error("浏览器无法处理图片。");
+      if (!context) throw new Error(t(language, "canvasImageFailure"));
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
       setPhotoSource("file");
       setCameraAspect(canvas.width / canvas.height);
       await analyzeCanvas(canvas);
     } catch (cause) {
       if (request !== requestRef.current) return;
-      setError(cause instanceof Error ? cause.message : "无法打开图片。");
+      setError(cause instanceof Error ? cause.message : t(language, "imageUnknown"));
       setPhase("idle");
     } finally {
       URL.revokeObjectURL(objectUrl);
@@ -259,7 +267,7 @@ export default function App() {
 
   const saveObservations = async () => {
     if (!reading) return;
-    const file = new File([readingAsText(reading)], "faceface-reading.txt", { type: "text/plain;charset=utf-8" });
+    const file = new File([readingAsText(reading, language)], "faceface-reading.txt", { type: "text/plain;charset=utf-8" });
     // iOS can use the native share sheet to save the text in Files.
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
