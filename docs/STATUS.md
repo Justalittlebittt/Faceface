@@ -1,6 +1,14 @@
 # Faceface｜项目进度总览（2026-11-13）
 
-> 状态：**英文默认/中文切换及英文古籍关联报告已入库；GitHub生产构建、20/20单测、Chromium及WebKit真实模型双语集成测试通过。真实iOS/Android真机、隐私审计、内容深度尚未验收；HTTPS测试站点仍待GitHub Pages首次启用。** 旧微信小程序方案已被国际网站方案替代。
+> 状态：**GitHub Pages HTTPS 测试站点已部署成功，首页及隐私说明页经 GitHub Actions 实际 HTTP 验证；英文默认/中文切换、20/20单测、Chromium与WebKit模型集成测试均已通过。真实iOS/Android真机、隐私网络审计、古籍内容深度尚未验收。** 旧微信小程序方案已被国际网站方案替代。
+
+## 2026-11-13 HTTPS 站点首次发布成功（实测）
+
+- [x] 仓库管理者已在 GitHub 设置中启用 GitHub Actions 作为 Pages 构建来源，仓库公开元数据 `has_pages=true`。
+- [x] 原失败部署工作流 [run 43393148981](https://github.com/Justalittlebittt/Faceface/actions/runs/43393148981) 重新运行，`Configure GitHub Pages`、`Upload static site`、`Deploy test site` 均成功，返回正式 HTTPS URL：**https://justalittlebittt.github.io/Faceface/**。
+- [x] 新增部署后外部 HTTP 验证工作流，run [43397158717](https://github.com/Justalittlebittt/Faceface/actions/runs/43397158717) 成功通过：GET 首页与 `privacy.html`，检查预期 HTML 标记和静态资源链接。此为**公开 HTTPS 测试版上线**，不是完整产品/合规验收。
+- [ ] iOS Safari 和 Android Chrome 真实手机的权限、拍照、推理、文本保存、后台退出及网络审计仍待实机检查。当前没有对真人照片采集、保存或上传的要求。
+- [ ] 保持技术测试版 `noindex`、无广告、无账号；人脸图片由本地浏览器处理，第三方模型资源与SDK通信仍需独立隐私审查。
 
 ## 已完成的成果（区分设计与实测）
 
@@ -94,11 +102,11 @@
 - [x] 英文版与中文版使用**相同几何观察与古籍卡片ID/匹配状态**；英文简洁/详细报告及下载包含卷页、PDF原文扫描链接和现代阈值限制。
 - [x] PR #8：GitHub TypeScript、Vite生产构建、20/20单测通过；Chromium模拟摄像头及WebKit本地文件均完成英文→中文→英文的真实模型报告和导出集成测试。
 - [ ] **国际版产品质量仍未完成**：英文释义缺少独立译校，只有3张历史来源卡与五个测试观察字段；真实iOS/Android及跨人群可靠性未验收。不得将双语技术可用称为正式国际上线。
-- [ ] GitHub Pages HTTPS 首次激活仍待管理员配置，不因本次PR解除。
+- [x] 此项为 PR #8 当时的历史状态；Pages 管理员配置已在后续部署中完成，见本页顶部的 HTTPS 站点发布记录。
 
 ## 明确尚未完成
 
-- [ ] 国际网站前端、域名、HTTPS生产部署和真实用户流程
+- [x] 已有免费 HTTPS 测试网站（GitHub Pages），尚无正式自有域名或正式生产发布；真实用户流程/真机验收仍待完成
 - [ ] 在真实 iOS Safari、Android Chrome 上完成本地视觉模型运行
 - [ ] 已用官方示例人像在真实Chromium模型中输出五区域形态词；**真人多样本的一致性、遮挡与分类阈值验证仍未完成**
 - [ ] 视觉描述与古籍规则的可审计自动匹配
@@ -116,7 +124,7 @@
 4. 真实设备通过：真相机、真模型、真日志与可复核输出。
 5. 发布通过：国际网站可用、隐私及运营条件有证明。
 
-**截至2026-11-13，项目以第1-3类成果为主，没有第5类成果。**
+**截至2026-11-13，已完成公开 HTTPS 技术测试版发布与桌面浏览器模型测试；“生产发布/正式产品验收”尚未完成，不能把技术预览当作第5类全面验收通过。**
 
 ## 迁移说明
 
