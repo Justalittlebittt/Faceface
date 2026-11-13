@@ -17,18 +17,18 @@ test("no readings generated for absent, multiple, or low-quality faces", () => {
   }
 });
 
-test("imports first three V0.6 source cards with traceable edition and page", () => {
+test("preserves three V0.6 cards and adds one separately checked illustrated category", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.cardId),
-    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01"]);
-  assert.ok(reading.sourceLinks.every(x => x.source.pdf_page_zero_based === 27));
+    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01"]);
+  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86]);
   assert.ok(reading.sourceLinks.every(x => x.source.source_url.includes("commons.wikimedia.org")));
 });
 
 test("an incomplete metric never becomes a historical face-type verdict", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.status),
-    ["related-observation", "insufficient", "insufficient"]);
+    ["related-observation", "insufficient", "insufficient", "insufficient"]);
   assert.ok(reading.sourceLinks.every(x => x.status !== "confirmed"));
   assert.match(reading.overview, /不足以判定完整的传统相型/);
 });
@@ -68,7 +68,7 @@ test("historical excerpts are conditionally related only when measured direction
   };
   const reading = makeReading(onlyMouth);
   assert.deepEqual(reading.sourceLinks.map(link => link.status),
-    ["insufficient", "related-observation", "insufficient"]);
+    ["insufficient", "related-observation", "insufficient", "insufficient"]);
   assert.match(reading.sourceLinks[1].explanation, /局部相似/);
   const neither = {
     ...onlyMouth, descriptors: onlyMouth.descriptors.map(d => d.id === "mouth.width"
@@ -87,4 +87,31 @@ test("expanded narrative remains cross-region rather than repeating a fixed fate
   assert.match(reading.patternSummary, /跨部位观察/);
   assert.match(reading.patternSummary, /双眼内眼角间距/);
   assert.match(readingAsText(reading), /下巴纵向比例/);
+});
+
+test("mouth-corner source is conditional, and no complete illustrated type is confirmed", () => {
+  const curve=(ratio)=>({...ok,descriptors:[
+    ...descriptors,
+    {id:"mouth.corner",region:"口角走势",measurement:"corner index",ratio,
+      text: ratio>.55?"本次照片中双侧口角相对上扬":"本次照片中口角与唇中线接近水平",
+      caveat:"当次表情可能改变"}
+  ]});
+  const neutral=makeReading(curve(.51)),smiling=makeReading(curve(.62));
+  assert.equal(neutral.sourceLinks[3].status,"insufficient");
+  assert.equal(smiling.sourceLinks[3].status,"related-observation");
+  assert.equal(smiling.sourceLinks[3].historicalTerm,"仰月口");
+  assert.match(smiling.sourceLinks[3].caveat,/笑容和表情/);
+  assert.doesNotMatch(readingAsText(smiling),/已确认仰月口/);
+});
+test("non-personal Five Mountains and Four Rivers notes remain source-traceable in both languages", () => {
+  const zh=makeReading(ok,"zh"),en=makeReading(ok,"en");
+  assert.deepEqual(zh.frameworkNotes.map(x=>x.id),
+    ["MY25-FRAME-MOUNTAINS-01","MY25-FRAME-RIVERS-01"]);
+  assert.deepEqual(zh.frameworkNotes.map(x=>x.source.pdf_page_zero_based),[27,28]);
+  assert.deepEqual(en.frameworkNotes.map(x=>x.id),zh.frameworkNotes.map(x=>x.id));
+  assert.match(readingAsText(zh),/古籍取象背景/);
+  assert.match(readingAsText(zh),/鼻為濟/);
+  assert.match(readingAsText(en,"en"),/HISTORICAL SYSTEM/);
+  assert.match(readingAsText(en,"en"),/Four Rivers/);
+  assert.match(readingAsText(en,"en"),/vol\. 1|卷一/);
 });
