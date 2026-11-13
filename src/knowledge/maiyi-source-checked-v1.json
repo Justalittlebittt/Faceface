@@ -1,0 +1,139 @@
+{
+  "dataset": "faceface-source-checked-v1",
+  "revision": "2026-11-13",
+  "provenance": {
+    "original_record": "五官原文规则卡_V0.6.json",
+    "version": "0.6.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "edition": "1925年文明书局秦慎安校勘本",
+    "volume": "卷一",
+    "section": "五官总论",
+    "pdf_page_zero_based": 27,
+    "verification": "original page re-inspected on 2026-11-13; terminology is historical evidence, NOT a facial trait inference",
+    "revision_note": "V0.6 three cards preserved verbatim; added one illustrated 卷二 相口 category and two non-personal historical-framework notes; original pages visually inspected"
+  },
+  "policy": {
+    "no_fate_prediction": true,
+    "no_automatic_classification_from_unvalidated_thresholds": true,
+    "no_side_to_front_metric_substitution": true,
+    "no_personality_health_fate_from_appearance": true
+  },
+  "cards": [
+    {
+      "id": "MY25-EYE-01",
+      "organ": "眼",
+      "traditional_name": "监察官",
+      "source_phrase": "或細長",
+      "modern_observation": "眼部宽高比例",
+      "mode": "geometry_only",
+      "linked_metric": "eye_aspect_ratio",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "现代眼部宽高比只能作为相关观测，不等于古籍细长标准"
+    },
+    {
+      "id": "MY25-MOUTH-01",
+      "organ": "口",
+      "traditional_name": "出纳官",
+      "source_phrase": "口須方大",
+      "modern_observation": "口部轮廓及宽度",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "可展示口宽比例，但古籍未给出现代“方大”数值判定"
+    },
+    {
+      "id": "MY25-NOSE-01",
+      "organ": "鼻",
+      "traditional_name": "审辨官",
+      "source_phrase": "梁柱端直",
+      "modern_observation": "鼻梁的直线形态",
+      "mode": "not_measured",
+      "linked_metric": null,
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "鼻尖中线偏移不能代替整条鼻梁的端直判断"
+    },
+    {
+      "id": "MY25-MOUTH-ARC-01",
+      "organ": "口",
+      "traditional_name": "口形图示",
+      "source_phrase": "仰月口",
+      "modern_observation": "单张照片两侧口角相对于唇部中线的垂直位置",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_corner_index",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相口·仰月口图",
+        "pdf_page_zero_based": 86,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_86_visual_read_2026-11-13"
+      },
+      "caveat": "古籍插图展示整口弧线；现代照片仅量口角上扬趋势，笑容和表情可瞬时改变形态，绝不可确认为仰月口完整相型"
+    }
+  ],
+  "framework_notes": [
+    {
+      "id": "MY25-FRAME-MOUNTAINS-01",
+      "title_zh": "五岳：面部作为山岳的空间比喻",
+      "title_en": "Five Mountains: mapping facial regions to mountains",
+      "quote": "額為衡山；鼻為嵩山",
+      "explanation_zh": "古籍借山岳比喻额与鼻等面部位置，是传统分类的历史背景；不能用单张照片推断人生走势。",
+      "explanation_en": "The classic maps the forehead and nose to mountain imagery. This explains its historical vocabulary; it does not predict personal outcomes.",
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五岳",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_27_visual_read_2026-11-13"
+      }
+    },
+    {
+      "id": "MY25-FRAME-RIVERS-01",
+      "title_zh": "四渎：五官与水系的取象",
+      "title_en": "Four Rivers: facial features as waterways",
+      "quote": "耳為江；目為河；口為淮；鼻為濟",
+      "explanation_zh": "古籍用江河等水系来组织耳、目、口、鼻的观察。这是文化取象，不是性格、财富或健康的科学推断。",
+      "explanation_en": "The classic compares ears, eyes, mouth and nose to waterways. It is a historical metaphor, not a scientific diagnosis or a personality forecast.",
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "四渎",
+        "pdf_page_zero_based": 28,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_28_visual_read_2026-11-13"
+      }
+    }
+  ]
+}

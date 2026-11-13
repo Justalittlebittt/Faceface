@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-v06.json" with { type: "json" };
+import catalog from "./knowledge/maiyi-source-checked-v1.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 
@@ -42,12 +42,21 @@ export type CulturalLink = {
   source: SourceCard["source"];
 };
 
+export type HistoricalFramework = {
+  id: string;
+  title: string;
+  quote: string;
+  explanation: string;
+  source: SourceCard["source"];
+};
+
 export type FaceReading = {
   heading: string;
   overview: string;
   patternSummary: string;
   observations: Descriptor[];
   sourceLinks: CulturalLink[];
+  frameworkNotes: HistoricalFramework[];
   reflection: string;
   evidenceNotice: string;
 };
@@ -67,13 +76,19 @@ const englishSource: Record<string, { organ: string; title: string; gloss: strin
     organ: "Nose", title: "Discernment Officer (historical term)",
     gloss: "The bridge should be upright and straight [descriptive gloss]",
     caveat: "Nostril width cannot stand in for a direct observation of the entire nasal bridge."
+  },
+  "MY25-MOUTH-ARC-01": {
+    organ: "Mouth", title: "Illustrated mouth shapes (historical chart)",
+    gloss: "Upturned crescent-shaped mouth [illustration label; explanatory gloss]",
+    caveat: "The illustration depicts an entire mouth shape. A still photo only measures current mouth-corner tilt, which changes with smiling and cannot confirm the illustrated type."
   }
 };
 
 const cards = catalog.cards as SourceCard[];
 const metricToDescriptor: Record<string, string> = {
   eye_aspect_ratio: "eyes.openness",
-  mouth_width_norm: "mouth.width"
+  mouth_width_norm: "mouth.width",
+  mouth_corner_index: "mouth.corner"
 };
 
 export function makeReading(analysis: Analysis, language: Language = "zh"): FaceReading | null {
@@ -88,7 +103,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     // These bands mirror provisional M1 ratio thresholds, not book criteria.
     const related = !!descriptor && card.mode === "geometry_only" &&
       ((card.id === "MY25-EYE-01" && descriptor.ratio < 0.205) ||
-       (card.id === "MY25-MOUTH-01" && descriptor.ratio > 0.495));
+       (card.id === "MY25-MOUTH-01" && descriptor.ratio > 0.495) ||
+       (card.id === "MY25-MOUTH-ARC-01" && descriptor.ratio > 0.550));
     const english = language === "en";
     const gloss = englishSource[card.id];
     return {
@@ -112,6 +128,14 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     };
   });
 
+  const frameworkNotes: HistoricalFramework[] = catalog.framework_notes.map(note => ({
+    id: note.id,
+    title: language === "en" ? note.title_en : note.title_zh,
+    quote: note.quote,
+    explanation: language === "en" ? note.explanation_en : note.explanation_zh,
+    source: note.source
+  }));
+
   // Do not transform measured morphology into purported personal history,
   // disposition, capability, health, moral attributes, destiny or wealth.
   return {
@@ -133,12 +157,13 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     })(),
     observations: analysis.descriptors.map(d => localizeDescriptor(d, language)),
     sourceLinks,
+    frameworkNotes,
     reflection: language === "en"
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation, vol. 1, 'General Discussion of the Five Features' (五官总论), printed page 14 (PDF zero-based page 27). English glosses are explanatory only, not an authoritative translation. Modern numeric thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》卷一《五官总论》，原书页十四（扫描 PDF 零起页27）。当代几何阈值是项目实验设定，并非古籍原文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; and an illustrated mouth category in volume 2 'Reading the Mouth' (相口), page 86 (all PDF pages zero-based). English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28）及卷二《相口》图例（页86）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
@@ -163,8 +188,18 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
         "This image: " + link.observation,
         link.explanation,
         "Limit: " + link.caveat,
-        "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Qin Shen'an collation, vol. 1, 五官总论, PDF zero-based page " + link.source.pdf_page_zero_based,
+        "Source: Mai Yi Xiang Fa (麻衣相法), " + link.source.edition + ", " +
+          link.source.volume + " / " + link.source.section + ", PDF zero-based page " + link.source.pdf_page_zero_based,
         "Original scan: " + link.source.source_url,
+        ""
+      ].join("\n")),
+      "HISTORICAL SYSTEM (BACKGROUND, NOT PERSONALIZED MATCHES)",
+      ...reading.frameworkNotes.map(note => [
+        note.title,
+        "Source words: " + note.quote,
+        note.explanation,
+        "Location: " + note.source.volume + " / " + note.source.section + ", PDF zero-based page " + note.source.pdf_page_zero_based,
+        "Original scan: " + note.source.source_url,
         ""
       ].join("\n")),
       "MODERN REFLECTION (NOT AN ANCIENT QUOTE)",
@@ -195,6 +230,15 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "出处：" + link.source.edition + "，" + link.source.volume + "《" +
         link.source.section + "》，扫描 PDF 零起页" + link.source.pdf_page_zero_based,
       "原始文件：" + link.source.source_url,
+      ""
+    ].join("\n")),
+    "【古籍取象背景（不是个人相型匹配）】",
+    ...reading.frameworkNotes.map(note => [
+      note.title,
+      "原文短语：" + note.quote,
+      note.explanation,
+      "原书位置：" + note.source.volume + "《" + note.source.section + "》，PDF 零起页" + note.source.pdf_page_zero_based,
+      "扫描原件：" + note.source.source_url,
       ""
     ].join("\n")),
     "【现代反思建议】",

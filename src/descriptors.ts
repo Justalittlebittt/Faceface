@@ -41,7 +41,7 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     return empty("poor-quality", "模型数据不足，无法可靠描述面部。");
   }
 
-  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397, 168, 17];
+  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397, 168, 17, 0];
   if (required.some(i => !face[i] || !Number.isFinite(face[i].x) || !Number.isFinite(face[i].y))) {
     return empty("poor-quality", "部分关键点缺失，请重新拍摄。");
   }
@@ -83,6 +83,12 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
   const eyeOpen = (d(159, 145) / eyeWidthL + d(386, 374) / eyeWidthR) / 2;
   const noseWidth = d(98, 327) / faceWidth;
   const mouthWidth = d(61, 291) / faceWidth;
+  // The instant photograph's mouth-corner line relative to the visible lip
+  // center. A value of 0.5 means flat; higher means corners look elevated.
+  // Transient smiling/expressions make this a photo observation only.
+  const lipCenterY = (p(0).y + p(17).y) / 2;
+  const cornerY = (p(61).y + p(291).y) / 2;
+  const cornerIndex = 0.5 + ((lipCenterY - cornerY) * image.height) / Math.max(d(61, 291), 1);
   const jawWidth = d(172, 397) / faceWidth;
   // Additional visible, cross-region geometry. These describe proportions in
   // one near-frontal image only. Do NOT equate ratios with ancient physiognomy.
@@ -110,7 +116,9 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     make("nose.length", "鼻部纵向", "鼻根至鼻尖距离 / 脸部高度", noseLength,
       category(noseLength, 0.15, 0.24, 0.015, "照片中鼻部纵向比例相对偏短", "照片中鼻部纵向比例处于中间区间", "照片中鼻部纵向比例相对偏长", "鼻部纵向比例接近实验分类边界，本次不作长短判断")),
     make("chin.height", "下巴纵向", "下唇下缘至下巴底距离 / 脸部高度", chinRatio,
-      category(chinRatio, 0.20, 0.29, 0.02, "照片中下巴纵向比例相对偏短", "照片中下巴纵向比例处于中间区间", "照片中下巴纵向比例相对偏长", "下巴纵向比例接近实验分类边界，本次不作长短判断"))
+      category(chinRatio, 0.20, 0.29, 0.02, "照片中下巴纵向比例相对偏短", "照片中下巴纵向比例处于中间区间", "照片中下巴纵向比例相对偏长", "下巴纵向比例接近实验分类边界，本次不作长短判断")),
+    make("mouth.corner", "口角走势", "0.5 + (唇部中心与双口角平均高度差) / 口宽", cornerIndex,
+      category(cornerIndex, 0.465, 0.535, 0.015, "本次照片中双侧口角相对向下", "本次照片中口角与唇中线接近水平", "本次照片中双侧口角相对上扬", "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂"))
   ];
 
   if (descriptors.some(item => !Number.isFinite(item.ratio) || item.ratio <= 0 || item.ratio > 3)) {

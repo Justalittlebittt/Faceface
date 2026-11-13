@@ -184,7 +184,11 @@ const observationText: Record<string, string> = {
   "照片中下巴纵向比例相对偏短": "Lower-lip to chin height appears relatively short in this photo",
   "照片中下巴纵向比例处于中间区间": "Lower-lip to chin height is in the middle experimental range",
   "照片中下巴纵向比例相对偏长": "Lower-lip to chin height appears relatively long in this photo",
-  "下巴纵向比例接近实验分类边界，本次不作长短判断": "Chin height is near an experimental boundary; no length category is assigned"
+  "下巴纵向比例接近实验分类边界，本次不作长短判断": "Chin height is near an experimental boundary; no length category is assigned",
+  "本次照片中双侧口角相对向下": "Both mouth corners appear relatively downturned in this photo",
+  "本次照片中口角与唇中线接近水平": "Mouth corners appear approximately level with the lip center in this photo",
+  "本次照片中双侧口角相对上扬": "Both mouth corners appear relatively upturned in this photo",
+  "本次照片中口角接近实验曲率边界，暂不判断上扬或下垂": "Mouth-corner tilt is near an experimental boundary; no upturn or downturn is assigned"
 };
 
 const fields = {
@@ -195,7 +199,8 @@ const fields = {
   "jaw.width": ["Jaw", "Lower-jaw span / cheekbone span"],
   "eyes.spacing": ["Inner-eye spacing", "Distance between inner eye corners / average eye width"],
   "nose.length": ["Nose length", "Nose-root to nose-tip span / face height"],
-  "chin.height": ["Chin height", "Lower-lip to chin-bottom span / face height"]
+  "chin.height": ["Chin height", "Lower-lip to chin-bottom span / face height"],
+  "mouth.corner": ["Mouth-corner shape", "0.5 + lip-center elevation relative to average mouth-corner line / mouth width"]
 } as Record<string, [string, string]>;
 
 const measurementCaveat = "Experimental ratio boundaries are not population or device-calibrated. Pose, expression, perspective and makeup can change measurements.";

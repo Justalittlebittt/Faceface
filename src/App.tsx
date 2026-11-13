@@ -400,6 +400,24 @@ export default function App() {
                       ))}
                     </div>
                     <p className="reflection">{reading.reflection}</p>
+                    <section className="historical-frameworks" aria-label={language === "en" ? "Historical framework" : "古籍取象背景"}>
+                      <h4>{language === "en" ? "How the classic organizes facial regions" : "古籍如何组织面部部位"}</h4>
+                      <p className="privacy-detail">{language === "en"
+                        ? "These are historical metaphors, not personalized matches or predictions."
+                        : "以下是历史文化取象说明，不是针对个人的相型匹配或未来预测。"}</p>
+                      <div className="framework-grid">
+                        {reading.frameworkNotes.map(note => (
+                          <article className="framework-note" key={note.id}>
+                            <strong>{note.title}</strong>
+                            <span className="historical-quote">「{note.quote}」</span>
+                            <p>{note.explanation}</p>
+                            <a href={note.source.source_url} rel="noopener noreferrer" target="_blank">
+                              {t(language, "originalScan")}: 《{note.source.section}》 ({t(language, "pageIndex")} {note.source.pdf_page_zero_based})
+                            </a>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
                     <details className="source-details">
                       <summary>{t(language, "expandedTitle")}</summary>
                       <p>{reading.evidenceNotice}</p>
