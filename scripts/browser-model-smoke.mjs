@@ -110,6 +110,14 @@ try {
     throw new Error("Wrong photo preview orientation for " + engine + ": " + previewTransform);
   }
   console.log("Geometry metrics (" + engine + "):", JSON.stringify(measuredRatios));
+  // The pinned public portrait previously yielded eye ratios .221 (Chromium)
+  // and .219 (WebKit), straddling the old .220 cutoff with contradictory labels.
+  // Both should now be described as borderline, not opposite face shapes.
+  const eyeLabel = await page.locator(".observation").nth(1).locator("strong").textContent();
+  if (!eyeLabel?.includes("接近实验分类边界")) {
+    throw new Error(engine + " still assigns a brittle eye shape label: " + eyeLabel);
+  }
+
 
   const diagnostics = await page.evaluate(() => ({
     report: document.querySelector(".report")?.textContent || null,
