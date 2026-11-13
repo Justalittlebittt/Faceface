@@ -1,6 +1,6 @@
 import catalog from "./knowledge/maiyi-v06.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
-import { localizeDescriptor, type Language } from "./i18n";
+import { localizeDescriptor, type Language } from "./i18n.ts";
 
 /**
  * M2 seed: source-linked cultural notes, not historical trait classifiers.
