@@ -17,18 +17,18 @@ test("no readings generated for absent, multiple, or low-quality faces", () => {
   }
 });
 
-test("preserves three V0.6 cards and adds one separately checked illustrated category", () => {
+test("retains original source cards and adds two independently scanned forms", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.cardId),
-    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01"]);
-  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86]);
+    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01"]);
+  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86,66,87]);
   assert.ok(reading.sourceLinks.every(x => x.source.source_url.includes("commons.wikimedia.org")));
 });
 
 test("an incomplete metric never becomes a historical face-type verdict", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.status),
-    ["related-observation", "insufficient", "insufficient", "insufficient"]);
+    ["related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.ok(reading.sourceLinks.every(x => x.status !== "confirmed"));
   assert.match(reading.overview, /不足以判定完整的传统相型/);
 });
@@ -68,7 +68,7 @@ test("historical excerpts are conditionally related only when measured direction
   };
   const reading = makeReading(onlyMouth);
   assert.deepEqual(reading.sourceLinks.map(link => link.status),
-    ["insufficient", "related-observation", "insufficient", "insufficient"]);
+    ["insufficient", "related-observation", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.match(reading.sourceLinks[1].explanation, /局部相似/);
   const neither = {
     ...onlyMouth, descriptors: onlyMouth.descriptors.map(d => d.id === "mouth.width"
@@ -114,4 +114,53 @@ test("non-personal Five Mountains and Four Rivers notes remain source-traceable 
   assert.match(readingAsText(en,"en"),/HISTORICAL SYSTEM/);
   assert.match(readingAsText(en,"en"),/Four Rivers/);
   assert.match(readingAsText(en,"en"),/vol\. 1|卷一/);
+});
+
+test("ox-mouth source only relates when BOTH width and reliable lip thickness agree", () => {
+  const shape=(width,lip,usable=true)=>({...ok,descriptors:[
+    ...descriptors.map(d=>d.id==="mouth.width"?{...d,ratio:width,text:"口部横向比例相对偏大"}:d),
+    {id:"mouth.lip",region:"唇部厚度",measurement:"lip height / mouth width",ratio:lip,
+      text:usable?"本次照片中唇部可见厚度相对偏丰":"照片中嘴唇有明显张开，暂不判断唇部厚薄",usable,caveat:"当次照片"}
+  ]});
+  const final=(x)=>makeReading(x).sourceLinks.find(link=>link.cardId==="MY25-MOUTH-OX-01");
+  assert.equal(final(shape(.53,.15)).status,"related-observation");
+  assert.equal(final(shape(.43,.15)).status,"insufficient");
+  assert.equal(final(shape(.53,.06)).status,"insufficient");
+  assert.equal(final(shape(.53,.15,false)).status,"insufficient");
+  const matched=final(shape(.53,.15));
+  assert.match(matched.observation,/口部横向比例/);
+  assert.match(matched.observation,/唇部可见厚度/);
+  assert.match(matched.historicalView,/传统说法/);
+  assert.doesNotMatch(matched.historicalView,/你.*富/);
+});
+
+test("ox-eye illustration has a separate eye-opening condition", () => {
+  const large={...ok,descriptors:descriptors.map(d=>d.id==="eyes.openness"
+    ? {...d,ratio:.38,text:"当前眼部开合比例偏大"}:d)};
+  const ox=makeReading(large).sourceLinks.find(link=>link.cardId==="MY25-EYE-OX-01");
+  assert.equal(ox.status,"related-observation");
+  assert.match(ox.historicalView,/历史的象形比喻/);
+  const borderline={...ok,descriptors:descriptors.map(d=>d.id==="eyes.openness"
+    ? {...d,ratio:.329,text:"眼部开合比例接近实验分类边界"}:d)};
+  assert.equal(makeReading(borderline).sourceLinks.find(x=>x.cardId==="MY25-EYE-OX-01").status,"insufficient");
+});
+
+test("missing or unusable metrics never trigger composite historical labels", () => {
+  const bare={...ok,descriptors:descriptors.filter(x=>x.id!=="mouth.width")};
+  const reading=makeReading(bare);
+  assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-MOUTH-OX-01").status,"insufficient");
+  assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-01").status,"insufficient");
+  assert.match(readingAsText(reading),/卷二/);
+});
+
+test("historic interpretation remains attributed culture rather than predicting user wealth", () => {
+  const src=makeReading(ok);
+  assert.equal(src.sourceLinks.length,6);
+  const en=readingAsText(makeReading(ok,"en"),"en");
+  assert.match(en,/What the historic text says/);
+  assert.match(en,/Original wording: 牛口/);
+  assert.match(en,/PDF zero-based page 87/);
+  const zh=readingAsText(src);
+  assert.match(zh,/古籍文化解读（非现实预测）/);
+  assert.match(zh,/吉祥寓意/);
 });
