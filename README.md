@@ -1,6 +1,6 @@
 # Faceface — Traditional Face Reading, Reimagined for the Web
 
-> **Project phase: M1 browser inference and an M2 limited source-linked cultural report have passed GitHub CI and a real Chromium MediaPipe integration test.** This is **not yet a verified iOS/Android product or a full classical face-reading engine**.
+> **Project phase: an English-first, Chinese-switchable M1/M2 experimental website has passed GitHub CI (20/20 unit tests) and Chromium/WebKit real-model browser integration with bilingual source-linked reports.** This is **not yet a verified iOS/Android product, a full classical face-reading engine, or a deployed public website**.
 
 **项目定位（中文）**：Faceface 是一款面向国际用户的免费、手机优先的传统面相文化解读网站。用户使用浏览器摄像头实时拍摄正脸，按需补拍可见耳部；系统将可观察的面部形态转为结构化、可读的描述，并与《麻衣相法》（历史版本有时称《麻衣神相》）及《易传·说卦》的传统取象知识关联，生成**简洁版报告**与**详细版报告**。报告包含历史相术观点、生活情境与可执行的人生启发。它不是科学人格诊断，也不是命运事实预测。
 
@@ -39,7 +39,7 @@ npm run build
 npm test
 ```
 
-The UI requests browser camera permission on a secure origin (localhost or HTTPS). The first analysis downloads version-pinned WASM and a public Google-hosted model; the input frame is processed in an in-memory canvas. The app now shows **experimental geometric observations and a small, traceable classical-text reference section**. The ancient observations are partial/insufficient correlations, not authenticated automatic traditional face-type verdicts. See [docs/M1_IMPLEMENTATION.md](docs/M1_IMPLEMENTATION.md) for exact implementation and remaining verification.
+The UI requests browser camera permission on a secure origin (localhost or HTTPS). The first analysis downloads version-pinned WASM and a public Google-hosted model; the input frame is processed in an in-memory canvas. The app defaults to **English with an immediate Chinese toggle**, and now shows **experimental geometric observations and a small, traceable classical-text reference section in both languages**. Original Chinese excerpts remain available alongside explicitly qualified English explanatory glosses. The ancient observations are partial/insufficient correlations, not authenticated automatic traditional face-type verdicts. See [docs/M1_IMPLEMENTATION.md](docs/M1_IMPLEMENTATION.md) for exact implementation and remaining verification.
 
 ## Current top priority
 
@@ -49,6 +49,6 @@ The UI requests browser camera permission on a secure origin (localhost or HTTPS
 
 The repository contains the project's **canonical planning/handoff documents plus experimental M1 Web source code**. Legacy V0.x–V2.8 research packages are referenced by status but have not been automatically imported or declared validated. Future source-data imports require provenance and acceptance.
 
-CI verification: [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4) (first source-linked reports), [PR #5](https://github.com/Justalittlebittt/Faceface/pull/5) (HTTPS test-site pipeline; Pages enablement still required), [PR #6](https://github.com/Justalittlebittt/Faceface/pull/6) (WebKit local-photo fallback), [PR #7](https://github.com/Justalittlebittt/Faceface/pull/7) (16/16 tests, cross-engine border labels and correct image orientation).
+CI verification: [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4) (first source-linked reports), [PR #5](https://github.com/Justalittlebittt/Faceface/pull/5) (HTTPS test-site pipeline; Pages enablement required), [PR #6](https://github.com/Justalittlebittt/Faceface/pull/6) (WebKit file fallback), [PR #7](https://github.com/Justalittlebittt/Faceface/pull/7) (geometry boundary stability), [PR #8](https://github.com/Justalittlebittt/Faceface/pull/8) (English-first UI, Chinese toggle and 20/20 bilingual report tests).
 
 **Last updated:** 2026-11-13.
