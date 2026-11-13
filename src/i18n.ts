@@ -172,7 +172,19 @@ const observationText: Record<string, string> = {
   "下颌相对颧部偏窄": "Jaw width is relatively narrow compared with the cheekbone span",
   "下颌与颧部宽度比例居中": "Jaw-to-cheekbone width ratio falls in the middle interval",
   "下颌相对颧部偏宽": "Jaw width is relatively broad compared with the cheekbone span",
-  "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄": "Jaw width is near an experimental boundary; no width category is assigned"
+  "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄": "Jaw width is near an experimental boundary; no width category is assigned",
+  "双眼内眼角间距相对偏近": "Inner-eye spacing is relatively close compared with average eye width",
+  "双眼内眼角间距与眼宽比例居中": "Inner-eye spacing is in the middle experimental range",
+  "双眼内眼角间距相对偏远": "Inner-eye spacing is relatively wide compared with average eye width",
+  "双眼内眼角间距接近实验分类边界，本次不作远近判断": "Inner-eye spacing is near an experimental boundary; no distance category is assigned",
+  "照片中鼻部纵向比例相对偏短": "Nose-root to nose-tip length appears relatively short in this photo",
+  "照片中鼻部纵向比例处于中间区间": "Nose-root to nose-tip length is in the middle experimental range",
+  "照片中鼻部纵向比例相对偏长": "Nose-root to nose-tip length appears relatively long in this photo",
+  "鼻部纵向比例接近实验分类边界，本次不作长短判断": "Nose length is near an experimental boundary; no length category is assigned",
+  "照片中下巴纵向比例相对偏短": "Lower-lip to chin height appears relatively short in this photo",
+  "照片中下巴纵向比例处于中间区间": "Lower-lip to chin height is in the middle experimental range",
+  "照片中下巴纵向比例相对偏长": "Lower-lip to chin height appears relatively long in this photo",
+  "下巴纵向比例接近实验分类边界，本次不作长短判断": "Chin height is near an experimental boundary; no length category is assigned"
 };
 
 const fields = {
@@ -180,7 +192,10 @@ const fields = {
   "eyes.openness": ["Eyes", "Vertical eyelid opening / eye width (both eyes averaged)"],
   "nose.width": ["Nose", "Nostril-wing span / cheekbone span"],
   "mouth.width": ["Mouth", "Mouth-corner span / cheekbone span"],
-  "jaw.width": ["Jaw", "Lower-jaw span / cheekbone span"]
+  "jaw.width": ["Jaw", "Lower-jaw span / cheekbone span"],
+  "eyes.spacing": ["Inner-eye spacing", "Distance between inner eye corners / average eye width"],
+  "nose.length": ["Nose length", "Nose-root to nose-tip span / face height"],
+  "chin.height": ["Chin height", "Lower-lip to chin-bottom span / face height"]
 } as Record<string, [string, string]>;
 
 const measurementCaveat = "Experimental ratio boundaries are not population or device-calibrated. Pose, expression, perspective and makeup can change measurements.";
