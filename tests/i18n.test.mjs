@@ -12,7 +12,8 @@ const descriptors = [
   { id:"eyes.spacing", region:"双眼间距", measurement:"inter-eye ratio", ratio:1.01, text:"双眼内眼角间距与眼宽比例居中", caveat:"实验阈值" },
   { id:"nose.length", region:"鼻部纵向", measurement:"nose ratio", ratio:.20, text:"照片中鼻部纵向比例处于中间区间", caveat:"实验阈值" },
   { id:"chin.height", region:"下巴纵向", measurement:"chin ratio", ratio:.25, text:"照片中下巴纵向比例处于中间区间", caveat:"实验阈值" },
-  { id:"mouth.corner", region:"口角走势", measurement:"corner index", ratio:.61, text:"本次照片中双侧口角相对上扬", caveat:"当次表情" }
+  { id:"mouth.corner", region:"口角走势", measurement:"corner index", ratio:.61, text:"本次照片中双侧口角相对上扬", caveat:"当次表情" },
+  { id:"mouth.lip", region:"唇部厚度", measurement:"lip width ratio", ratio:.14, text:"本次照片中唇部可见厚度相对偏丰", caveat:"实验阈值", usable:true }
 ];
 const analysis = { status:"ok", message:"以下描述来自本次相机帧的模型关键点与实验性比例计算，不代表传统面相判词。", descriptors };
 
@@ -55,6 +56,9 @@ test("English and Chinese reports share source IDs and retain original historica
   assert.match(chineseText,/扫描 PDF 零起页27/);
   assert.match(englishText,/仰月口/);
   assert.match(englishText,/PDF zero-based page 86/);
+  assert.match(englishText,/PDF zero-based page 87/);
+  assert.match(englishText,/Ox mouth/);
+  assert.match(englishText,/What the historic text says/);
   assert.match(englishText,/Four Rivers/);
   assert.match(chineseText,/仰月口/);
 });
