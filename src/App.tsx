@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
+import { makeReading, readingAsText } from "./reading";
 
 type Phase = "idle" | "camera" | "analyzing" | "result";
 
@@ -35,6 +36,7 @@ export default function App() {
   const [showMeasurements, setShowMeasurements] = useState(false);
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
+  const reading = analysis ? makeReading(analysis) : null;
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -209,20 +211,12 @@ export default function App() {
   };
 
   const saveObservations = async () => {
-    if (!analysis || analysis.status !== "ok") return;
-    const lines = [
-      "Faceface — 面部形态观察（技术验证）",
-      "这只是实验性几何描述，不是已校验的传统相法报告，也不是人格/命运判断。",
-      "",
-      ...analysis.descriptors.map(item =>
-        item.region + "：" + item.text + "\n计算：" + item.measurement + " = " + item.ratio + "\n说明：" + item.caveat + "\n"
-      )
-    ];
-    const file = new File([lines.join("\n")], "faceface-observation.txt", { type: "text/plain;charset=utf-8" });
+    if (!reading) return;
+    const file = new File([readingAsText(reading)], "faceface-reading.txt", { type: "text/plain;charset=utf-8" });
     // iOS can use the native share sheet to save the text in Files.
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: "Faceface 面部形态观察" });
+        await navigator.share({ files: [file], title: "Faceface 传统文化参考报告" });
         return;
       } catch (cause) {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
@@ -250,7 +244,7 @@ export default function App() {
         <section className="hero">
           <p className="eyebrow">TRADITIONAL FACE CULTURE · VISUAL RESEARCH</p>
           <h1>让面部形态，<br /><em>成为可读的语言。</em></h1>
-          <p className="subtitle">用真实的相机画面测试浏览器端特征提取。这一版本先验证“看见什么”，古籍解读将在来源核验后接入。</p>
+          <p className="subtitle">用真实的相机画面测试浏览器端特征提取。这一版本先验证“看见什么”，目前展示经过原页核对的少量历史用语关联，完整古籍报告仍在开发中。</p>
         </section>
 
         <section className="workbench" aria-label="面部观察">
@@ -310,11 +304,46 @@ export default function App() {
                     </article>
                   ))}
                 </div>
+                {reading && (
+                  <div className="cultural-reading">
+                    <div className="reading-heading">
+                      <span className="step-label">03 / CULTURAL SOURCES</span>
+                      <h3>简洁文化报告 <span className="preview-label">资料核对版</span></h3>
+                    </div>
+                    <p className="report-intro">{reading.overview}</p>
+                    <div className="source-highlights">
+                      {reading.sourceLinks.filter(link => link.status === "related-observation").map(link => (
+                        <article className="source-highlight" key={link.cardId}>
+                          <span className="region">{link.organ} · {link.traditionalName}</span>
+                          <strong>古籍用语：「{link.historicalTerm}」</strong>
+                          <p>{link.observation}</p>
+                          <small>仅属于相关观察，不代表古籍相型已经成立。</small>
+                        </article>
+                      ))}
+                    </div>
+                    <p className="reflection">{reading.reflection}</p>
+                    <details className="source-details">
+                      <summary>展开详细报告：出处、条件与不足</summary>
+                      <p>{reading.evidenceNotice}</p>
+                      {reading.sourceLinks.map(link => (
+                        <article className="source-detail" key={link.cardId}>
+                          <h4>{link.organ}：{link.historicalTerm} <span>（{link.status === "related-observation" ? "相关观察" : "条件不足"}）</span></h4>
+                          <p>本次照片：{link.observation}</p>
+                          <p>{link.explanation}</p>
+                          <p>注意：{link.caveat}</p>
+                          <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
+                            查看《{link.source.work}》{link.source.volume}《{link.source.section}》扫描原件（零起页{link.source.pdf_page_zero_based}）
+                          </a>
+                        </article>
+                      ))}
+                    </details>
+                  </div>
+                )}
                 <div className="actions">
-                  <button className="primary" onClick={() => void saveObservations()}>保存或分享文字结果</button>
+                  <button className="primary" onClick={() => void saveObservations()}>保存或分享文化报告</button>
                   <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{showMeasurements ? "隐藏" : "查看"}计算依据</button>
                 </div>
-                <p className="disclaimer">以上描述只表示此照片中测得的几何比例。单张自拍会受到姿态、光线、表情、相机透视与妆容影响；不能据此判断人格、健康、道德或命运。古籍规则尚未接入，不会伪造典籍出处。</p>
+                <p className="disclaimer">以上描述只表示此照片中测得的几何比例。单张自拍会受到姿态、光线、表情、相机透视与妆容影响；不能据此判断人格、健康、道德或命运。目前仅展示少量已核对的历史用语；不能把现代几何比例当作古籍完整相型。</p>
               </>
             )}
           </section>
