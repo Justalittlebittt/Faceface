@@ -17,6 +17,7 @@ export default function App() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -31,6 +32,7 @@ export default function App() {
     setAnalysis(null);
     setError("");
     setShowMeasurements(false);
+    setTiming(null);
     const canvas = canvasRef.current;
     if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
   };
@@ -46,6 +48,7 @@ export default function App() {
     const request = ++requestRef.current;
     setError("");
     setAnalysis(null);
+    setTiming(null);
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError("摄像头需要 HTTPS（或本地 localhost）以及支持摄像头的浏览器。");
       return;
@@ -120,14 +123,19 @@ export default function App() {
     setPhase("analyzing");
     setError("");
     const request = ++requestRef.current;
+    const modelStart = performance.now();
     try {
       const model = await loadLandmarker();
+      const modelMs = performance.now() - modelStart;
       if (request !== requestRef.current) return;
       // Let the analyzing state paint before synchronous single-frame inference.
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (request !== requestRef.current) return;
+      const inferenceStart = performance.now();
       const result = model.detect(canvas);
+      const inferenceMs = performance.now() - inferenceStart;
       if (request !== requestRef.current) return;
+      setTiming({ modelMs: Math.round(modelMs), inferenceMs: Math.round(inferenceMs) });
       setAnalysis(describeLandmarks(result.faceLandmarks, { width: canvas.width, height: canvas.height }));
       setPhase("result");
     } catch (cause) {
@@ -208,6 +216,7 @@ export default function App() {
           <section className="report" aria-live="polite">
             <div className="stage-header"><div><span className="step-label">02 / OBSERVATIONS</span><h2>面部形态描述</h2></div></div>
             <p className={analysis.status === "ok" ? "report-intro" : "error-message"}>{analysis.message}</p>
+            {timing && <p className="privacy-detail" role="status">本机诊断：模型准备 {timing.modelMs} ms · 单帧推理 {timing.inferenceMs} ms。仅在本页面显示，不自动上传。</p>}
             {analysis.status === "ok" && (
               <>
                 <div className="observations">
