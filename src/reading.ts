@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-v06.json";
+import catalog from "./knowledge/maiyi-v06.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 
 /**
