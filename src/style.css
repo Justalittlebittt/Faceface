@@ -160,3 +160,6 @@ footer {
   .reading-heading h3 { font-size: 19px; }
   .source-details { padding: 14px; }
 }
+
+/* The technical preview must link to a readable privacy notice on every screen. */
+footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3px; }
