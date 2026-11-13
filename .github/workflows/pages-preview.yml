@@ -50,3 +50,16 @@ jobs:
       - name: Deploy test site
         id: deploy
         uses: actions/deploy-pages@v4
+      - name: Verify published HTTPS pages
+        env:
+          SITE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          case "$SITE_URL" in https://*) ;; *) echo "Deployment did not return an HTTPS URL"; exit 1 ;; esac
+          BASE="${SITE_URL%/}/"
+          curl --fail --silent --show-error --location --retry 12 --retry-all-errors --retry-delay 3 --max-time 20 "${BASE}" -o /tmp/faceface-index.html
+          curl --fail --silent --show-error --location --retry 12 --retry-all-errors --retry-delay 3 --max-time 20 "${BASE}privacy.html" -o /tmp/faceface-privacy.html
+          grep -q 'id="root"' /tmp/faceface-index.html
+          grep -q 'assets/index-' /tmp/faceface-index.html
+          grep -q 'Privacy notice' /tmp/faceface-privacy.html
+          echo "PASS: deployed Faceface homepage and privacy page return valid HTTPS HTML"
