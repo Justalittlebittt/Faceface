@@ -50,3 +50,24 @@ test("rejects missing required landmark coordinates", () => {
   face[98] = { x: Number.NaN, y: .58 };
   assert.equal(describeLandmarks([face], image).status, "poor-quality");
 });
+
+test("changing observed eye and nose ratios changes the resulting descriptions", () => {
+  const changed = sample();
+  changed[98] = { x: .35, y: .58 };
+  changed[327] = { x: .65, y: .58 };
+  changed[159] = { x: .365, y: .38 };
+  changed[145] = { x: .365, y: .46 };
+  changed[386] = { x: .635, y: .38 };
+  changed[374] = { x: .635, y: .46 };
+  const original = describeLandmarks([sample()], image);
+  const adjusted = describeLandmarks([changed], image);
+  assert.equal(adjusted.status, "ok");
+  for (const region of ["眼部", "鼻部"]) {
+    assert.notEqual(original.descriptors.find(d => d.region === region).text,
+      adjusted.descriptors.find(d => d.region === region).text);
+  }
+});
+
+test("faces too small for meaningful pixel geometry are not labelled", () => {
+  assert.equal(describeLandmarks([sample()], { width: 20, height: 20 }).status, "poor-quality");
+});
