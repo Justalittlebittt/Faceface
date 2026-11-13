@@ -11,6 +11,7 @@ function sample() {
   set(362,.57,.42);set(263,.7,.42);set(386,.635,.405);set(374,.635,.435);
   set(98,.42,.58);set(327,.58,.58);set(61,.35,.69);set(291,.65,.69);
   set(172,.29,.74);set(397,.71,.74);
+  set(168,.5,.38);set(17,.5,.70);
   return face;
 }
 const image = { width: 800, height: 800 };
@@ -19,10 +20,10 @@ test("reports no-face and multiple-face states rather than guessing", () => {
   assert.equal(describeLandmarks([], image).status, "no-face");
   assert.equal(describeLandmarks([sample(), sample()], image).status, "multiple-faces");
 });
-test("outputs five independently measured regions from valid geometry", () => {
+test("outputs eight independently measured features spanning five face regions", () => {
   const result = describeLandmarks([sample()], image);
   assert.equal(result.status, "ok");
-  assert.deepEqual(result.descriptors.map(d => d.region), ["整体脸型", "眼部", "鼻部", "口部", "下颌"]);
+  assert.deepEqual(result.descriptors.map(d => d.region), ["整体脸型", "眼部", "鼻部", "口部", "下颌", "双眼间距", "鼻部纵向", "下巴纵向"]);
   assert.ok(result.descriptors.every(d => d.ratio > 0 && d.text.length > 0 && d.measurement.length > 0));
 });
 test("repeated input is deterministic without using personality inference", () => {
@@ -92,4 +93,28 @@ test("nearly identical eye geometry on opposite sides of a provisional cutoff st
   assert.equal(b.ratio, .221);
   assert.equal(a.text, b.text);
   assert.match(a.text, /分类边界/);
+});
+
+test("additional eye-gap, nose-length and chin-height fields respond independently", () => {
+  const before = describeLandmarks([sample()], image);
+  const face = sample();
+  face[133] = { x: .40, y: .42 };
+  face[362] = { x: .60, y: .42 };
+  face[168] = { x: .5, y: .32 };
+  face[17] = { x: .5, y: .62 };
+  const after = describeLandmarks([face], image);
+  assert.equal(before.status, "ok");
+  assert.equal(after.status, "ok");
+  for (const id of ["eyes.spacing", "nose.length", "chin.height"]) {
+    const a = before.descriptors.find(d => d.id === id);
+    const b = after.descriptors.find(d => d.id === id);
+    assert.ok(a && b);
+    assert.notEqual(a.ratio, b.ratio);
+  }
+});
+
+test("newly required landmarks cannot be silently hallucinated", () => {
+  const face = sample();
+  face[168] = { x: Number.NaN, y: .39 };
+  assert.equal(describeLandmarks([face], image).status, "poor-quality");
 });
