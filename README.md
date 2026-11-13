@@ -1,6 +1,6 @@
 # Faceface — Traditional Face Reading, Reimagined for the Web
 
-> **Project phase: requirements, research & architecture.** This repository was initialized with project documentation on 2026-11-13. It is **not yet a running website or validated production face-analysis system**.
+> **Project phase: M1 browser prototype committed; build and real-device acceptance pending.** This repository now includes an experimental camera → on-device Face Landmarker → five-region geometry description flow. It is **not yet a verified production website or classical-reading engine**.
 
 **项目定位（中文）**：Faceface 是一款面向国际用户的免费、手机优先的传统面相文化解读网站。用户使用浏览器摄像头实时拍摄正脸，按需补拍可见耳部；系统将可观察的面部形态转为结构化、可读的描述，并与《麻衣相法》（历史版本有时称《麻衣神相》）及《易传·说卦》的传统取象知识关联，生成**简洁版报告**与**详细版报告**。报告包含历史相术观点、生活情境与可执行的人生启发。它不是科学人格诊断，也不是命运事实预测。
 
@@ -16,7 +16,7 @@
 - **Interpretation:** integrate I Ching / Yijing **Eight Trigrams imagery** into relevant face-feature explanations; **no independent divination/hexagram-casting flow**. Do not invent rules such as “larger eyes mean stronger fire.”
 - **Scientific boundary:** visible morphology does not establish personality, moral character, life events, or health; traditional claims must be attributed as historical beliefs. Suggestions are reflective rather than diagnostic.
 - **Monetization intent:** free product supported by ads *if feasible and compliant*; no ads in camera capture; consent/privacy requirements for third-party advertising remain to be assessed.
-- **Development status:** previous proof-of-concept code exists in earlier ChatGPT-generated local ZIP packages, **not migrated here**, and was not verified with real-model inference or browser/device acceptance. Implementation remains paused pending this documentation handoff.
+- **Development status:** M1 experimental React/TypeScript code is committed, including MediaPipe still-image detection and a geometry-only observation/export UI. GitHub Actions results and Android/iOS camera acceptance are not yet confirmed; classical-text matching and full reports are not implemented. Historical ZIP prototypes remain outside this repository.
 
 ## Start here
 
@@ -30,12 +30,23 @@
 | [docs/PRIVACY_AND_LAUNCH.md](docs/PRIVACY_AND_LAUNCH.md) | Privacy promises, auditable evidence, region-aware launch |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Confirmed decisions and explicitly unresolved choices |
 
+## Run the M1 experiment locally
+
+```bash
+npm install
+npm run dev
+npm run build
+npm test
+```
+
+The UI requests browser camera permission on a secure origin (localhost or HTTPS). The first analysis downloads version-pinned WASM and a public Google-hosted model; the input frame is processed in an in-memory canvas. The app currently shows **provisional geometry observations only**; it does not claim to generate authenticated classical face-reading reports. See [docs/M1_IMPLEMENTATION.md](docs/M1_IMPLEMENTATION.md) for exact implementation and remaining verification.
+
 ## Current top priority
 
 Prove a **real on-device browser vertical slice**, not another paper-only example: camera permission → good-quality frame → several face-region descriptors → source-linked match → coherent concise/detailed report → user-controlled export, **without facial data leaving the browser**. In parallel, begin exhaustive cataloguing of the pinned classic source. Do not confuse simulated tests with real browser inference.
 
 ### Repository scope
 
-The repository contains the project's **canonical planning and handoff documents** at inception. Legacy V0.x–V2.8 research packages and code are referenced by status but have not been automatically imported or declared validated. Future code and source-data imports require explicit provenance and acceptance.
+The repository contains the project's **canonical planning/handoff documents plus experimental M1 Web source code**. Legacy V0.x–V2.8 research packages are referenced by status but have not been automatically imported or declared validated. Future source-data imports require provenance and acceptance.
 
 **Last updated:** 2026-11-13.
