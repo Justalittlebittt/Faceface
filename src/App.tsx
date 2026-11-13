@@ -292,20 +292,20 @@ export default function App() {
     <div className="site-shell">
       <header className="masthead">
         <div className="brand">faceface<span className="brand-dot">.</span></div>
-        <span className="version-chip">M1/M2 · HTTPS 技术测试版</span>
+        <div className="header-controls"><span className="version-chip">{t(language, "version")}</span><button className="lang-switch" type="button" aria-label="Switch language / 切换语言" onClick={() => setLanguage(value => value === "en" ? "zh" : "en")}>{t(language, "switchLanguage")}</button></div>
       </header>
 
       <main>
         <section className="hero">
-          <p className="eyebrow">TRADITIONAL FACE CULTURE · VISUAL RESEARCH</p>
-          <h1>让面部形态，<br /><em>成为可读的语言。</em></h1>
-          <p className="subtitle">用真实的相机画面测试浏览器端特征提取。这一版本先验证“看见什么”，目前展示经过原页核对的少量历史用语关联，完整古籍报告仍在开发中。</p>
+          <p className="eyebrow">{t(language, "eyebrow")}</p>
+          <h1>{t(language, "heroFirst")}<br /><em>{t(language, "heroSecond")}</em></h1>
+          <p className="subtitle">{t(language, "subtitle")}</p>
         </section>
 
-        <section className="workbench" aria-label="面部观察">
+        <section className="workbench" aria-label={t(language, "cameraTitle")}>
           <div className="stage-header">
-            <div><span className="step-label">01 / CAMERA</span><h2>拍摄正面照片</h2></div>
-            <span className="privacy-mark">◌ 设备本地分析</span>
+            <div><span className="step-label">{t(language, "cameraStep")}</span><h2>{t(language, "cameraTitle")}</h2></div>
+            <span className="privacy-mark">{t(language, "privateLabel")}</span>
           </div>
           <div
             className="camera-stage"
@@ -323,27 +323,27 @@ export default function App() {
                 }
               }}
               className={phase === "camera" ? "camera-video" : "offscreen"}
-              aria-label="前置摄像头预览"
+              aria-label={t(language, "cameraTitle")}
             />
             <canvas
               ref={canvasRef}
               className={(phase === "analyzing" || phase === "result" ? "photo-canvas" : "offscreen") +
                 (photoSource === "camera" ? " photo-canvas--selfie" : "")}
-              aria-label="本次拍摄的内存画面"
+              aria-label={t(language, "observationTitle")}
             />
-            {phase === "idle" && <div className="camera-placeholder"><span className="placeholder-icon">◎</span><p>相机尚未开启</p><small>光线均匀 · 面对镜头 · 不遮挡五官</small></div>}
-            {phase === "analyzing" && <div className="processing-layer" role="status">正在本机加载模型并提取特征…<small>首次需要下载模型文件，不上传照片</small></div>}
+            {phase === "idle" && <div className="camera-placeholder"><span className="placeholder-icon">◎</span><p>{t(language, "cameraIdle")}</p><small>{t(language, "cameraHint")}</small></div>}
+            {phase === "analyzing" && <div className="processing-layer" role="status">{t(language, "analyzing")}<small>{t(language, "analyzingHint")}</small></div>}
             {phase === "camera" && <div className="guide-oval" aria-hidden="true" />}
           </div>
           {error && <p className="error-message" role="alert">{error}</p>}
           <div className="actions">
             {phase === "idle" && <>
-              <button className="primary" onClick={() => void begin()}>开启前置摄像头</button>
+              <button className="primary" onClick={() => void begin()}>{t(language, "openCamera")}</button>
               <label className="secondary file-action">
-                摄像头不可用？从本地选择照片
+                {t(language, "galleryFallback")}
                 <input
                   className="file-input"
-                  aria-label="从本地选择照片"
+                  aria-label={t(language, "choosePhoto")}
                   type="file"
                   accept="image/*"
                   onChange={event => {
@@ -354,57 +354,57 @@ export default function App() {
                 />
               </label>
             </>}
-            {phase === "camera" && <><button className="primary" onClick={() => void capture()}>拍摄并本地分析</button><button className="secondary" onClick={reset}>关闭相机</button></>}
-            {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
-            {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
+            {phase === "camera" && <><button className="primary" onClick={() => void capture()}>{t(language, "takePhoto")}</button><button className="secondary" onClick={reset}>{t(language, "closeCamera")}</button></>}
+            {phase === "analyzing" && <button className="secondary" onClick={reset}>{t(language, "cancelAnalysis")}</button>}
+            {phase === "result" && <button className="secondary" onClick={reset}>{t(language, "retake")}</button>}
           </div>
-          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；可选的本地照片直接由浏览器读取，不上传原图。照片与特征默认不写入浏览器存储或应用服务器。自拍预览和自拍结果使用镜像；从本地选择的照片按原方向显示。模型在未镜像的图像上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">{t(language, "privacyDetail")}</p>
         </section>
 
         {analysis && phase === "result" && (
           <section className="report" aria-live="polite">
-            <div className="stage-header"><div><span className="step-label">02 / OBSERVATIONS</span><h2>面部形态描述</h2></div></div>
-            <p className={analysis.status === "ok" ? "report-intro" : "error-message"}>{analysis.message}</p>
-            {timing && <p className="privacy-detail" role="status">本机诊断：模型准备 {timing.modelMs} ms · 单帧推理 {timing.inferenceMs} ms。仅在本页面显示，不自动上传。</p>}
+            <div className="stage-header"><div><span className="step-label">{t(language, "observationStep")}</span><h2>{t(language, "observationTitle")}</h2></div></div>
+            <p className={analysis.status === "ok" ? "report-intro" : "error-message"}>{localizeAnalysisMessage(analysis, language)}</p>
+            {timing && <p className="privacy-detail" role="status">{t(language, "modelTime")} {timing.modelMs} {t(language, "ms")} · {t(language, "inferenceTime")} {timing.inferenceMs} {t(language, "ms")}. {t(language, "timingNotice")}</p>}
             {analysis.status === "ok" && (
               <>
                 <div className="observations">
-                  {analysis.descriptors.map(item => (
+                  {observations.map(item => (
                     <article className="observation" key={item.id}>
                       <span className="region">{item.region}</span><strong>{item.text}</strong>
-                      {showMeasurements && <small>{item.measurement}：{item.ratio}（实验阈值，未校准）</small>}
+                      {showMeasurements && <small>{item.measurement}: {item.ratio} {t(language, "measurementQualifier")}</small>}
                     </article>
                   ))}
                 </div>
                 {reading && (
                   <div className="cultural-reading">
                     <div className="reading-heading">
-                      <span className="step-label">03 / CULTURAL SOURCES</span>
-                      <h3>简洁文化报告 <span className="preview-label">资料核对版</span></h3>
+                      <span className="step-label">{t(language, "culturalStep")}</span>
+                      <h3>{t(language, "culturalTitle")} <span className="preview-label">{t(language, "culturalVersion")}</span></h3>
                     </div>
                     <p className="report-intro">{reading.overview}</p>
                     <div className="source-highlights">
                       {reading.sourceLinks.filter(link => link.status === "related-observation").map(link => (
                         <article className="source-highlight" key={link.cardId}>
                           <span className="region">{link.organ} · {link.traditionalName}</span>
-                          <strong>古籍用语：「{link.historicalTerm}」</strong>
+                          <strong>{t(language, "ancientPhrase")}: 「{link.historicalTerm}」{link.historicalGloss ? " — " + link.historicalGloss : ""}</strong>
                           <p>{link.observation}</p>
-                          <small>仅属于相关观察，不代表古籍相型已经成立。</small>
+                          <small>{t(language, "relatedFootnote")}</small>
                         </article>
                       ))}
                     </div>
                     <p className="reflection">{reading.reflection}</p>
                     <details className="source-details">
-                      <summary>展开详细报告：出处、条件与不足</summary>
+                      <summary>{t(language, "expandedTitle")}</summary>
                       <p>{reading.evidenceNotice}</p>
                       {reading.sourceLinks.map(link => (
                         <article className="source-detail" key={link.cardId}>
-                          <h4>{link.organ}：{link.historicalTerm} <span>（{link.status === "related-observation" ? "相关观察" : "条件不足"}）</span></h4>
-                          <p>本次照片：{link.observation}</p>
+                          <h4>{link.organ}: {link.historicalTerm} {link.historicalGloss ? " — " + link.historicalGloss : ""} <span>({language === "en" ? (link.status === "related-observation" ? "Related observation" : "Insufficient evidence") : (link.status === "related-observation" ? "相关观察" : "条件不足")})</span></h4>
+                          <p>{t(language, "observed")}: {link.observation}</p>
                           <p>{link.explanation}</p>
-                          <p>注意：{link.caveat}</p>
+                          <p>{t(language, "caution")}: {link.caveat}</p>
                           <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
-                            查看《{link.source.work}》{link.source.volume}《{link.source.section}》扫描原件（零起页{link.source.pdf_page_zero_based}）
+                            {t(language, "originalScan")}: 《{link.source.work}》{link.source.volume}《{link.source.section}》 ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
                           </a>
                         </article>
                       ))}
@@ -412,16 +412,16 @@ export default function App() {
                   </div>
                 )}
                 <div className="actions">
-                  <button className="primary" onClick={() => void saveObservations()}>保存或分享文化报告</button>
-                  <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{showMeasurements ? "隐藏" : "查看"}计算依据</button>
+                  <button className="primary" onClick={() => void saveObservations()}>{t(language, "saveReport")}</button>
+                  <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{t(language, showMeasurements ? "hideMeasurements" : "showMeasurements")}</button>
                 </div>
-                <p className="disclaimer">以上描述只表示此照片中测得的几何比例。单张自拍会受到姿态、光线、表情、相机透视与妆容影响；不能据此判断人格、健康、道德或命运。目前仅展示少量已核对的历史用语；不能把现代几何比例当作古籍完整相型。</p>
+                <p className="disclaimer">{t(language, "disclaimer")}</p>
               </>
             )}
           </section>
         )}
       </main>
-      <footer><span>Faceface · Technical preview · 不注册 / 无广告</span><a href="./privacy.html">隐私说明 / Privacy notice</a></footer>
+      <footer><span>{t(language, "footer")}</span><a href="./privacy.html">{t(language, "privacyLink")}</a></footer>
     </div>
   );
 }
