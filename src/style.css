@@ -179,3 +179,14 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
   .version-chip { font-size: 9px; max-width: 140px; line-height: 1.25; text-align: center; }
   .lang-switch { padding: 8px 10px; font-size: 12px; min-height: 40px; }
 }
+
+/* Original-source background is explanatory, not a portrait-specific verdict. */
+.historical-frameworks { margin: 22px 0; border-top: 1px solid #3d5849; padding-top: 18px; }
+.historical-frameworks h4 { font-size: 18px; font-weight: 600; margin: 0; }
+.historical-frameworks .privacy-detail { margin: 8px 0 13px; }
+.framework-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,245px),1fr)); gap: 12px; }
+.framework-note { background: #1b2c24; border: 1px solid #385646; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 9px; }
+.framework-note strong { color: #d9efda; font-size: 15px; line-height: 1.4; }
+.framework-note .historical-quote { font-family: Georgia,"Songti SC",serif; color: #c9e4d0; font-size: 14px; line-height: 1.6; }
+.framework-note p { color: #bcd0c0; font-size: 13px; line-height: 1.75; margin: 0; }
+.framework-note a { color: #bfe6cb; font-size: 12px; overflow-wrap: anywhere; }
