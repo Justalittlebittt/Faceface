@@ -80,6 +80,10 @@ try {
     report: document.querySelector(".report")?.textContent || null,
     cameraError: document.querySelector(".workbench .error-message")?.textContent || null,
     descriptionCount: document.querySelectorAll(".observation").length,
+    historicalHighlights: document.querySelectorAll(".source-highlight").length,
+    historicalCards: document.querySelectorAll(".source-detail").length,
+    sourceLabels: [...document.querySelectorAll(".source-detail h4")].map(node => node.textContent),
+    detailedReport: document.querySelector(".source-details")?.textContent || null,
     modelTiming: document.querySelector(".report [role=status]")?.textContent || null
   }));
   console.log("Integration result (public Google sample only):", JSON.stringify({
@@ -88,10 +92,13 @@ try {
   }));
   if (remoteFailures.length) console.log("Model/CDN failures:", remoteFailures.join(" | "));
   if (scriptErrors.length) console.log("Browser JS errors:", scriptErrors.join(" | "));
-  if (diagnostics.descriptionCount !== 5 || diagnostics.cameraError || scriptErrors.length) {
-    throw new Error("Real model/browser geometry integration did not yield five regions");
+  if (diagnostics.descriptionCount !== 5 || diagnostics.historicalHighlights !== 2 ||
+      diagnostics.historicalCards !== 3 ||
+      !diagnostics.detailedReport?.includes("不能用其他比例替代原文条件") ||
+      diagnostics.cameraError || scriptErrors.length) {
+    throw new Error("Real browser face-to-source-linked report integration failed");
   }
-  console.log("PASS: real on-device MediaPipe model and geometry descriptors executed in Chromium.");
+  console.log("PASS: real MediaPipe model -> five geometry descriptions -> partial-only historical report in Chromium.");
 } finally {
   if (browser) await browser.close();
   preview.kill();
