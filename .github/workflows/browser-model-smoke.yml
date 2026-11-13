@@ -24,15 +24,17 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build actual website
         run: npm run build
-      - name: Install Chromium integration test runner (not part of website bundle)
+      - name: Install mobile Chromium and WebKit (test dependencies only)
         run: |
           npm install --no-save playwright@1.65.0 --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Obtain official MediaPipe example portrait temporarily
         run: |
           curl --fail --location --retry 3 --max-time 60 \
             https://storage.googleapis.com/mediapipe-assets/portrait.jpg \
             --output dist/ci-portrait.jpg
           test -s dist/ci-portrait.jpg
-      - name: Exercise real browser FaceLandmarker on sample portrait
-        run: node scripts/browser-model-smoke.mjs
+      - name: Real MediaPipe test in emulated Android Chromium
+        run: FACEFACE_BROWSER=chromium node scripts/browser-model-smoke.mjs
+      - name: Real MediaPipe test in Linux WebKit (Safari engine approximation)
+        run: FACEFACE_BROWSER=webkit node scripts/browser-model-smoke.mjs

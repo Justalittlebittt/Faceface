@@ -165,25 +165,9 @@ export default function App() {
     return loadingRef.current;
   };
 
-  const capture = async () => {
-    if (phase !== "camera") return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) {
-      setError("相机尚未准备好，请稍后再拍。");
-      return;
-    }
-    const maxSide = 960;
-    const scale = Math.min(1, maxSide / Math.max(video.videoWidth, video.videoHeight));
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) {
-      setError("浏览器无法读取相机画面。");
-      return;
-    }
-    // Draw to an in-memory canvas, never to a server or browser persistence API.
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // Both the camera frame and the optional local-file fallback use exactly the
+  // same browser-only landmark inference and descriptive report path.
+  const analyzeCanvas = async (canvas: HTMLCanvasElement) => {
     stopCamera();
     setPhase("analyzing");
     setError("");
@@ -193,7 +177,6 @@ export default function App() {
       const model = await loadLandmarker();
       const modelMs = performance.now() - modelStart;
       if (request !== requestRef.current) return;
-      // Let the analyzing state paint before synchronous single-frame inference.
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (request !== requestRef.current) return;
       const inferenceStart = performance.now();
@@ -207,6 +190,64 @@ export default function App() {
       if (request !== requestRef.current) return;
       setError(cause instanceof Error ? "本地模型运行失败：" + cause.message : "模型初始化失败，请检查网络和浏览器。");
       setPhase("result");
+    }
+  };
+
+  const capture = async () => {
+    if (phase !== "camera") return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) {
+      setError("相机尚未准备好，请稍后再拍。");
+      return;
+    }
+    const scale = Math.min(1, 960 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) {
+      setError("浏览器无法读取相机画面。");
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    await analyzeCanvas(canvas);
+  };
+
+  const selectLocalPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 12 * 1024 * 1024) {
+      setError("请选择不超过 12MB 的本地图片。");
+      return;
+    }
+    setAnalysis(null);
+    setTiming(null);
+    setError("");
+    setPhase("analyzing");
+    const request = ++requestRef.current;
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = objectUrl;
+      await image.decode();
+      if (request !== requestRef.current) return;
+      const canvas = canvasRef.current;
+      if (!canvas || !image.naturalWidth || !image.naturalHeight) {
+        throw new Error("无法读取这张图片，请选择另一张。");
+      }
+      const scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
+      canvas.width = Math.round(image.naturalWidth * scale);
+      canvas.height = Math.round(image.naturalHeight * scale);
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("浏览器无法处理图片。");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      setCameraAspect(canvas.width / canvas.height);
+      await analyzeCanvas(canvas);
+    } catch (cause) {
+      if (request !== requestRef.current) return;
+      setError(cause instanceof Error ? cause.message : "无法打开图片。");
+      setPhase("idle");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
     }
   };
 
@@ -281,12 +322,28 @@ export default function App() {
           </div>
           {error && <p className="error-message" role="alert">{error}</p>}
           <div className="actions">
-            {phase === "idle" && <button className="primary" onClick={() => void begin()}>开启前置摄像头</button>}
+            {phase === "idle" && <>
+              <button className="primary" onClick={() => void begin()}>开启前置摄像头</button>
+              <label className="secondary file-action">
+                摄像头不可用？从本地选择照片
+                <input
+                  className="file-input"
+                  aria-label="从本地选择照片"
+                  type="file"
+                  accept="image/*"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    void selectLocalPhoto(file);
+                  }}
+                />
+              </label>
+            </>}
             {phase === "camera" && <><button className="primary" onClick={() => void capture()}>拍摄并本地分析</button><button className="secondary" onClick={reset}>关闭相机</button></>}
             {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
           </div>
-          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；可选的本地照片直接由浏览器读取，不上传原图。照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
         </section>
 
         {analysis && phase === "result" && (
