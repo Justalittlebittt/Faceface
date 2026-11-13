@@ -64,6 +64,9 @@ export default function App() {
       if (!video) throw new Error("相机预览未初始化");
       video.srcObject = stream;
       setPhase("camera");
+      // On mobile Safari, let React reveal the video before starting playback.
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      if (request !== requestRef.current) return;
       await video.play();
     } catch (cause) {
       if (request !== requestRef.current) return;
@@ -119,6 +122,9 @@ export default function App() {
     const request = ++requestRef.current;
     try {
       const model = await loadLandmarker();
+      if (request !== requestRef.current) return;
+      // Let the analyzing state paint before synchronous single-frame inference.
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (request !== requestRef.current) return;
       const result = model.detect(canvas);
       if (request !== requestRef.current) return;
@@ -195,7 +201,7 @@ export default function App() {
             {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
           </div>
-          <p className="privacy-detail">相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">相机权限仅由你的操作触发；照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
         </section>
 
         {analysis && phase === "result" && (
