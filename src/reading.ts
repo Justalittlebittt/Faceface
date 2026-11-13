@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-source-checked-v1.json" with { type: "json" };
+import catalog from "./knowledge/maiyi-source-checked-v2.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 
@@ -19,6 +19,9 @@ type SourceCard = {
   linked_metric: string | null;
   conclusion_from_metric_allowed: boolean;
   caveat: string;
+  conditions: { metric: string; operator: "gt" | "lt"; value: number }[];
+  historical_view_zh: string;
+  historical_view_en: string;
   source: {
     work: string;
     edition: string;
@@ -39,6 +42,7 @@ export type CulturalLink = {
   observation: string;
   explanation: string;
   caveat: string;
+  historicalView: string;
   source: SourceCard["source"];
 };
 
@@ -81,30 +85,45 @@ const englishSource: Record<string, { organ: string; title: string; gloss: strin
     organ: "Mouth", title: "Illustrated mouth shapes (historical chart)",
     gloss: "Upturned crescent-shaped mouth [illustration label; explanatory gloss]",
     caveat: "The illustration depicts an entire mouth shape. A still photo only measures current mouth-corner tilt, which changes with smiling and cannot confirm the illustrated type."
+  },
+  "MY25-EYE-OX-01": {
+    organ: "Eyes", title: "Ox-eye illustration (historical chart)",
+    gloss: "Ox eyes: large eyes with rounded pupils [interpretive gloss]",
+    caveat: "Only the ratio of eyelid opening to width is measured; an ancient animal-shaped eye chart is not fully established."
+  },
+  "MY25-MOUTH-OX-01": {
+    organ: "Mouth", title: "Ox-mouth illustration (historical chart)",
+    gloss: "Ox mouth: thick and full lips [interpretive gloss]",
+    caveat: "Two photographic metrics can align locally, but opening the mouth, expression, cosmetics and lens angle change the observed shape."
   }
 };
 
 const cards = catalog.cards as SourceCard[];
-const metricToDescriptor: Record<string, string> = {
-  eye_aspect_ratio: "eyes.openness",
-  mouth_width_norm: "mouth.width",
-  mouth_corner_index: "mouth.corner"
-};
+// Every condition is an experimental *observable direction*, not a numeric
+// standard claimed by the 1925 classic. Source cards with zero conditions
+// must never match automatically.
+function observedConditions(
+  card: SourceCard,
+  byId: Map<string, Descriptor>
+): boolean {
+  return card.mode === "geometry_only" && card.conditions.length > 0 &&
+    card.conditions.every(rule => {
+      const d = byId.get(rule.metric);
+      return !!d && d.usable !== false && Number.isFinite(d.ratio) &&
+        (rule.operator === "gt" ? d.ratio > rule.value : d.ratio < rule.value);
+    });
+}
 
 export function makeReading(analysis: Analysis, language: Language = "zh"): FaceReading | null {
   if (analysis.status !== "ok") return null;
 
   const byId = new Map(analysis.descriptors.map(d => [d.id, d]));
   const sourceLinks: CulturalLink[] = cards.map(card => {
-    const descriptor = card.linked_metric ? byId.get(metricToDescriptor[card.linked_metric] ?? "") : undefined;
-    // A common organ is NOT enough for a historical cross-reference.
-    // At most a *partial* directional resemblance is recorded. The historic
-    // full condition (e.g. square AND broad mouth) is never auto-confirmed.
-    // These bands mirror provisional M1 ratio thresholds, not book criteria.
-    const related = !!descriptor && card.mode === "geometry_only" &&
-      ((card.id === "MY25-EYE-01" && descriptor.ratio < 0.205) ||
-       (card.id === "MY25-MOUTH-01" && descriptor.ratio > 0.495) ||
-       (card.id === "MY25-MOUTH-ARC-01" && descriptor.ratio > 0.550));
+    const related = observedConditions(card, byId);
+    const metrics = [...new Set(card.conditions.map(rule => rule.metric))];
+    const observed = metrics.map(metric => byId.get(metric)).filter((d): d is Descriptor => !!d);
+    // All tested conditions are listed, including uncertainty when the mouth
+    // is open. A matched subset of ratios never confirms the historic type.
     const english = language === "en";
     const gloss = englishSource[card.id];
     return {
@@ -114,16 +133,18 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       historicalGloss: english ? gloss.gloss : undefined,
       traditionalName: english ? gloss.title : card.traditional_name,
       status: related ? "related-observation" : "insufficient",
-      observation: descriptor ? localizeDescriptor(descriptor, language).text :
-        (english ? "The required historical shape was not measured in this photograph." : "本次尚未测量这个古籍词语要求的具体形态。"),
+      observation: observed.length
+        ? observed.map(item => localizeDescriptor(item, language).text).join(english ? "; " : "；")
+        : (english ? "The required historical shape was not measured in this photograph." : "本次尚未测量这个古籍词语要求的具体形态。"),
       explanation: related
         ? (english
-          ? "Only one measured direction loosely resembles a phrase from the book. The full historical condition, its exceptions and a calibrated numeric standard are not established."
-          : "本次比例仅与古籍词语中的一个外观方向存在局部相似；原文完整形态、例外条件和数值标准均未满足核查，不能认定相型成立。")
+          ? "One or more photo measurements show a limited resemblance to the historic description. The complete classical type and its exceptions have NOT been established."
+          : "本次照片中一项或多项形态方向与古籍词语局部相似；仍不足以认定完整古籍相型，也不代表古籍存在这些现代数值标准。")
         : (english
           ? "The current measurement does not support even a limited directional resemblance, or the historical condition is not measurable here. No classical type is assigned."
           : "当前比例未能支持该古籍用语的局部形态方向，或者原文所需形态未测量；不据此作出相型判断。"),
       caveat: english ? gloss.caveat : card.caveat,
+      historicalView: english ? card.historical_view_en : card.historical_view_zh,
       source: card.source
     };
   });
@@ -162,8 +183,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; and an illustrated mouth category in volume 2 'Reading the Mouth' (相口), page 86 (all PDF pages zero-based). English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28）及卷二《相口》图例（页86）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category in printed volume 2 page 66, and illustrated mouth categories in printed volume 2 pages 86–87 (PDF pages all zero-based, within the Wikimedia digital file labelled 第1卷). English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
@@ -187,6 +208,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
         "Match status: " + (link.status === "related-observation" ? "Related observation only" : "Insufficient evidence"),
         "This image: " + link.observation,
         link.explanation,
+        "What the historic text says (not a factual prediction): " + link.historicalView,
         "Limit: " + link.caveat,
         "Source: Mai Yi Xiang Fa (麻衣相法), " + link.source.edition + ", " +
           link.source.volume + " / " + link.source.section + ", PDF zero-based page " + link.source.pdf_page_zero_based,
@@ -226,6 +248,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "状态：" + (link.status === "related-observation" ? "相关观察／不能确认古籍相型" : "条件不足／不做判断"),
       "本次观察：" + link.observation,
       link.explanation,
+      "古籍文化解读（非现实预测）：" + link.historicalView,
       "限制：" + link.caveat,
       "出处：" + link.source.edition + "，" + link.source.volume + "《" +
         link.source.section + "》，扫描 PDF 零起页" + link.source.pdf_page_zero_based,
