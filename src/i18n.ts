@@ -1,0 +1,214 @@
+import type { Analysis, Descriptor } from "./descriptors";
+
+export type Language = "en" | "zh";
+
+export const copy = {
+  en: {
+    version: "M1/M2 · Technical preview",
+    switchLanguage: "中文",
+    eyebrow: "TRADITIONAL FACE CULTURE · VISUAL RESEARCH",
+    heroFirst: "Read facial features",
+    heroSecond: "as observable patterns.",
+    subtitle: "Explore local, on-device facial geometry. The early cultural reference section shows a few checked historical phrases, not verified traditional face-type judgments.",
+    cameraStep: "01 / CAMERA",
+    cameraTitle: "Take a front-facing photo",
+    privateLabel: "◌ On-device analysis",
+    cameraIdle: "Camera is off",
+    cameraHint: "Even lighting · Face the camera · Keep features visible",
+    analyzing: "Running face analysis locally…",
+    analyzingHint: "The model is downloaded on first use; your photo is not uploaded",
+    openCamera: "Open front camera",
+    galleryFallback: "Camera unavailable? Select a local photo",
+    choosePhoto: "Select a local image",
+    takePhoto: "Capture and analyze",
+    closeCamera: "Close camera",
+    cancelAnalysis: "Cancel and clear image",
+    retake: "Clear photo / Take another",
+    privacyDetail: "Switching away while capturing or analyzing stops the camera and discards the temporary frame. Completed reports stay only in this page's memory until you leave. Permission is requested only when you choose the camera. A selected local image stays in your browser; Faceface does not upload your face image or landmarks. Selfies are mirrored for display; selected gallery photos retain their original orientation. Model and runtime assets are fetched from external providers; full SDK/network privacy auditing is still pending.",
+    observationStep: "02 / OBSERVATIONS",
+    observationTitle: "Observed facial geometry",
+    modelTime: "Local diagnostics: model ready in",
+    inferenceTime: "single-frame inference",
+    ms: "ms",
+    timingNotice: "Shown on your device only; never uploaded by Faceface.",
+    culturalStep: "03 / CULTURAL SOURCES",
+    culturalTitle: "Short cultural report",
+    culturalVersion: "Source-check preview",
+    ancientPhrase: "Historical wording",
+    relatedFootnote: "Related observation only; a complete historical face type has not been established.",
+    expandedTitle: "Detailed report: sources, conditions and gaps",
+    observed: "This photograph",
+    caution: "Limit",
+    originalScan: "View original scan",
+    pageIndex: "PDF page (zero-based)",
+    saveReport: "Save or share the report",
+    showMeasurements: "Show measurements",
+    hideMeasurements: "Hide measurements",
+    measurementQualifier: "(experimental; not calibrated)",
+    disclaimer: "These ratios describe a single photograph and may change with angle, expression, lighting, perspective or makeup. Appearance cannot establish a person's character, health, ethics or fate. The linked historical excerpts are limited cultural references, not validated classical classifications.",
+    footer: "Faceface · Research preview · No sign-up / No ads",
+    privacyLink: "Privacy notice / 隐私说明",
+    unsupported: "Camera access requires HTTPS (or localhost) and a browser that supports camera access.",
+    cameraDenied: "Camera access was not allowed. Enable the camera in your browser's site settings and try again.",
+    cameraMissing: "No usable camera was found. Connect a camera or select a local photo.",
+    cameraBusy: "Another app may be using the camera. Close it and try again.",
+    cameraUnknown: "Could not start the camera",
+    cameraUnavailable: "The camera preview is not available.",
+    cameraNotReady: "The camera is not ready. Try capturing again.",
+    canvasFailure: "Your browser could not read the camera frame.",
+    badPhoto: "Choose a local image no larger than 12 MB.",
+    badImage: "This image could not be opened. Select a different one.",
+    canvasImageFailure: "Your browser could not process this image.",
+    imageUnknown: "Could not open the image.",
+    modelFailure: "On-device model failed",
+    modelUnknown: "The model could not start. Check your connection and browser.",
+    noFace: "No clear face was detected. Face the camera and improve lighting.",
+    multipleFaces: "More than one face was detected. Retake the photo with just one person.",
+    poorLandmarks: "Not enough face landmarks were available for a reliable description.",
+    missingLandmarks: "Some landmarks were missing. Please retake the photo.",
+    croppedFace: "The face may be cropped by the frame. Move back slightly and retake.",
+    smallFace: "The face is too small. Move closer and retake.",
+    tiltedFace: "Your head appears tilted. Keep both eyes roughly level and retake.",
+    angledFace: "The face may be turned too far. This preview requires a nearly frontal photo.",
+    weakEyes: "Eye landmarks are too small or unclear. Please retake.",
+    invalidLandmarks: "The landmark ratios are inconsistent. Please retake.",
+    validLandmarks: "These are experimental geometry descriptions from local model landmarks, not verified traditional face-reading verdicts."
+  },
+  zh: {
+    version: "M1/M2 · HTTPS 技术测试版",
+    switchLanguage: "English",
+    eyebrow: "TRADITIONAL FACE CULTURE · VISUAL RESEARCH",
+    heroFirst: "让面部形态，",
+    heroSecond: "成为可读的语言。",
+    subtitle: "用真实的相机画面测试浏览器端特征提取。目前仅展示经过原页核对的少量历史用语，完整古籍解读仍在开发中。",
+    cameraStep: "01 / CAMERA",
+    cameraTitle: "拍摄正面照片",
+    privateLabel: "◌ 设备本地分析",
+    cameraIdle: "相机尚未开启",
+    cameraHint: "光线均匀 · 面对镜头 · 不遮挡五官",
+    analyzing: "正在本机加载模型并提取特征…",
+    analyzingHint: "首次需要下载模型文件，不上传照片",
+    openCamera: "开启前置摄像头",
+    galleryFallback: "摄像头不可用？从本地选择照片",
+    choosePhoto: "从本地选择照片",
+    takePhoto: "拍摄并本地分析",
+    closeCamera: "关闭相机",
+    cancelAnalysis: "取消分析并清除画面",
+    retake: "清除画面 / 重新拍摄",
+    privacyDetail: "拍摄或分析时切换应用将关闭摄像头并清除临时画面，已生成报告仅保留在当前页面内存。相机权限仅由你的操作触发；本地照片不会上传。自拍预览使用镜像，本地图片保持原始方向。模型文件来自外部服务商，完整的网络及 SDK 隐私审计仍待完成。",
+    observationStep: "02 / OBSERVATIONS",
+    observationTitle: "面部形态描述",
+    modelTime: "本机诊断：模型准备",
+    inferenceTime: "单帧推理",
+    ms: "毫秒",
+    timingNotice: "仅在本页面显示，不自动上传。",
+    culturalStep: "03 / CULTURAL SOURCES",
+    culturalTitle: "简洁文化报告",
+    culturalVersion: "资料核对版",
+    ancientPhrase: "古籍用语",
+    relatedFootnote: "仅属于相关观察，不代表古籍相型已经成立。",
+    expandedTitle: "展开详细报告：出处、条件与不足",
+    observed: "本次照片",
+    caution: "注意",
+    originalScan: "查看原始扫描",
+    pageIndex: "扫描 PDF 零起页",
+    saveReport: "保存或分享文化报告",
+    showMeasurements: "查看计算依据",
+    hideMeasurements: "隐藏计算依据",
+    measurementQualifier: "（实验阈值，未校准）",
+    disclaimer: "以上描述只表示此照片中测得的几何比例。自拍会受姿态、光线、表情、透视与妆容影响；不能据此判断人格、健康、道德或命运。历史资料仅作文化参考，不能把现代数值阈值当作古籍相型标准。",
+    footer: "Faceface · Research preview · 不注册 / 无广告",
+    privacyLink: "隐私说明 / Privacy notice",
+    unsupported: "摄像头需要 HTTPS（或本地 localhost）以及支持摄像头的浏览器。",
+    cameraDenied: "未获得摄像头权限。请在浏览器的网站设置中允许相机后重新尝试。",
+    cameraMissing: "没有检测到可用摄像头。请检查设备或连接外接摄像头。",
+    cameraBusy: "摄像头可能正被其他应用占用。请关闭占用摄像头的应用后重试。",
+    cameraUnknown: "无法打开相机",
+    cameraUnavailable: "相机预览未初始化",
+    cameraNotReady: "相机尚未准备好，请稍后再拍。",
+    canvasFailure: "浏览器无法读取相机画面。",
+    badPhoto: "请选择不超过 12MB 的本地图片。",
+    badImage: "无法读取这张图片，请选择另一张。",
+    canvasImageFailure: "浏览器无法处理图片。",
+    imageUnknown: "无法打开图片。",
+    modelFailure: "本地模型运行失败",
+    modelUnknown: "模型初始化失败，请检查网络和浏览器。",
+    noFace: "没有检测到清晰的人脸，请面向镜头并改善光线。",
+    multipleFaces: "画面出现多张人脸，请只保留一位拍摄者。",
+    poorLandmarks: "模型数据不足，无法可靠描述面部。",
+    missingLandmarks: "部分关键点缺失，请重新拍摄。",
+    croppedFace: "脸部靠近画面边缘，可能被裁切；请后退一点重拍。",
+    smallFace: "人脸太小，请靠近一点。",
+    tiltedFace: "头部倾斜较明显，请保持双眼接近水平后重拍。",
+    angledFace: "面部可能明显偏转，当前仅支持接近正面的画面。",
+    weakEyes: "眼部关键点不足，请重新拍摄。",
+    invalidLandmarks: "关键点比例异常，无法稳定描述；请重拍。",
+    validLandmarks: "以下描述来自本次相机帧的模型关键点与实验性比例计算，不代表传统面相判词。"
+  }
+} as const;
+
+export type CopyKey = keyof typeof copy.en;
+export function t(language: Language, key: CopyKey): string {
+  return copy[language][key];
+}
+
+const observationText: Record<string, string> = {
+  "面部轮廓在画面中相对偏宽": "The face appears relatively broad in this image",
+  "面部长宽比例相对均衡": "Facial height and width appear relatively balanced",
+  "面部轮廓在画面中相对偏长": "The face appears relatively long in this image",
+  "脸部长宽比例接近实验分类边界，暂不判断偏宽或均衡": "Face proportions are near an experimental boundary; no broad/balanced label is assigned",
+  "当前眼部开合比例偏小": "Current eye-opening ratio is relatively small",
+  "当前眼部开合比例居中": "Current eye-opening ratio is in the middle interval",
+  "当前眼部开合比例偏大": "Current eye-opening ratio is relatively large",
+  "眼部开合比例接近实验分类边界，暂不判定偏小、居中或偏大": "Eye-opening ratio is near an experimental boundary; no size label is assigned",
+  "鼻翼横向比例相对偏窄": "Nostril-wing width is relatively narrow in the measured face",
+  "鼻翼横向比例处于中间区间": "Nostril-wing width falls in the middle experimental interval",
+  "鼻翼横向比例相对偏宽": "Nostril-wing width is relatively broad in the measured face",
+  "鼻翼横向比例接近实验分类边界，本次不做宽窄分档": "Nostril-wing width is near an experimental boundary; no width category is assigned",
+  "口部横向比例相对偏小": "Mouth width is relatively small compared with facial width",
+  "口部横向比例处于中间区间": "Mouth width falls in the middle experimental interval",
+  "口部横向比例相对偏大": "Mouth width is relatively large compared with facial width",
+  "口部横向比例接近实验分类边界，本次不做大小分档": "Mouth width is near an experimental boundary; no size category is assigned",
+  "下颌相对颧部偏窄": "Jaw width is relatively narrow compared with the cheekbone span",
+  "下颌与颧部宽度比例居中": "Jaw-to-cheekbone width ratio falls in the middle interval",
+  "下颌相对颧部偏宽": "Jaw width is relatively broad compared with the cheekbone span",
+  "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄": "Jaw width is near an experimental boundary; no width category is assigned"
+};
+
+const fields = {
+  "face.aspect": ["Overall face", "Face height / cheekbone span"],
+  "eyes.openness": ["Eyes", "Vertical eyelid opening / eye width (both eyes averaged)"],
+  "nose.width": ["Nose", "Nostril-wing span / cheekbone span"],
+  "mouth.width": ["Mouth", "Mouth-corner span / cheekbone span"],
+  "jaw.width": ["Jaw", "Lower-jaw span / cheekbone span"]
+} as Record<string, [string, string]>;
+
+const measurementCaveat = "Experimental ratio boundaries are not population or device-calibrated. Pose, expression, perspective and makeup can change measurements.";
+
+export function localizeDescriptor(d: Descriptor, language: Language): Descriptor {
+  if (language === "zh") return d;
+  const values = fields[d.id];
+  if (!values || !observationText[d.text]) {
+    // Never misrepresent an untranslated descriptor as a verified observation.
+    return { ...d, region: values?.[0] ?? d.id, text: "Untranslated experimental observation; refer to measurement details.", caveat: measurementCaveat };
+  }
+  return { ...d, region: values[0], measurement: values[1], text: observationText[d.text], caveat: measurementCaveat };
+}
+
+const observedStatus: Record<string, CopyKey> = {
+  "没有检测到清晰的人脸，请面向镜头并改善光线。": "noFace",
+  "画面出现多张人脸，请只保留一位拍摄者。": "multipleFaces",
+  "模型数据不足，无法可靠描述面部。": "poorLandmarks",
+  "部分关键点缺失，请重新拍摄。": "missingLandmarks",
+  "脸部靠近画面边缘，可能被裁切；请后退一点重拍。": "croppedFace",
+  "人脸太小，请靠近一点。": "smallFace",
+  "头部倾斜较明显，请保持双眼接近水平后重拍。": "tiltedFace",
+  "面部可能明显偏转，当前仅支持接近正面的画面。": "angledFace",
+  "眼部关键点不足，请重新拍摄。": "weakEyes",
+  "关键点比例异常，无法稳定描述；请重拍。": "invalidLandmarks",
+  "以下描述来自本次相机帧的模型关键点与实验性比例计算，不代表传统面相判词。": "validLandmarks"
+};
+export function localizeAnalysisMessage(analysis: Analysis, language: Language): string {
+  if (language === "zh") return analysis.message;
+  return t("en", observedStatus[analysis.message] ?? "poorLandmarks");
+}
