@@ -10,6 +10,7 @@
  */
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const origin = "http://127.0.0.1:4173";
@@ -32,7 +33,13 @@ try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const scriptErrors = [];
   const remoteFailures = [];
+  const unexpectedNetworkWrites = [];
   page.on("pageerror", error => scriptErrors.push(error.message));
+  page.on("request", request => {
+    if (!["GET", "HEAD"].includes(request.method()) && /^https?:/.test(request.url())) {
+      unexpectedNetworkWrites.push(request.method() + " " + request.url());
+    }
+  });
   page.on("requestfailed", request => {
     if (request.url().includes("jsdelivr") || request.url().includes("googleapis")) {
       remoteFailures.push(request.url() + ": " + request.failure()?.errorText);
@@ -98,7 +105,31 @@ try {
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
   }
-  console.log("PASS: real MediaPipe model -> five geometry descriptions -> partial-only historical report in Chromium.");
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    page.getByRole("button", { name: "保存或分享文化报告" }).click()
+  ]);
+  const downloadedPath = await download.path();
+  if (!downloadedPath) throw new Error("No downloadable report file");
+  const savedText = await readFile(downloadedPath, "utf8");
+  if (!savedText.includes("【简洁报告】") ||
+      !savedText.includes("或細長") ||
+      !savedText.includes("口須方大") ||
+      !savedText.includes("梁柱端直") ||
+      !savedText.includes("扫描 PDF 零起页27")) {
+    throw new Error("Local report export is missing observed content or source provenance");
+  }
+  if (unexpectedNetworkWrites.length) {
+    throw new Error("Non-GET network requests detected: " + unexpectedNetworkWrites.join(" | "));
+  }
+  const persistence = await page.evaluate(() => ({
+    localKeys: Object.keys(localStorage),
+    sessionKeys: Object.keys(sessionStorage)
+  }));
+  if (persistence.localKeys.length || persistence.sessionKeys.length) {
+    throw new Error("Unexpected persisted browser storage keys: " + JSON.stringify(persistence));
+  }
+  console.log("PASS: browser camera fixture -> local MediaPipe -> source report -> downloaded text; no network writes or web-storage keys.");
 } finally {
   if (browser) await browser.close();
   preview.kill();
