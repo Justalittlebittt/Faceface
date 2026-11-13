@@ -19,3 +19,12 @@ jobs:
         run: npm run build
       - name: Geometry unit tests (not real camera acceptance)
         run: npm test
+      - name: Preserve production bundle and dependency lock for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: faceface-m1-build
+          path: |
+            dist/
+            package-lock.json
+          if-no-files-found: error
+          retention-days: 7
