@@ -99,6 +99,18 @@ try {
        document.querySelector(".processing-layer") === null);
   }, { timeout: 90000 });
 
+  // Use the existing user-facing measurement toggle; do not export face coordinates.
+  await page.getByRole("button", { name: "查看计算依据" }).click();
+  const measuredRatios = await page.locator(".observation small").allTextContents();
+  const previewTransform = await page.locator("canvas.photo-canvas").evaluate(el =>
+    getComputedStyle(el).transform
+  );
+  const isMirrored = previewTransform !== "none" && previewTransform.startsWith("matrix(-1");
+  if (isMirrored !== (engine === "chromium")) {
+    throw new Error("Wrong photo preview orientation for " + engine + ": " + previewTransform);
+  }
+  console.log("Geometry metrics (" + engine + "):", JSON.stringify(measuredRatios));
+
   const diagnostics = await page.evaluate(() => ({
     report: document.querySelector(".report")?.textContent || null,
     cameraError: document.querySelector(".workbench .error-message")?.textContent || null,
