@@ -8,12 +8,14 @@
  *           npm run build
  *           curl official portrait to dist/ci-portrait.jpg
  */
-import { chromium } from "playwright";
+import { chromium, webkit, devices } from "playwright";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const origin = "http://127.0.0.1:4173";
+const engine = process.env.FACEFACE_BROWSER ?? "chromium";
+if (!["chromium", "webkit"].includes(engine)) throw new Error("Unrecognized browser test engine");
 const preview = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "preview",
   "--host", "127.0.0.1", "--port", "4173", "--strictPort"], { stdio: "ignore" });
 
@@ -29,8 +31,10 @@ try {
   }
   if (!online) throw new Error("Vite preview did not start");
 
-  browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  browser = await (engine === "webkit" ? webkit : chromium).launch({ headless: true });
+  const mobileProfile = engine === "webkit" ? devices["iPhone 13"] : devices["Pixel 7"];
+  const page = await browser.newPage({ ...mobileProfile, viewport: { width: 390, height: 844 } });
+  console.log("Mobile-engine integration test:", engine);
   const scriptErrors = [];
   const remoteFailures = [];
   const unexpectedNetworkWrites = [];
@@ -69,6 +73,8 @@ try {
   });
 
   await page.goto(origin, { waitUntil: "domcontentloaded", timeout: 30000 });
+  const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+  if (!robots?.includes("noindex")) throw new Error("Preview must remain noindex");
   await page.getByRole("button", { name: "开启前置摄像头" }).click();
   await page.getByRole("button", { name: "拍摄并本地分析" }).waitFor({ timeout: 15000 });
   await page.waitForFunction(() => {
@@ -129,7 +135,9 @@ try {
   if (persistence.localKeys.length || persistence.sessionKeys.length) {
     throw new Error("Unexpected persisted browser storage keys: " + JSON.stringify(persistence));
   }
-  console.log("PASS: browser camera fixture -> local MediaPipe -> source report -> downloaded text; no network writes or web-storage keys.");
+  await page.getByRole("link", { name: "隐私说明 / Privacy notice" }).click();
+  await page.getByRole("heading", { name: "Privacy notice / 隐私说明" }).waitFor({ timeout: 10000 });
+  console.log("PASS (" + engine + "): camera fixture -> real MediaPipe -> source report -> local download, privacy page, no network writes/storage.");
 } finally {
   if (browser) await browser.close();
   preview.kill();
