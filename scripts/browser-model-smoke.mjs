@@ -1,0 +1,98 @@
+/**
+ * CI-only integration smoke. Uses Google's public MediaPipe example portrait.
+ * The portrait is downloaded temporarily in CI; no user images are required,
+ * and no image, landmarks, or per-person report are uploaded by this script.
+ *
+ * Requires: npm install --no-save playwright@1.65.0
+ *           npx playwright install --with-deps chromium
+ *           npm run build
+ *           curl official portrait to dist/ci-portrait.jpg
+ */
+import { chromium } from "playwright";
+import { spawn } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
+
+const origin = "http://127.0.0.1:4173";
+const preview = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "preview",
+  "--host", "127.0.0.1", "--port", "4173", "--strictPort"], { stdio: "ignore" });
+
+let browser;
+try {
+  let online = false;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try {
+      const response = await fetch(origin);
+      if (response.ok) { online = true; break; }
+    } catch { /* local server not ready yet */ }
+    await sleep(300);
+  }
+  if (!online) throw new Error("Vite preview did not start");
+
+  browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const scriptErrors = [];
+  const remoteFailures = [];
+  page.on("pageerror", error => scriptErrors.push(error.message));
+  page.on("requestfailed", request => {
+    if (request.url().includes("jsdelivr") || request.url().includes("googleapis")) {
+      remoteFailures.push(request.url() + ": " + request.failure()?.errorText);
+    }
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+      configurable: true,
+      value: async () => {
+        const image = new Image();
+        image.src = "/ci-portrait.jpg";
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Camera fixture canvas unavailable");
+        const paint = () => context.drawImage(image, 0, 0);
+        paint();
+        const stream = canvas.captureStream(15);
+        // Keep frame delivery alive while video waits to start.
+        const ticker = setInterval(paint, 100);
+        stream.getTracks()[0]?.addEventListener("ended", () => clearInterval(ticker), { once: true });
+        return stream;
+      }
+    });
+  });
+
+  await page.goto(origin, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.getByRole("button", { name: "开启前置摄像头" }).click();
+  await page.getByRole("button", { name: "拍摄并本地分析" }).waitFor({ timeout: 15000 });
+  await page.waitForFunction(() => {
+    const video = document.querySelector("video");
+    return video instanceof HTMLVideoElement && video.readyState >= 2 && video.videoWidth > 0;
+  }, { timeout: 15000 });
+  await page.getByRole("button", { name: "拍摄并本地分析" }).click();
+
+  await page.waitForFunction(() => {
+    return document.querySelector(".report") !== null ||
+      (document.querySelector(".error-message") !== null &&
+       document.querySelector(".processing-layer") === null);
+  }, { timeout: 90000 });
+
+  const diagnostics = await page.evaluate(() => ({
+    report: document.querySelector(".report")?.textContent || null,
+    cameraError: document.querySelector(".workbench .error-message")?.textContent || null,
+    descriptionCount: document.querySelectorAll(".observation").length,
+    modelTiming: document.querySelector(".report [role=status]")?.textContent || null
+  }));
+  console.log("Integration result (public Google sample only):", JSON.stringify({
+    ...diagnostics,
+    report: diagnostics.report?.slice(0, 900)
+  }));
+  if (remoteFailures.length) console.log("Model/CDN failures:", remoteFailures.join(" | "));
+  if (scriptErrors.length) console.log("Browser JS errors:", scriptErrors.join(" | "));
+  if (diagnostics.descriptionCount !== 5 || diagnostics.cameraError || scriptErrors.length) {
+    throw new Error("Real model/browser geometry integration did not yield five regions");
+  }
+  console.log("PASS: real on-device MediaPipe model and geometry descriptors executed in Chromium.");
+} finally {
+  if (browser) await browser.close();
+  preview.kill();
+}
