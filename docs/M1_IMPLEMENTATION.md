@@ -8,7 +8,7 @@
 - `src/App.tsx`：通过 `@mediapipe/tasks-vision@1.2.3` 的 `FaceLandmarker.createFromOptions` 加载本地推理模型（在浏览器设备端运行，首次须联网下载模型/WASM），对用户拍摄的 `canvas` 执行真正的 `detect(canvas)`。对0人/多人有单独状态。
 - `src/descriptors.ts`：五个不同面部区域的纯函数几何观察：整体脸型、眼部、鼻部、口部、下颌；每条保存测量名称、比例和实验性文字描述。没有直接输出个人性格、健康、命运断语。
 - `tests/descriptors.test.mjs`：纯几何模拟单测，不能替代真实摄像头/真模型的验收。
-- `.github/workflows/ci.yml`：每次 push/PR 执行 npm install、类型检查、构建、模拟几何测试。CI 结果须单独确认。
+- `.github/workflows/ci.yml`：每次 push/PR 执行 npm install、类型检查、构建、模拟几何测试，并保留7天的生产构建产物与依赖锁定文件；PR #1/#2/#3 实际记录已通过。\n- `scripts/browser-model-smoke.mjs` 与 `.github/workflows/browser-model-smoke.yml`：CI 在 Chromium 将 Google 官方人像样例喂给模拟摄像头，**真实初始化 MediaPipe/提取关键点/生成五区域形态描述**；PR #3 测试成功，测试图仅临时下载，不纳入仓库。
 
 ## 浏览器启动方式
 
@@ -31,7 +31,7 @@ npm run dev
 
 ## 尚未完成的 M1 Gate
 
-- [ ] GitHub CI 的类型检查、构建和单测成功结果核查。
+- [x] GitHub CI 类型检查、Vite生产构建和9/9几何单测成功（PR #1/#2/#3）。\n- [x] GitHub CI Chromium 公共样例图真实 FaceLandmarker 推理成功并输出五区域描述（PR #3）；模型准备378ms、推理184ms系该运行器单次测量，不代表手机延迟。
 - [ ] 真人正脸在 iOS Safari 和 Android Chrome 真机上启动相机与下载模型，完成 `detect(canvas)` 并有真实观察输出。
 - [ ] 不同真人、不同角度、遮挡、表情、光照测试；根据实测修订/淘汰阈值与特征。
 - [ ] 真机网络与本地存储审计、取消时模型加载竞态审计；确认无用户面部帧、关键点或报告出站。
@@ -39,4 +39,4 @@ npm run dev
 
 ## 首轮下阶段工作
 
-先检查 CI 与修复实际构建错误，再由手机 HTTPS 测试验证真模型和形态比例，接着迁入有出处的少量古籍规则做 M2 闭环。并行的全书归档不阻塞这些任务。
+已完成CI构建与桌面Chromium官方示例图真实模型整合测试。下一步为手机HTTPS授权/拍照/保存实测、网络和存储隐私审计、不同真人形态阈值检查，再迁入有出处的少量古籍规则做M2报告闭环；并行全书归档不阻塞这些任务。
