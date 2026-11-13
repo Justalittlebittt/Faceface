@@ -49,4 +49,6 @@ The UI requests browser camera permission on a secure origin (localhost or HTTPS
 
 The repository contains the project's **canonical planning/handoff documents plus experimental M1 Web source code**. Legacy V0.x–V2.8 research packages are referenced by status but have not been automatically imported or declared validated. Future source-data imports require provenance and acceptance.
 
-CI verification: [PR #1](https://github.com/Justalittlebittt/Faceface/pull/1) · [PR #2](https://github.com/Justalittlebittt/Faceface/pull/2) · [PR #3](https://github.com/Justalittlebittt/Faceface/pull/3).\n\n**Last updated:** 2026-11-13.
+CI verification: [PR #1](https://github.com/Justalittlebittt/Faceface/pull/1) · [PR #2](https://github.com/Justalittlebittt/Faceface/pull/2) · [PR #3](https://github.com/Justalittlebittt/Faceface/pull/3).
+
+**Last updated:** 2026-11-13.
