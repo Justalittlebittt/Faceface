@@ -43,12 +43,12 @@ The UI requests browser camera permission on a secure origin (localhost or HTTPS
 
 ## Current top priority
 
-**Next:** validate the working model and initial source-linked report on real iOS Safari and Android Chrome under HTTPS; audit privacy requests/storage; then add source-verifiable multi-condition ancient rules for more useful content. A single public portrait passing Chromium does not validate shape thresholds across people. Full-book archival continues in parallel.
+**Next:** enable GitHub Pages once via **Settings → Pages → Build and deployment → GitHub Actions** so the existing deploy workflow can publish a real HTTPS mobile test site; then validate iOS Safari and Android Chrome camera permissions and privacy requests/storage. Browser-model integration passes on Chromium camera simulation and WebKit file input only; thresholds remain experimental. Then add source-verifiable multi-condition ancient rules for useful content. A single public portrait passing Chromium does not validate shape thresholds across people. Full-book archival continues in parallel.
 
 ### Repository scope
 
 The repository contains the project's **canonical planning/handoff documents plus experimental M1 Web source code**. Legacy V0.x–V2.8 research packages are referenced by status but have not been automatically imported or declared validated. Future source-data imports require provenance and acceptance.
 
-CI verification: [PR #1](https://github.com/Justalittlebittt/Faceface/pull/1) · [PR #2](https://github.com/Justalittlebittt/Faceface/pull/2) · [PR #3](https://github.com/Justalittlebittt/Faceface/pull/3) · [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4).
+CI verification: [PR #4](https://github.com/Justalittlebittt/Faceface/pull/4) (first source-linked reports), [PR #5](https://github.com/Justalittlebittt/Faceface/pull/5) (HTTPS test-site pipeline; Pages enablement still required), [PR #6](https://github.com/Justalittlebittt/Faceface/pull/6) (WebKit local-photo fallback), [PR #7](https://github.com/Justalittlebittt/Faceface/pull/7) (16/16 tests, cross-engine border labels and correct image orientation).
 
 **Last updated:** 2026-11-13.
