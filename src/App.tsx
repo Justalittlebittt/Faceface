@@ -27,6 +27,7 @@ export default function App() {
   const streamRef = useRef<MediaStream | null>(null);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const loadingRef = useRef<Promise<FaceLandmarker> | null>(null);
+  const mountedRef = useRef(false);
   const requestRef = useRef(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -58,11 +59,15 @@ export default function App() {
     }
   };
 
-  useEffect(() => () => {
-    requestRef.current += 1;
-    stopCamera();
-    landmarkerRef.current?.close();
-    landmarkerRef.current = null;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      requestRef.current += 1;
+      stopCamera();
+      landmarkerRef.current?.close();
+      landmarkerRef.current = null;
+    };
   }, [stopCamera]);
 
   // Suspend camera access and discard temporary captures whenever the page is hidden.
@@ -142,6 +147,12 @@ export default function App() {
           numFaces: 2,
           outputFaceBlendshapes: false
         });
+        // An in-flight model download can resolve after the browser route unmounts.
+        // Close the completed instance instead of retaining a WASM runtime forever.
+        if (!mountedRef.current) {
+          model.close();
+          throw new Error("本页面已关闭，模型加载已取消。");
+        }
         landmarkerRef.current = model;
         return model;
       })().catch(cause => {
