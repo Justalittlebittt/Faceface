@@ -41,7 +41,7 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     return empty("poor-quality", "模型数据不足，无法可靠描述面部。");
   }
 
-  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397];
+  const required = [10, 152, 234, 454, 4, 33, 133, 159, 145, 362, 263, 386, 374, 98, 327, 61, 291, 172, 397, 168, 17];
   if (required.some(i => !face[i] || !Number.isFinite(face[i].x) || !Number.isFinite(face[i].y))) {
     return empty("poor-quality", "部分关键点缺失，请重新拍摄。");
   }
@@ -84,6 +84,11 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
   const noseWidth = d(98, 327) / faceWidth;
   const mouthWidth = d(61, 291) / faceWidth;
   const jawWidth = d(172, 397) / faceWidth;
+  // Additional visible, cross-region geometry. These describe proportions in
+  // one near-frontal image only. Do NOT equate ratios with ancient physiognomy.
+  const eyeGap = d(133, 362) / ((eyeWidthL + eyeWidthR) / 2);
+  const noseLength = d(168, 4) / faceHeight;
+  const chinRatio = d(17, 152) / faceHeight;
 
   const caveat = "探索阶段的比例区间，尚未经过多设备/人群标定；拍摄角度、表情与妆容可能影响结果。";
   const make = (id: string, region: string, measurement: string, ratio: number, text: string): Descriptor =>
@@ -99,7 +104,13 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
     make("mouth.width", "口部", "双侧口角距离 / 颧部横向跨度", mouthWidth,
       category(mouthWidth, 0.37, 0.48, 0.015, "口部横向比例相对偏小", "口部横向比例处于中间区间", "口部横向比例相对偏大", "口部横向比例接近实验分类边界，本次不做大小分档")),
     make("jaw.width", "下颌", "下颌两侧跨度 / 颧部横向跨度", jawWidth,
-      category(jawWidth, 0.65, 0.77, 0.015, "下颌相对颧部偏窄", "下颌与颧部宽度比例居中", "下颌相对颧部偏宽", "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄"))
+      category(jawWidth, 0.65, 0.77, 0.015, "下颌相对颧部偏窄", "下颌与颧部宽度比例居中", "下颌相对颧部偏宽", "下颌与颧部宽度比例接近实验分类边界，暂不判断偏宽或偏窄")),
+    make("eyes.spacing", "双眼间距", "双眼内眼角距离 / 平均眼宽", eyeGap,
+      category(eyeGap, 0.85, 1.10, 0.06, "双眼内眼角间距相对偏近", "双眼内眼角间距与眼宽比例居中", "双眼内眼角间距相对偏远", "双眼内眼角间距接近实验分类边界，本次不作远近判断")),
+    make("nose.length", "鼻部纵向", "鼻根至鼻尖距离 / 脸部高度", noseLength,
+      category(noseLength, 0.15, 0.24, 0.015, "照片中鼻部纵向比例相对偏短", "照片中鼻部纵向比例处于中间区间", "照片中鼻部纵向比例相对偏长", "鼻部纵向比例接近实验分类边界，本次不作长短判断")),
+    make("chin.height", "下巴纵向", "下唇下缘至下巴底距离 / 脸部高度", chinRatio,
+      category(chinRatio, 0.20, 0.29, 0.02, "照片中下巴纵向比例相对偏短", "照片中下巴纵向比例处于中间区间", "照片中下巴纵向比例相对偏长", "下巴纵向比例接近实验分类边界，本次不作长短判断"))
   ];
 
   if (descriptors.some(item => !Number.isFinite(item.ratio) || item.ratio <= 0 || item.ratio > 3)) {

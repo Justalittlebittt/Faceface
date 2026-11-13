@@ -28,7 +28,7 @@ test("imports first three V0.6 source cards with traceable edition and page", ()
 test("an incomplete metric never becomes a historical face-type verdict", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.status),
-    ["related-observation", "related-observation", "insufficient"]);
+    ["related-observation", "insufficient", "insufficient"]);
   assert.ok(reading.sourceLinks.every(x => x.status !== "confirmed"));
   assert.match(reading.overview, /不足以判定完整的传统相型/);
 });
@@ -37,7 +37,7 @@ test("no substitution of nose-wing width for classical nose bridge straightness"
   const reading = makeReading(ok);
   const nose = reading.sourceLinks.find(x => x.cardId === "MY25-NOSE-01");
   assert.equal(nose.status, "insufficient");
-  assert.match(nose.explanation, /不能用其他比例替代原文条件/);
+  assert.match(nose.explanation, /不据此作出相型判断/);
 });
 
 test("report preserves observed differences without inventing personality scores", () => {
@@ -57,4 +57,34 @@ test("downloadable text includes concise/detailed source and explicit limitation
   assert.match(text, /1925年文明书局/);
   assert.match(text, /扫描 PDF 零起页27/);
   assert.match(text, /当代几何阈值是项目实验设定/);
+});
+
+test("historical excerpts are conditionally related only when measured direction supports them", () => {
+  const onlyMouth = {
+    ...ok, descriptors: descriptors.map(d => d.id === "eyes.openness"
+      ? { ...d, ratio: .22, text: "眼部开合比例接近实验分类边界，暂不判定偏小、居中或偏大" }
+      : d.id === "mouth.width"
+        ? { ...d, ratio: .53, text: "口部横向比例相对偏大" } : d)
+  };
+  const reading = makeReading(onlyMouth);
+  assert.deepEqual(reading.sourceLinks.map(link => link.status),
+    ["insufficient", "related-observation", "insufficient"]);
+  assert.match(reading.sourceLinks[1].explanation, /局部相似/);
+  const neither = {
+    ...onlyMouth, descriptors: onlyMouth.descriptors.map(d => d.id === "mouth.width"
+      ? { ...d, ratio: .43, text: "口部横向比例处于中间区间" } : d)
+  };
+  assert.equal(makeReading(neither).sourceLinks.filter(link => link.status === "related-observation").length, 0);
+});
+
+test("expanded narrative remains cross-region rather than repeating a fixed fate verdict", () => {
+  const extended = { ...ok, descriptors: [...descriptors,
+    { id:"eyes.spacing",region:"双眼间距",measurement:"inter-eye",ratio:1.01,text:"双眼内眼角间距与眼宽比例居中",caveat:"实验" },
+    { id:"nose.length",region:"鼻部纵向",measurement:"nose",ratio:.21,text:"照片中鼻部纵向比例处于中间区间",caveat:"实验" },
+    { id:"chin.height",region:"下巴纵向",measurement:"chin",ratio:.24,text:"照片中下巴纵向比例处于中间区间",caveat:"实验" }
+  ]};
+  const reading = makeReading(extended);
+  assert.match(reading.patternSummary, /跨部位观察/);
+  assert.match(reading.patternSummary, /双眼内眼角间距/);
+  assert.match(readingAsText(reading), /下巴纵向比例/);
 });

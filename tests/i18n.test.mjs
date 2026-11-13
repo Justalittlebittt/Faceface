@@ -8,7 +8,10 @@ const descriptors = [
   { id:"eyes.openness", region:"眼部", measurement:"eye ratio", ratio:.22, text:"眼部开合比例接近实验分类边界，暂不判定偏小、居中或偏大", caveat:"实验阈值" },
   { id:"nose.width", region:"鼻部", measurement:"nose ratio", ratio:.30, text:"鼻翼横向比例处于中间区间", caveat:"实验阈值" },
   { id:"mouth.width", region:"口部", measurement:"mouth ratio", ratio:.52, text:"口部横向比例相对偏大", caveat:"实验阈值" },
-  { id:"jaw.width", region:"下颌", measurement:"jaw ratio", ratio:.80, text:"下颌相对颧部偏宽", caveat:"实验阈值" }
+  { id:"jaw.width", region:"下颌", measurement:"jaw ratio", ratio:.80, text:"下颌相对颧部偏宽", caveat:"实验阈值" },
+  { id:"eyes.spacing", region:"双眼间距", measurement:"inter-eye ratio", ratio:1.01, text:"双眼内眼角间距与眼宽比例居中", caveat:"实验阈值" },
+  { id:"nose.length", region:"鼻部纵向", measurement:"nose ratio", ratio:.20, text:"照片中鼻部纵向比例处于中间区间", caveat:"实验阈值" },
+  { id:"chin.height", region:"下巴纵向", measurement:"chin ratio", ratio:.25, text:"照片中下巴纵向比例处于中间区间", caveat:"实验阈值" }
 ];
 const analysis = { status:"ok", message:"以下描述来自本次相机帧的模型关键点与实验性比例计算，不代表传统面相判词。", descriptors };
 
@@ -42,7 +45,7 @@ test("English and Chinese reports share source IDs and retain original historica
   assert.deepEqual(en.sourceLinks.map(c=>c.status),zh.sourceLinks.map(c=>c.status));
   assert.ok(en.sourceLinks.every(c=>c.historicalTerm&&c.historicalGloss));
   assert.equal(en.sourceLinks[2].status,"insufficient");
-  assert.match(en.sourceLinks[2].explanation,/cannot substitute/);
+  assert.match(en.sourceLinks[2].explanation,/No classical type is assigned/);
   const englishText=readingAsText(en,"en");
   for(const phrase of ["SHORT REPORT","Original wording: 或細長","not a certified translation","PDF zero-based page 27","MODERN REFLECTION"])
     assert.ok(englishText.includes(phrase),phrase);

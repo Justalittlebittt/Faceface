@@ -45,6 +45,7 @@ export type CulturalLink = {
 export type FaceReading = {
   heading: string;
   overview: string;
+  patternSummary: string;
   observations: Descriptor[];
   sourceLinks: CulturalLink[];
   reflection: string;
@@ -81,7 +82,13 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
   const byId = new Map(analysis.descriptors.map(d => [d.id, d]));
   const sourceLinks: CulturalLink[] = cards.map(card => {
     const descriptor = card.linked_metric ? byId.get(metricToDescriptor[card.linked_metric] ?? "") : undefined;
-    const related = !!descriptor && card.mode === "geometry_only";
+    // A common organ is NOT enough for a historical cross-reference.
+    // At most a *partial* directional resemblance is recorded. The historic
+    // full condition (e.g. square AND broad mouth) is never auto-confirmed.
+    // These bands mirror provisional M1 ratio thresholds, not book criteria.
+    const related = !!descriptor && card.mode === "geometry_only" &&
+      ((card.id === "MY25-EYE-01" && descriptor.ratio < 0.205) ||
+       (card.id === "MY25-MOUTH-01" && descriptor.ratio > 0.495));
     const english = language === "en";
     const gloss = englishSource[card.id];
     return {
@@ -94,8 +101,12 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       observation: descriptor ? localizeDescriptor(descriptor, language).text :
         (english ? "The required historical shape was not measured in this photograph." : "本次尚未测量这个古籍词语要求的具体形态。"),
       explanation: related
-        ? (english ? "The observed region is related to historical wording, but the text supplies no compatible numeric cutoff. A complete traditional face type is NOT established." : "这项现代几何观察与古籍谈论的部位相关，但原书没有给出可直接套用的数值门槛，不能认定相型成立。")
-        : (english ? "The required shape was not measured. A different modern geometric ratio cannot substitute for this historical condition." : "目前的特征不满足可靠观察条件；即使照片中有相关部位，也不能用其他比例替代原文条件。"),
+        ? (english
+          ? "Only one measured direction loosely resembles a phrase from the book. The full historical condition, its exceptions and a calibrated numeric standard are not established."
+          : "本次比例仅与古籍词语中的一个外观方向存在局部相似；原文完整形态、例外条件和数值标准均未满足核查，不能认定相型成立。")
+        : (english
+          ? "The current measurement does not support even a limited directional resemblance, or the historical condition is not measurable here. No classical type is assigned."
+          : "当前比例未能支持该古籍用语的局部形态方向，或者原文所需形态未测量；不据此作出相型判断。"),
       caveat: english ? gloss.caveat : card.caveat,
       source: card.source
     };
@@ -113,6 +124,13 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
         " 项实验性形态描述，其中 " +
         sourceLinks.filter(link => link.status === "related-observation").length +
         " 项可联系到已核对的古籍形态用语，但都不足以判定完整的传统相型。",
+    patternSummary: (() => {
+      const chosen = ["face.aspect", "eyes.spacing", "nose.length", "chin.height"]
+        .map(id => byId.get(id)).filter((d): d is Descriptor => !!d)
+        .map(d => localizeDescriptor(d, language).text);
+      return (language === "en" ? "Across the face: " : "跨部位观察：") + chosen.join(language === "en" ? "; " : "；") +
+        (language === "en" ? ". These describe this photo only." : "。以上仅描述本次照片。");
+    })(),
     observations: analysis.descriptors.map(d => localizeDescriptor(d, language)),
     sourceLinks,
     reflection: language === "en"
@@ -132,6 +150,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "",
       "SHORT REPORT",
       reading.overview,
+      reading.patternSummary,
       "",
       ...reading.observations.map(d => d.region + ": " + d.text),
       "",
@@ -162,6 +181,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "",
     "【简洁报告】",
     reading.overview,
+    reading.patternSummary,
     "",
     ...reading.observations.map(d => d.region + "：" + d.text),
     "",
