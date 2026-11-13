@@ -35,6 +35,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
+  const [photoSource, setPhotoSource] = useState<"camera" | "file" | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
   const reading = analysis ? makeReading(analysis) : null;
 
@@ -53,6 +54,7 @@ export default function App() {
     setShowMeasurements(false);
     setTiming(null);
     setCameraAspect(null);
+    setPhotoSource(null);
     const canvas = canvasRef.current;
     if (canvas) {
       // Resetting the backing size releases pixel data, not just the visible drawing.
@@ -87,6 +89,7 @@ export default function App() {
       setAnalysis(null);
       setTiming(null);
       setCameraAspect(null);
+      setPhotoSource(null);
       setError("");
     };
     const onVisibility = () => {
@@ -108,6 +111,7 @@ export default function App() {
     setAnalysis(null);
     setTiming(null);
     setCameraAspect(null);
+    setPhotoSource(null);
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError("摄像头需要 HTTPS（或本地 localhost）以及支持摄像头的浏览器。");
       return;
@@ -210,6 +214,7 @@ export default function App() {
       return;
     }
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setPhotoSource("camera");
     await analyzeCanvas(canvas);
   };
 
@@ -240,6 +245,7 @@ export default function App() {
       const context = canvas.getContext("2d", { willReadFrequently: true });
       if (!context) throw new Error("浏览器无法处理图片。");
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      setPhotoSource("file");
       setCameraAspect(canvas.width / canvas.height);
       await analyzeCanvas(canvas);
     } catch (cause) {
@@ -267,7 +273,7 @@ export default function App() {
     const objectUrl = URL.createObjectURL(file);
     const anchor = document.createElement("a");
     anchor.href = objectUrl;
-    anchor.download = "faceface-observation.txt";
+    anchor.download = "faceface-reading.txt";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -313,7 +319,8 @@ export default function App() {
             />
             <canvas
               ref={canvasRef}
-              className={phase === "analyzing" || phase === "result" ? "photo-canvas" : "offscreen"}
+              className={(phase === "analyzing" || phase === "result" ? "photo-canvas" : "offscreen") +
+                (photoSource === "camera" ? " photo-canvas--selfie" : "")}
               aria-label="本次拍摄的内存画面"
             />
             {phase === "idle" && <div className="camera-placeholder"><span className="placeholder-icon">◎</span><p>相机尚未开启</p><small>光线均匀 · 面对镜头 · 不遮挡五官</small></div>}
@@ -343,7 +350,7 @@ export default function App() {
             {phase === "analyzing" && <button className="secondary" onClick={reset}>取消分析并清除画面</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>清除画面 / 重新拍摄</button>}
           </div>
-          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；可选的本地照片直接由浏览器读取，不上传原图。照片与特征默认不写入浏览器存储或应用服务器。自拍预览和展示画面使用镜像，模型在未镜像的原始帧上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
+          <p className="privacy-detail">拍摄或分析期间切换到其他应用时会关闭相机并清除临时画面；已生成的结果仅保留在当前页面内存中，离开页面时清除。相机权限仅由你的操作触发；可选的本地照片直接由浏览器读取，不上传原图。照片与特征默认不写入浏览器存储或应用服务器。自拍预览和自拍结果使用镜像；从本地选择的照片按原方向显示。模型在未镜像的图像上计算。模型和运行文件会从第三方 CDN 下载，相关网络与 SDK 指标仍需上线前审计。</p>
         </section>
 
         {analysis && phase === "result" && (
