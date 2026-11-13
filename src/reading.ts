@@ -162,8 +162,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation, vol. 1, 'General Discussion of the Five Features' (五官总论), printed page 14 (PDF zero-based page 27). English glosses are explanatory only, not an authoritative translation. Modern numeric thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》卷一《五官总论》，原书页十四（扫描 PDF 零起页27）。当代几何阈值是项目实验设定，并非古籍原文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; and an illustrated mouth category in volume 2 'Reading the Mouth' (相口), page 86 (all PDF pages zero-based). English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28）及卷二《相口》图例（页86）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
