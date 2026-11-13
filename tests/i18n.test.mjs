@@ -45,7 +45,7 @@ test("English and Chinese reports share source IDs and retain original historica
   assert.deepEqual(en.sourceLinks.map(c=>c.status),zh.sourceLinks.map(c=>c.status));
   assert.ok(en.sourceLinks.every(c=>c.historicalTerm&&c.historicalGloss));
   assert.equal(en.sourceLinks[2].status,"insufficient");
-  assert.match(en.sourceLinks[2].explanation,/cannot substitute/);
+  assert.match(en.sourceLinks[2].explanation,/No classical type is assigned/);
   const englishText=readingAsText(en,"en");
   for(const phrase of ["SHORT REPORT","Original wording: 或細長","not a certified translation","PDF zero-based page 27","MODERN REFLECTION"])
     assert.ok(englishText.includes(phrase),phrase);
