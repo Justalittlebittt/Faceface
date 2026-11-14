@@ -34,6 +34,7 @@ type SourceCard = {
 
 export type CulturalLink = {
   cardId: string;
+  conditionCount: number;
   organ: string;
   historicalTerm: string;
   historicalGloss?: string;
@@ -60,6 +61,8 @@ export type FaceReading = {
   patternSummary: string;
   observations: Descriptor[];
   sourceLinks: CulturalLink[];
+  featuredLinks: CulturalLink[];
+  briefInsights: string[];
   frameworkNotes: HistoricalFramework[];
   reflection: string;
   evidenceNotice: string;
@@ -128,6 +131,7 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     const gloss = englishSource[card.id];
     return {
       cardId: card.id,
+      conditionCount: card.conditions.length,
       organ: english ? gloss.organ : card.organ,
       historicalTerm: card.source_phrase,
       historicalGloss: english ? gloss.gloss : undefined,
@@ -148,6 +152,30 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       source: card.source
     };
   });
+
+  // A phone-first report should not repeat overlapping words for the same
+  // region. Prefer richer composite evidence, then source order; reserve all
+  // source cards (including unsupported ones) for the expanded audit trail.
+  const featuredLinks = sourceLinks
+    .map((link, index) => ({ link, index }))
+    .filter(item => item.link.status === "related-observation")
+    .sort((a, b) => b.link.conditionCount - a.link.conditionCount || a.index - b.index)
+    .filter((item, index, items) =>
+      items.findIndex(other => other.link.organ === item.link.organ) === index)
+    .slice(0, 2)
+    .map(item => item.link);
+
+  const briefInsights = featuredLinks.length
+    ? featuredLinks.map(link => language === "en"
+      ? "This image shows: " + link.observation + ". The checked Mai Yi Xiang Fa phrase \"" +
+        link.historicalTerm + "\" describes a partly similar visible shape. Historical interpretation: " +
+        link.historicalView + " Only a photographic resemblance is observed, not a verified traditional classification."
+      : "本次照片观察到：" + link.observation + "。其外观方向与《麻衣相法》中的「" +
+        link.historicalTerm + "」有局部相似。古籍文化含义：" + link.historicalView +
+        "。这只是照片中的局部形态对照，不代表完整古籍相型成立。")
+    : [language === "en"
+      ? "The checked historical descriptions have no sufficiently supported shape overlap in this photograph. You can still review the source notes in the detailed report; no traditional type is assigned."
+      : "本次照片没有足够明确的形态线索与已核对的古籍用语建立局部关联。详细版仍保留原文与条件说明，不勉强套用传统相型。"];
 
   const frameworkNotes: HistoricalFramework[] = catalog.framework_notes.map(note => ({
     id: note.id,
@@ -178,6 +206,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     })(),
     observations: analysis.descriptors.map(d => localizeDescriptor(d, language)),
     sourceLinks,
+    featuredLinks,
+    briefInsights,
     frameworkNotes,
     reflection: language === "en"
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
@@ -197,7 +227,9 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "SHORT REPORT",
       reading.overview,
       reading.patternSummary,
+      ...reading.briefInsights,
       "",
+      "DETAILED OBSERVATIONS (PROVISIONAL)",
       ...reading.observations.map(d => d.region + ": " + d.text),
       "",
       "HISTORICAL REFERENCES (NOT CONFIRMED FACE TYPES)",
@@ -239,7 +271,9 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "【简洁报告】",
     reading.overview,
     reading.patternSummary,
+    ...reading.briefInsights,
     "",
+    "【详细版：全部面部形态观察（实验项）】",
     ...reading.observations.map(d => d.region + "：" + d.text),
     "",
     "【与古籍对应的文化材料】",
