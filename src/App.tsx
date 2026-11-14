@@ -384,23 +384,39 @@ export default function App() {
                     </div>
                     <p className="report-intro">{reading.overview}</p>
                     <p className="report-intro">{reading.patternSummary}</p>
-                    {reading.sourceLinks.every(link => link.status !== "related-observation") && (
-                      <p className="privacy-detail">{language === "en"
-                        ? "No checked historical phrase has even a limited directional resemblance to this photo. The detailed source notes remain available for context."
-                        : "本次未找到满足局部形态相似条件的已核查古籍用语。仍可在详细报告中阅读原文及条件不足的原因。"}</p>
-                    )}
+                    <div className="reading-insights" aria-label={language === "en" ? "Cultural reading" : "本次文化解读"}>
+                      {reading.briefInsights.map((paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ))}
+                    </div>
                     <div className="source-highlights">
-                      {reading.sourceLinks.filter(link => link.status === "related-observation").map(link => (
+                      {reading.featuredLinks.map(link => (
                         <article className="source-highlight" key={link.cardId}>
                           <span className="region">{link.organ} · {link.traditionalName}</span>
                           <strong>{t(language, "ancientPhrase")}: 「{link.historicalTerm}」{link.historicalGloss ? " — " + link.historicalGloss : ""}</strong>
-                          <p>{link.observation}</p>
-                          <p className="source-tradition">{link.historicalView}</p>
                           <small>{t(language, "relatedFootnote")}</small>
+                          <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
+                            {t(language, "originalScan")}: {link.source.volume}《{link.source.section}》 ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
+                          </a>
                         </article>
                       ))}
                     </div>
                     <p className="reflection">{reading.reflection}</p>
+                    <details className="source-details">
+                      <summary>{t(language, "expandedTitle")}</summary>
+                      <p>{reading.evidenceNotice}</p>
+                      {reading.sourceLinks.map(link => (
+                        <article className="source-detail" key={link.cardId}>
+                          <h4>{link.organ}: {link.historicalTerm} {link.historicalGloss ? " — " + link.historicalGloss : ""} <span>({language === "en" ? (link.status === "related-observation" ? "Related observation" : "Insufficient evidence") : (link.status === "related-observation" ? "相关观察" : "条件不足")})</span></h4>
+                          <p>{t(language, "observed")}: {link.observation}</p>
+                          <p>{link.explanation}</p>
+                          <p className="source-tradition">{language === "en" ? "Historic cultural reading (not a factual prediction): " : "古籍文化释义（非现实预测）："}{link.historicalView}</p>
+                          <p>{t(language, "caution")}: {link.caveat}</p>
+                          <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
+                            {t(language, "originalScan")}: 《{link.source.work}》{link.source.volume}《{link.source.section}》 ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
+                          </a>
+                        </article>
+                      ))}
                     <section className="historical-frameworks" aria-label={language === "en" ? "Historical framework" : "古籍取象背景"}>
                       <h4>{language === "en" ? "How the classic organizes facial regions" : "古籍如何组织面部部位"}</h4>
                       <p className="privacy-detail">{language === "en"
@@ -419,21 +435,6 @@ export default function App() {
                         ))}
                       </div>
                     </section>
-                    <details className="source-details">
-                      <summary>{t(language, "expandedTitle")}</summary>
-                      <p>{reading.evidenceNotice}</p>
-                      {reading.sourceLinks.map(link => (
-                        <article className="source-detail" key={link.cardId}>
-                          <h4>{link.organ}: {link.historicalTerm} {link.historicalGloss ? " — " + link.historicalGloss : ""} <span>({language === "en" ? (link.status === "related-observation" ? "Related observation" : "Insufficient evidence") : (link.status === "related-observation" ? "相关观察" : "条件不足")})</span></h4>
-                          <p>{t(language, "observed")}: {link.observation}</p>
-                          <p>{link.explanation}</p>
-                          <p className="source-tradition">{language === "en" ? "Historic cultural reading (not a factual prediction): " : "古籍文化释义（非现实预测）："}{link.historicalView}</p>
-                          <p>{t(language, "caution")}: {link.caveat}</p>
-                          <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
-                            {t(language, "originalScan")}: 《{link.source.work}》{link.source.volume}《{link.source.section}》 ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
-                          </a>
-                        </article>
-                      ))}
                     </details>
                   </div>
                 )}
