@@ -164,3 +164,62 @@ test("historic interpretation remains attributed culture rather than predicting 
   assert.match(zh,/古籍文化解读（非现实预测）/);
   assert.match(zh,/吉祥寓意/);
 });
+
+test("short report prioritizes composite evidence and diverse face regions", () => {
+  const d=[
+    ...descriptors.map(item => item.id === "mouth.width"
+      ? {...item,ratio:.54,text:"口部横向比例相对偏大"} : item),
+    {id:"mouth.corner",region:"口角走势",measurement:"corner",ratio:.60,text:"本次照片中双侧口角相对上扬",caveat:"表达影响"},
+    {id:"mouth.lip",region:"唇部厚度",measurement:"lip",ratio:.16,text:"本次照片中唇部可见厚度相对偏丰",usable:true,caveat:"表情影响"}
+  ];
+  const reading=makeReading({...ok,descriptors:d});
+  assert.ok(reading.sourceLinks.filter(item=>item.status==="related-observation").length >= 4);
+  assert.deepEqual(reading.featuredLinks.map(item=>item.cardId),
+    ["MY25-MOUTH-OX-01","MY25-EYE-01"]);
+  assert.equal(new Set(reading.featuredLinks.map(item=>item.organ)).size,2);
+  assert.equal(reading.featuredLinks[0].conditionCount,2);
+  assert.equal(reading.briefInsights.length,2);
+  assert.match(reading.briefInsights[0],/牛口/);
+  assert.match(reading.briefInsights[1],/或細長/);
+});
+
+test("no-match report stays useful without manufacturing ancient classifications", () => {
+  const withoutMatches={...ok,descriptors:descriptors.map(d => {
+    if(d.id==="eyes.openness")return {...d,ratio:.25,text:"当前眼部开合比例居中"};
+    return d;
+  })};
+  const reading=makeReading(withoutMatches);
+  assert.equal(reading.featuredLinks.length,0);
+  assert.equal(reading.briefInsights.length,1);
+  assert.match(reading.briefInsights[0],/不勉强套用传统相型/);
+  assert.equal(reading.sourceLinks.length,6);
+  const asText=readingAsText(reading);
+  assert.match(asText,/详细版：全部面部形态观察/);
+  assert.match(asText,/条件不足/);
+});
+
+test("download export has a genuinely short narrative before detailed measurements", () => {
+  const bilingual=["zh","en"];
+  for(const lang of bilingual){
+    const reading=makeReading(ok,lang);
+    const exported=readingAsText(reading,lang);
+    const detailedStart=lang==="en"?"DETAILED OBSERVATIONS":"【详细版：全部面部形态观察";
+    const start=lang==="en"?"SHORT REPORT":"【简洁报告】";
+    const short=exported.split(start)[1].split(detailedStart)[0];
+    assert.ok(short.length>30);
+    assert.equal((short.match(/face ratio/g)||[]).length,0);
+    assert.ok(!short.includes("jaw ratio"));
+    assert.equal(reading.featuredLinks.length,1);
+    assert.ok(exported.includes("牛口")); // source archive is always traceable
+    assert.ok(exported.includes(reading.evidenceNotice));
+  }
+});
+
+test("bilingual highlights identify identical evidence and remain limited to two", () => {
+  const zh=makeReading(ok,"zh");
+  const en=makeReading(ok,"en");
+  assert.deepEqual(zh.featuredLinks.map(x=>x.cardId),en.featuredLinks.map(x=>x.cardId));
+  assert.deepEqual(zh.featuredLinks.map(x=>x.status),en.featuredLinks.map(x=>x.status));
+  assert.match(en.briefInsights[0],/Only a photographic resemblance/);
+  assert.ok(zh.featuredLinks.length<=2);
+});
