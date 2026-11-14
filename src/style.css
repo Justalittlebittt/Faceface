@@ -190,3 +190,10 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
 .framework-note .historical-quote { font-family: Georgia,"Songti SC",serif; color: #c9e4d0; font-size: 14px; line-height: 1.6; }
 .framework-note p { color: #bcd0c0; font-size: 13px; line-height: 1.75; margin: 0; }
 .framework-note a { color: #bfe6cb; font-size: 12px; overflow-wrap: anywhere; }
+
+/* Short report: interpretation first, sources next, full evidence on request. */
+.reading-insights { display: grid; gap: 10px; margin: 16px 0; }
+.reading-insights p { margin: 0; padding: 15px 17px; border-left: 3px solid #9bcfb0;
+  background: #1b2b22; border-radius: 0 9px 9px 0; color: #e0eee2; line-height: 1.9; font-size: 14px; }
+.source-highlight a { color: #c6e6cf; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.source-details .historical-frameworks { margin-top: 24px; }
