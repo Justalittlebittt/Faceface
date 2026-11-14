@@ -130,6 +130,8 @@ try {
     cameraError: document.querySelector(".workbench .error-message")?.textContent || null,
     descriptionCount: document.querySelectorAll(".observation").length,
     historicalHighlights: document.querySelectorAll(".source-highlight").length,
+    briefInsightCount: document.querySelectorAll(".reading-insights p").length,
+    detailedCollapsed: !document.querySelector("details.source-details")?.open,
     historicalCards: document.querySelectorAll(".source-detail").length,
     historicalFrameworks: document.querySelectorAll(".framework-note").length,
     sourceLabels: [...document.querySelectorAll(".source-detail h4")].map(node => node.textContent),
@@ -143,7 +145,8 @@ try {
   if (remoteFailures.length) console.log("Model/CDN failures:", remoteFailures.join(" | "));
   if (scriptErrors.length) console.log("Browser JS errors:", scriptErrors.join(" | "));
   if (diagnostics.descriptionCount !== 10 ||
-      diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 3 ||
+      diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 2 ||
+      diagnostics.briefInsightCount < 1 || !diagnostics.detailedCollapsed ||
       diagnostics.historicalCards !== 6 || diagnostics.historicalFrameworks !== 2 ||
       !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
       diagnostics.cameraError || scriptErrors.length) {
@@ -157,6 +160,7 @@ try {
   if (!downloadedPath) throw new Error("No downloadable report file");
   const savedText = await readFile(downloadedPath, "utf8");
   if (!savedText.includes("【简洁报告】") ||
+      !savedText.includes("【详细版：全部面部形态观察") ||
       !savedText.includes("或細長") ||
       !savedText.includes("口須方大") ||
       !savedText.includes("梁柱端直") ||
@@ -197,6 +201,7 @@ try {
   if (!englishPath) throw new Error("Missing English downloaded file");
   const englishReport = await readFile(englishPath, "utf8");
   if (!englishReport.includes("SHORT REPORT") ||
+      !englishReport.includes("DETAILED OBSERVATIONS") ||
       !englishReport.includes("Original wording: 或細長") ||
       !englishReport.includes("not a certified translation") ||
       !englishReport.includes("PDF zero-based page 27") ||
