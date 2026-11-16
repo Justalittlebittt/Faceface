@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-source-checked-v2.json" with { type: "json" };
+import catalog from "./knowledge/maiyi-source-checked-v3.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 
@@ -98,6 +98,21 @@ const englishSource: Record<string, { organ: string; title: string; gloss: strin
     organ: "Mouth", title: "Ox-mouth illustration (historical chart)",
     gloss: "Ox mouth: thick and full lips [interpretive gloss]",
     caveat: "Two photographic metrics can align locally, but opening the mouth, expression, cosmetics and lens angle change the observed shape."
+  },
+  "MY25-FACE-ROUND-01": {
+    organ: "Face", title: "Facial outline (historical text)",
+    gloss: "Round and lustrous face [brief contextual gloss]",
+    caveat: "Only the width-to-height direction is observed. A broad photo ratio cannot establish the complete rounded contour or luster of the original wording."
+  },
+  "MY25-NOSE-LONG-01": {
+    organ: "Nose", title: "Nose proportions (historical verse)",
+    gloss: "Long nose associated with longevity [historical belief, not fact]",
+    caveat: "This is one two-dimensional ratio, not a nasal-bridge assessment, a health indicator, or a lifespan prediction."
+  },
+  "MY25-CHIN-WIDE-01": {
+    organ: "Chin", title: "Three Talents and Three Sections",
+    gloss: "Chin as Earth; broadly square [partial descriptive gloss]",
+    caveat: "Jaw width relative to cheekbones does not demonstrate a square chin. This traditional description does not predict wealth."
   }
 };
 
@@ -156,10 +171,15 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
   // A phone-first report should not repeat overlapping words for the same
   // region. Prefer richer composite evidence, then source order; reserve all
   // source cards (including unsupported ones) for the expanded audit trail.
+  const regionPriority: Record<string, number> = language === "en"
+    ? { Face: 0, Nose: 1, Chin: 2, Eyes: 3, Mouth: 4 }
+    : { "面": 0, "鼻": 1, "頦": 2, "眼": 3, "口": 4 };
   const featuredLinks = sourceLinks
     .map((link, index) => ({ link, index }))
     .filter(item => item.link.status === "related-observation")
-    .sort((a, b) => b.link.conditionCount - a.link.conditionCount || a.index - b.index)
+    .sort((a, b) => b.link.conditionCount - a.link.conditionCount ||
+      (regionPriority[a.link.organ] ?? 9) - (regionPriority[b.link.organ] ?? 9) ||
+      a.index - b.index)
     .filter((item, index, items) =>
       items.findIndex(other => other.link.organ === item.link.organ) === index)
     .slice(0, 2)
@@ -213,8 +233,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category in printed volume 2 page 66, and illustrated mouth categories in printed volume 2 pages 86–87 (PDF pages all zero-based, within the Wikimedia digital file labelled 第1卷). English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); and 'Three Talents and Three Sections' (三才三停) on page 34 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
