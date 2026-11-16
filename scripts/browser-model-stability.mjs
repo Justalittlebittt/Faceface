@@ -58,13 +58,15 @@ try {
     image.src = "/ci-portrait.jpg";
     await image.decode();
     const results = [];
+    // Pixel-wise operations avoid inconsistent CanvasRenderingContext2D.filter
+    // support across browser engines. Verify transforms actually changed pixels.
     const settings = [
-      { name: "jpeg-recode", filter: "none", zoom: 1, scale: 1, quality: .75 },
-      { name: "brightness-85", filter: "brightness(85%)", zoom: 1, scale: 1, quality: .9 },
-      { name: "brightness-115", filter: "brightness(115%)", zoom: 1, scale: 1, quality: .9 },
-      { name: "contrast-90", filter: "contrast(90%)", zoom: 1, scale: 1, quality: .9 },
-      { name: "center-crop-4pct", filter: "none", zoom: 1.04, scale: 1, quality: .9 },
-      { name: "resize-75pct", filter: "none", zoom: 1, scale: .75, quality: .9 }
+      { name: "jpeg-recode", brightness: 1, contrast: 1, zoom: 1, scale: 1, quality: .75 },
+      { name: "brightness-85", brightness: .85, contrast: 1, zoom: 1, scale: 1, quality: .9 },
+      { name: "brightness-115", brightness: 1.15, contrast: 1, zoom: 1, scale: 1, quality: .9 },
+      { name: "contrast-90", brightness: 1, contrast: .90, zoom: 1, scale: 1, quality: .9 },
+      { name: "center-crop-4pct", brightness: 1, contrast: 1, zoom: 1.04, scale: 1, quality: .9 },
+      { name: "resize-75pct", brightness: 1, contrast: 1, zoom: 1, scale: .75, quality: .9 }
     ];
     for (const setting of settings) {
       const canvas = document.createElement("canvas");
@@ -72,19 +74,52 @@ try {
       canvas.height = Math.round(image.naturalHeight * setting.scale);
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Image transform canvas failed");
-      context.filter = setting.filter;
       const srcWidth = image.naturalWidth / setting.zoom;
       const srcHeight = image.naturalHeight / setting.zoom;
       context.drawImage(image, (image.naturalWidth - srcWidth) / 2,
         (image.naturalHeight - srcHeight) / 2, srcWidth, srcHeight,
         0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      if (setting.brightness !== 1 || setting.contrast !== 1) {
+        for (let i = 0; i < pixels.data.length; i += 4) {
+          for (let channel = 0; channel < 3; channel++) {
+            const value = (pixels.data[i + channel] - 128) * setting.contrast + 128;
+            pixels.data[i + channel] = Math.max(0, Math.min(255, value * setting.brightness));
+          }
+        }
+        context.putImageData(pixels, 0, 0);
+      }
+      // Short-lived aggregate luminance of the test image, no image/landmarks
+      // retained in result artifact; confirms real transforms on both engines.
+      const values = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let light = 0, count = 0, sampledHash = 0;
+      for (let i = 0; i < values.length; i += 4 * 97) {
+        const r = values[i], g = values[i + 1], b = values[i + 2];
+        light += (r + g + b) / 3;
+        sampledHash = (sampledHash * 131 + r * 7 + g * 3 + b) % 1000000007;
+        count += 1;
+      }
       results.push({
         name: setting.name,
+        meanLuminance: Number((light / count).toFixed(2)),
+        sampledHash,
         base64: canvas.toDataURL("image/jpeg", setting.quality).split(",")[1]
       });
     }
     return results;
   });
+  const byName = new Map(variants.map(v => [v.name, v]));
+  const neutral = byName.get("jpeg-recode");
+  const darker = byName.get("brightness-85");
+  const brighter = byName.get("brightness-115");
+  const softer = byName.get("contrast-90");
+  if (!(darker.meanLuminance < neutral.meanLuminance - 5 &&
+        brighter.meanLuminance > neutral.meanLuminance + 5 &&
+        softer.sampledHash !== neutral.sampledHash)) {
+    throw new Error("Pixel-level brightness/contrast transformations were not applied");
+  }
+  const variantLuminance = Object.fromEntries(variants.map(v => [v.name, v.meanLuminance]));
+
   const officialPortrait = await readFile("dist/ci-portrait.jpg");
   const allVariants = [{ name: "original", bytes: officialPortrait },
     ...variants.map(v => ({ name: v.name, bytes: Buffer.from(v.base64, "base64") }))];
@@ -155,6 +190,7 @@ try {
     descriptorIds,
     sourceIds,
     original: { ratios: original.ratios, related: original.related },
+    variantLuminance,
     comparisons,
     scriptErrors: failures
   };
