@@ -98,11 +98,12 @@ try {
       document.querySelector(".report") !== null ||
       (document.querySelector(".error-message") !== null &&
        document.querySelector(".processing-layer") === null),
-      { timeout: 90000 });
+      null, { timeout: 90000 });
     if (!(await page.locator(".report").count())) {
       throw new Error(variant.name + ": no report. " +
         await page.locator(".error-message").allTextContents());
     }
+    await page.getByRole("button", { name: "查看计算依据" }).click();
     const snapshot = await page.evaluate(({ descriptorIds, sourceIds }) => {
       const observations = Array.from(document.querySelectorAll(".observation"));
       const cards = Array.from(document.querySelectorAll(".source-detail"));
