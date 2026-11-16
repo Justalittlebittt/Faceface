@@ -38,10 +38,24 @@ try {
   const scriptErrors = [];
   const remoteFailures = [];
   const unexpectedNetworkWrites = [];
+  const unexpectedExternalRequests = [];
   page.on("pageerror", error => scriptErrors.push(error.message));
   page.on("request", request => {
-    if (!["GET", "HEAD"].includes(request.method()) && /^https?:/.test(request.url())) {
-      unexpectedNetworkWrites.push(request.method() + " " + request.url());
+    if (!/^https?:/.test(request.url())) return;
+    const uri = new URL(request.url());
+    if (!["GET", "HEAD"].includes(request.method())) {
+      unexpectedNetworkWrites.push(request.method() + " " + uri.origin + uri.pathname);
+    }
+    // Product code should only load its own static UI and pinned
+    // jsDelivr WASM + Google model. Any newly added external GET
+    // endpoint must be reviewed; GET can also exfiltrate query data.
+    const onOwnSite = uri.origin === origin;
+    const pinnedWasm = uri.host === "cdn.jsdelivr.net" &&
+      uri.pathname.startsWith("/npm/@mediapipe/tasks-vision@1.2.3/wasm/");
+    const pinnedModel = uri.host === "storage.googleapis.com" &&
+      uri.pathname === "/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+    if (!(onOwnSite || pinnedWasm || pinnedModel) || uri.search) {
+      unexpectedExternalRequests.push(uri.origin + uri.pathname + (uri.search ? " [query present]" : ""));
     }
   });
   page.on("requestfailed", request => {
@@ -221,6 +235,45 @@ try {
       !englishReport.includes("What the historic text says")) {
     throw new Error("English report export missing original phrases or source caveats");
   }
+  // M9: a willing participant can re-analyze another local photo and inspect
+  // changes without sending either photo or landmark coordinates to a server.
+  // This uses the SAME public sample twice, testing the actual private UI
+  // workflow, not multi-person validity or identity matching.
+  await page.locator('input[aria-label="Choose a second photo of the same person"]')
+    .setInputFiles("dist/ci-portrait.jpg");
+  await page.waitForSelector(".consistency-panel", { timeout: 90000 });
+  const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
+  if (comparisonStats.join("|") !== "0 / 10|0 / 9") {
+    throw new Error("M9 identical-picture local comparison drifted: " + comparisonStats.join("|"));
+  }
+  await page.locator(".consistency-details summary").click();
+  if ((await page.locator(".consistency-item").count()) !== 10 ||
+      (await page.locator(".consistency-source-change").count()) !== 0) {
+    throw new Error("M9 local comparison did not explain all ten descriptors");
+  }
+  // The local comparison is session memory only and must be gone on reset.
+  await page.getByRole("button", { name: "Clear photo / Take another" }).click();
+  if (await page.locator(".consistency-panel").count()) {
+    throw new Error("M9 local comparison data persisted after clearing the photo");
+  }
+  if (unexpectedNetworkWrites.length || unexpectedExternalRequests.length) {
+    throw new Error("Unexpected network activity after M9 local comparison: " +
+      JSON.stringify({ unexpectedNetworkWrites, unexpectedExternalRequests }));
+  }
+  const additionalStorage = await page.evaluate(async () => ({
+    cookies: document.cookie,
+    localKeys: Object.keys(localStorage),
+    sessionKeys: Object.keys(sessionStorage),
+    databases: typeof indexedDB.databases === "function"
+      ? (await indexedDB.databases()).map(d => d.name) : [],
+    caches: typeof caches !== "undefined" ? await caches.keys() : []
+  }));
+  if (additionalStorage.cookies || additionalStorage.localKeys.length ||
+      additionalStorage.sessionKeys.length || additionalStorage.databases.length ||
+      additionalStorage.caches.length) {
+    throw new Error("M9 unexpected app persistence: " + JSON.stringify(additionalStorage));
+  }
+  console.log("M9 PASS (" + engine + "): two local photo analyses, zero categorical/source drift, no unapproved outbound requests, no persistent app storage");
   await page.getByRole("link", { name: "Privacy notice / 隐私说明" }).click();
   await page.getByRole("heading", { name: "Privacy notice / 隐私说明" }).waitFor({ timeout: 10000 });
   console.log("PASS (" + engine + "): " + (engine === "webkit" ? "local file" : "camera fixture") + " -> real MediaPipe -> source report -> local download, privacy page, no network writes/storage.");
