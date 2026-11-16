@@ -58,7 +58,7 @@ export const copy = {
     compareNoSource: "No historical reference status changed.",
     compareRelated: "Limited related appearance",
     compareNotRelated: "Insufficient evidence",
-    compareMissing: "Not measured"
+    compareMissing: "Not measured",
     measurementQualifier: "(experimental; not calibrated)",
     disclaimer: "These ratios describe a single photograph and may change with angle, expression, lighting, perspective or makeup. Appearance cannot establish a person's character, health, ethics or fate. The linked historical excerpts are limited cultural references, not validated classical classifications.",
     footer: "Faceface · Research preview · No sign-up / No ads",
@@ -144,7 +144,7 @@ export const copy = {
     compareNoSource: "古籍关联状态没有变化。",
     compareRelated: "局部相关",
     compareNotRelated: "条件不足",
-    compareMissing: "未能测量"
+    compareMissing: "未能测量",
     measurementQualifier: "（实验阈值，未校准）",
     disclaimer: "以上描述只表示此照片中测得的几何比例。自拍会受姿态、光线、表情、透视与妆容影响；不能据此判断人格、健康、道德或命运。历史资料仅作文化参考，不能把现代数值阈值当作古籍相型标准。",
     footer: "Faceface · Research preview · 不注册 / 无广告",
