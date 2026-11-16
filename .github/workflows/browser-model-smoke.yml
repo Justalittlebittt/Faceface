@@ -5,6 +5,7 @@ on:
     paths:
       - "src/**"
       - "scripts/browser-model-smoke.mjs"
+      - "scripts/browser-model-stability.mjs"
       - ".github/workflows/browser-model-smoke.yml"
   workflow_dispatch:
 
@@ -38,3 +39,15 @@ jobs:
         run: FACEFACE_BROWSER=chromium node scripts/browser-model-smoke.mjs
       - name: Real MediaPipe test in Linux WebKit (Safari engine approximation)
         run: FACEFACE_BROWSER=webkit node scripts/browser-model-smoke.mjs
+      - name: M8 stability probe in emulated Android Chromium
+        run: FACEFACE_BROWSER=chromium node scripts/browser-model-stability.mjs
+      - name: M8 stability probe in Linux WebKit
+        run: FACEFACE_BROWSER=webkit node scripts/browser-model-stability.mjs
+      - name: Preserve metric drift and source-match changes (no images or landmarks)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: faceface-m8-portrait-stability
+          path: m8-stability-*.json
+          retention-days: 14
+          if-no-files-found: warn
