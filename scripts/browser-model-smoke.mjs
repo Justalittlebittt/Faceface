@@ -147,7 +147,7 @@ try {
   if (diagnostics.descriptionCount !== 10 ||
       diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 2 ||
       diagnostics.briefInsightCount < 1 || !diagnostics.detailedCollapsed ||
-      diagnostics.historicalCards !== 6 || diagnostics.historicalFrameworks !== 2 ||
+      diagnostics.historicalCards !== 9 || diagnostics.historicalFrameworks !== 2 ||
       !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
@@ -167,10 +167,16 @@ try {
       !savedText.includes("仰月口") ||
       !savedText.includes("牛眼") ||
       !savedText.includes("牛口") ||
+      !savedText.includes("面圓光澤") ||
+      !savedText.includes("鼻長有壽") ||
+      !savedText.includes("頦為地") ||
       !savedText.includes("古籍文化解读（非现实预测）") ||
       !savedText.includes("【古籍取象背景") ||
       !savedText.includes("PDF 零起页86") ||
       !savedText.includes("扫描 PDF 零起页87") ||
+      !savedText.includes("扫描 PDF 零起页52") ||
+      !savedText.includes("扫描 PDF 零起页77") ||
+      !savedText.includes("扫描 PDF 零起页34") ||
       !savedText.includes("扫描 PDF 零起页27")) {
     throw new Error("Local report export is missing observed content or source provenance");
   }
@@ -209,6 +215,9 @@ try {
       !englishReport.includes("Four Rivers") ||
       !englishReport.includes("PDF zero-based page 86") ||
       !englishReport.includes("PDF zero-based page 87") ||
+      !englishReport.includes("PDF zero-based page 52") ||
+      !englishReport.includes("PDF zero-based page 77") ||
+      !englishReport.includes("PDF zero-based page 34") ||
       !englishReport.includes("What the historic text says")) {
     throw new Error("English report export missing original phrases or source caveats");
   }
