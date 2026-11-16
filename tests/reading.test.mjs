@@ -17,18 +17,18 @@ test("no readings generated for absent, multiple, or low-quality faces", () => {
   }
 });
 
-test("retains original source cards and adds two independently scanned forms", () => {
+test("preserves six earlier cards and adds three checked non-eye-mouth sources", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.cardId),
-    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01"]);
-  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86,66,87]);
+    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01", "MY25-FACE-ROUND-01", "MY25-NOSE-LONG-01", "MY25-CHIN-WIDE-01"]);
+  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86,66,87,52,77,34]);
   assert.ok(reading.sourceLinks.every(x => x.source.source_url.includes("commons.wikimedia.org")));
 });
 
 test("an incomplete metric never becomes a historical face-type verdict", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.status),
-    ["related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
+    ["related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.ok(reading.sourceLinks.every(x => x.status !== "confirmed"));
   assert.match(reading.overview, /不足以判定完整的传统相型/);
 });
@@ -68,7 +68,7 @@ test("historical excerpts are conditionally related only when measured direction
   };
   const reading = makeReading(onlyMouth);
   assert.deepEqual(reading.sourceLinks.map(link => link.status),
-    ["insufficient", "related-observation", "insufficient", "insufficient", "insufficient", "insufficient"]);
+    ["insufficient", "related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.match(reading.sourceLinks[1].explanation, /局部相似/);
   const neither = {
     ...onlyMouth, descriptors: onlyMouth.descriptors.map(d => d.id === "mouth.width"
@@ -155,7 +155,7 @@ test("missing or unusable metrics never trigger composite historical labels", ()
 
 test("historic interpretation remains attributed culture rather than predicting user wealth", () => {
   const src=makeReading(ok);
-  assert.equal(src.sourceLinks.length,6);
+  assert.equal(src.sourceLinks.length,9);
   const en=readingAsText(makeReading(ok,"en"),"en");
   assert.match(en,/What the historic text says/);
   assert.match(en,/Original wording: 牛口/);
@@ -192,7 +192,7 @@ test("no-match report stays useful without manufacturing ancient classifications
   assert.equal(reading.featuredLinks.length,0);
   assert.equal(reading.briefInsights.length,1);
   assert.match(reading.briefInsights[0],/不勉强套用传统相型/);
-  assert.equal(reading.sourceLinks.length,6);
+  assert.equal(reading.sourceLinks.length,9);
   const asText=readingAsText(reading);
   assert.match(asText,/详细版：全部面部形态观察/);
   assert.match(asText,/条件不足/);
@@ -222,4 +222,66 @@ test("bilingual highlights identify identical evidence and remain limited to two
   assert.deepEqual(zh.featuredLinks.map(x=>x.status),en.featuredLinks.map(x=>x.status));
   assert.match(en.briefInsights[0],/Only a photographic resemblance/);
   assert.ok(zh.featuredLinks.length<=2);
+});
+
+test("three verified face, nose and chin source cards use distinct scan pages", () => {
+  const reading=makeReading(ok);
+  const expected={
+    "MY25-FACE-ROUND-01":{page:52,volume:"卷二",phrase:"面圓光澤"},
+    "MY25-NOSE-LONG-01":{page:77,volume:"卷二",phrase:"鼻長有壽"},
+    "MY25-CHIN-WIDE-01":{page:34,volume:"卷一",phrase:"頦為地，欲方而闊"}
+  };
+  for(const [id,exp] of Object.entries(expected)){
+    const link=reading.sourceLinks.find(x=>x.cardId===id);
+    assert.ok(link,id);
+    assert.equal(link.source.pdf_page_zero_based,exp.page);
+    assert.equal(link.source.volume,exp.volume);
+    assert.equal(link.historicalTerm,exp.phrase);
+    assert.equal(link.status,"insufficient");
+    assert.match(link.source.source_url,/commons.wikimedia.org/);
+  }
+});
+
+test("face, nose and chin can become partial cultural references from actual corresponding metrics", () => {
+  const observed=[
+    ...descriptors.map(d =>
+      d.id==="face.aspect"?{...d,ratio:1.22,text:"面部轮廓在画面中相对偏宽"}:
+      d.id==="jaw.width"?{...d,ratio:.83,text:"下颌相对颧部偏宽"}:d),
+    {id:"nose.length",region:"鼻部纵向",measurement:"nose / face",ratio:.28,
+      text:"照片中鼻部纵向比例相对偏长",caveat:"实验阈值"}
+  ];
+  const zh=makeReading({...ok,descriptors:observed},"zh");
+  const en=makeReading({...ok,descriptors:observed},"en");
+  for(const id of ["MY25-FACE-ROUND-01","MY25-NOSE-LONG-01","MY25-CHIN-WIDE-01"]){
+    assert.equal(zh.sourceLinks.find(x=>x.cardId===id)?.status,"related-observation",id);
+    assert.equal(en.sourceLinks.find(x=>x.cardId===id)?.status,"related-observation",id);
+  }
+  // Underrepresented regions enter the two-slot short view instead of
+  // being pushed out by a single existing eye or mouth card.
+  assert.deepEqual(zh.featuredLinks.map(x=>x.cardId),["MY25-FACE-ROUND-01","MY25-NOSE-LONG-01"]);
+  assert.deepEqual(zh.featuredLinks.map(x=>x.cardId),en.featuredLinks.map(x=>x.cardId));
+  assert.match(zh.briefInsights.join(" "),/论面|鼻長|相鼻/);
+  assert.match(readingAsText(en,"en"),/PDF zero-based page 52/);
+  assert.match(readingAsText(en,"en"),/PDF zero-based page 34/);
+});
+
+test("modern proportion near a boundary cannot trigger a new ancient type", () => {
+  const observed=[
+    ...descriptors.map(d =>
+      d.id==="face.aspect"?{...d,ratio:1.26}:d.id==="jaw.width"?{...d,ratio:.785}:d),
+    {id:"nose.length",region:"鼻部纵向",measurement:"nose",ratio:.255,text:"鼻部纵向比例接近实验分类边界",caveat:"实验"}
+  ];
+  const reading=makeReading({...ok,descriptors:observed});
+  for(const id of ["MY25-FACE-ROUND-01","MY25-NOSE-LONG-01","MY25-CHIN-WIDE-01"]){
+    assert.equal(reading.sourceLinks.find(x=>x.cardId===id)?.status,"insufficient",id);
+  }
+  assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-01").status,"insufficient");
+});
+
+test("the nasal length reference never substitutes for nasal bridge straightness", () => {
+  const observed=[...descriptors,{id:"nose.length",region:"鼻部纵向",measurement:"nose",ratio:.30,text:"照片中鼻部纵向比例相对偏长",caveat:"实验"}];
+  const reading=makeReading({...ok,descriptors:observed});
+  assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-LONG-01").status,"related-observation");
+  assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-01").status,"insufficient");
+  assert.match(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-LONG-01").historicalView,/不是对本人的健康或寿命预测/);
 });
