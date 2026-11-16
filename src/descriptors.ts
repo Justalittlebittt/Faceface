@@ -27,9 +27,13 @@ function category(
   value: number, lower: number, upper: number, margin: number,
   low: string, middle: string, high: string, borderline: string
 ): string {
-  // A measured ratio just above/below a provisional cutoff can change between
-  // browsers. Prefer a neutral description instead of fabricating certainty.
-  if (Math.abs(value - lower) <= margin || Math.abs(value - upper) <= margin) return borderline;
+  // A measured ratio near a cutoff is not a reliable categorical trait.
+  // The 0.003-wide additional guard prevents rounding/resize drift at the
+  // edge of our provisional band (observed .218 vs .220 on one image).
+  // This is a conservative display rule, NOT population/device calibration.
+  const displayGuard = margin + 0.003;
+  if (Math.abs(value - lower) <= displayGuard ||
+      Math.abs(value - upper) <= displayGuard) return borderline;
   return value < lower ? low : value > upper ? high : middle;
 }
 
