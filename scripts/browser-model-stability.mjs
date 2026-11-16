@@ -200,6 +200,17 @@ try {
   if (comparisons.some(c => Object.values(c.ratioDeltas).some(x => !Number.isFinite(x)))) {
     throw new Error("Non-finite or unparseable model measurement during robustness test");
   }
+  // This gate tests one pinned public image and specifically these mild
+  // transforms, not arbitrary people or extreme pose changes.
+  const changed = comparisons.filter(c =>
+    c.categoryChanges.length || c.relatedGained.length || c.relatedLost.length);
+  if (changed.length) {
+    throw new Error("M8 public-image regression: category/source flips detected " +
+      JSON.stringify(changed.map(c => ({
+        variant: c.variant, categories: c.categoryChanges,
+        relatedGained: c.relatedGained, relatedLost: c.relatedLost
+      }))));
+  }
   console.log("PASS M8: " + (snapshots.length) + " runs of one public portrait, " +
     engine + "; category flips and classical-link changes recorded for review");
 } finally {
