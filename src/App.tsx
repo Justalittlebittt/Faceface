@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
+import { comparePhotoAnalyses } from "./consistency";
 import { makeReading, readingAsText } from "./reading";
 import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from "./i18n";
 
@@ -34,6 +35,9 @@ export default function App() {
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<Phase>("idle");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  // Retain only the previous summary of user-chosen local analysis, never an
+  // earlier photo or landmark array. Reset/pagehide discards this comparison.
+  const [comparisonBaseline, setComparisonBaseline] = useState<Analysis | null>(null);
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
@@ -41,6 +45,8 @@ export default function App() {
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
   const reading = analysis ? makeReading(analysis, language) : null;
   const observations = analysis?.descriptors.map(d => localizeDescriptor(d, language)) ?? [];
+  const comparison = comparisonBaseline && analysis
+    ? comparePhotoAnalyses(comparisonBaseline, analysis) : null;
 
   useEffect(() => {
     document.documentElement.lang = language === "en" ? "en" : "zh-CN";
@@ -58,6 +64,7 @@ export default function App() {
     stopCamera();
     setPhase("idle");
     setAnalysis(null);
+    setComparisonBaseline(null);
     setError("");
     setShowMeasurements(false);
     setTiming(null);
@@ -95,6 +102,7 @@ export default function App() {
       }
       setPhase("idle");
       setAnalysis(null);
+      setComparisonBaseline(null);
       setTiming(null);
       setCameraAspect(null);
       setPhotoSource(null);
@@ -438,10 +446,62 @@ export default function App() {
                     </details>
                   </div>
                 )}
+                {comparison && (
+                  <section className="consistency-panel" aria-label={t(language, "compareTitle")}>
+                    <h3>{t(language, "compareTitle")}</h3>
+                    <div className="consistency-totals" role="status">
+                      <div><strong>{comparison.labelChangeCount} / {comparison.descriptors.length}</strong><span>{t(language, "compareLabels")}</span></div>
+                      <div><strong>{comparison.historicalChangeCount} / {comparison.historical.length}</strong><span>{t(language, "compareSources")}</span></div>
+                    </div>
+                    {comparison.labelChangeCount === 0 && comparison.historicalChangeCount === 0 && (
+                      <p className="privacy-detail">{t(language, "compareNone")}</p>
+                    )}
+                    <details className="consistency-details">
+                      <summary>{t(language, "compareDetails")}</summary>
+                      <div className="consistency-observations">
+                        {comparison.descriptors.map(item => (
+                          <article className={item.labelChanged ? "consistency-item consistency-changed" : "consistency-item"} key={item.id} data-field-id={item.id}>
+                            <strong>{localizeDescriptor(item.first, language).region}</strong>
+                            <p><span>{t(language, "compareFirst")}:</span> {localizeDescriptor(item.first, language).text}</p>
+                            <p><span>{t(language, "compareSecond")}:</span> {item.second ? localizeDescriptor(item.second, language).text : t(language, "compareMissing")}</p>
+                            {item.ratioDelta !== null && <small>Δ {item.ratioDelta.toFixed(3)} {t(language, "measurementQualifier")}</small>}
+                          </article>
+                        ))}
+                      </div>
+                      <h4>{t(language, "compareSourceChanges")}</h4>
+                      {comparison.historicalChangeCount === 0
+                        ? <p>{t(language, "compareNoSource")}</p>
+                        : comparison.historical.filter(item => item.changed).map(item => (
+                          <p className="consistency-source-change" key={item.cardId} data-source-id={item.cardId}>
+                            「{item.historicalTerm}」: {item.firstRelated ? t(language, "compareRelated") : t(language, "compareNotRelated")} → {item.secondRelated ? t(language, "compareRelated") : t(language, "compareNotRelated")}
+                          </p>
+                        ))}
+                    </details>
+                  </section>
+                )}
                 <div className="actions">
                   <button className="primary" onClick={() => void saveObservations()}>{t(language, "saveReport")}</button>
                   <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{t(language, showMeasurements ? "hideMeasurements" : "showMeasurements")}</button>
+                  <label className="secondary file-action">
+                    {t(language, "compareAction")}
+                    <input
+                      className="file-input"
+                      type="file"
+                      accept="image/*"
+                      aria-label={t(language, "compareInput")}
+                      onChange={event => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (!file) return;
+                        if (file.type.startsWith("image/") && file.size <= 12 * 1024 * 1024) {
+                          setComparisonBaseline(analysis);
+                        }
+                        void selectLocalPhoto(file);
+                      }}
+                    />
+                  </label>
                 </div>
+                <p className="privacy-detail">{t(language, "compareNotice")}</p>
                 <p className="disclaimer">{t(language, "disclaimer")}</p>
               </>
             )}
