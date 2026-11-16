@@ -115,7 +115,7 @@ try {
       const categories = {};
       observations.forEach((node, i) => {
         const measure = node.querySelector("small")?.textContent ?? "";
-        const ratio = /:\\s*([0-9]+(?:\\.[0-9]+)?)/.exec(measure);
+        const ratio = /:\s*([0-9]+(?:\.[0-9]+)?)/.exec(measure);
         if (!ratio) throw new Error("Unable to read measured ratio: " + measure);
         ratios[descriptorIds[i]] = Number(ratio[1]);
         categories[descriptorIds[i]] = node.querySelector("strong")?.textContent ?? "";
