@@ -162,3 +162,18 @@ test("missing upper or lower lip contour cannot be silently filled in", () => {
   const face=sample();face[14]={x:Number.NaN,y:.7};
   assert.equal(describeLandmarks([face],image).status,"poor-quality");
 });
+
+test("M8: tiny chin ratio drift near the measured band edge remains explicitly uncertain", () => {
+  const chinAt = ratio => {
+    const face = sample();
+    face[17] = { x:.5, y:.85-ratio*(.85-.15) };
+    const analysis = describeLandmarks([face], image);
+    assert.equal(analysis.status,"ok");
+    return analysis.descriptors.find(d=>d.id==="chin.height");
+  };
+  const original=chinAt(.218), resized=chinAt(.220);
+  assert.equal(original.ratio,.218);
+  assert.equal(resized.ratio,.220);
+  assert.equal(original.text,resized.text);
+  assert.match(original.text,/实验分类边界/);
+});
