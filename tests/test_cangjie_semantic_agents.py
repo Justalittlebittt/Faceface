@@ -41,7 +41,7 @@ class FakeCangjieModel:
             return {"candidates":[]}
         return {"candidates":[{
             "title":"传统口形描述",
-            "source_quote":"口須方大",
+            "quote_id":0,
             "summary":"古籍页面中出现传统口部形态词，需回原图校核。",
             "observability":"photo_partial",
             "interference":"角度和表情"
@@ -134,7 +134,7 @@ class CangjieSemanticTests(unittest.TestCase):
         self.put_ocr("nlc-44091",27,"口須方大，或細長。")
         record=page_evidence(self.workspace,[("nlc-44091",27)])[0]
         row={
-            "title":"口形","source_quote":"口須方大",
+            "title":"口形","quote_id":0,
             "summary":"古籍口形描述",
             "observability":"photo_partial","interference":"表情"
         }
@@ -143,10 +143,10 @@ class CangjieSemanticTests(unittest.TestCase):
         self.assertEqual(len(rejected),0)
         self.assertFalse(accepted[0]["quote_original_scan_verified"])
         self.assertFalse(accepted[0]["auto_activated_faceface_rule"])
-        row["source_quote"]="人必富貴"
+        row["quote_id"]=99
         accepted,rejected=validate_candidates({"candidates":[row]},record,"principle")
         self.assertEqual(len(accepted),0)
-        self.assertEqual(rejected[0]["reason"],"OCR_quote_not_found_on_scanned_page")
+        self.assertEqual(rejected[0]["reason"],"unknown_OCR_quote_ID")
 
     def test_real_agent_orchestrator_invokes_five_independent_roles_and_adler(self):
         self.put_ocr("nlc-44091",27,"口須方大，或細長。")
