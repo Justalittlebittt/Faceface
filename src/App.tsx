@@ -12,6 +12,12 @@ import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from ".
 
 type Phase = "idle" | "camera" | "analyzing" | "result";
 
+function evidenceLabel(value: "clear" | "borderline" | "unavailable" | undefined, language: Language) {
+  return t(language, value === "clear" ? "compareEvidenceClear" :
+    value === "borderline" ? "compareEvidenceBorderline" :
+    value === "unavailable" ? "compareEvidenceUnavailable" : "compareEvidenceUnknown");
+}
+
 function cameraFailure(cause: unknown, language: Language): string {
   if (cause instanceof DOMException) {
     if (cause.name === "NotAllowedError" || cause.name === "PermissionDeniedError") {
@@ -680,10 +686,27 @@ export default function App() {
                             <strong>{localizeDescriptor(item.first, language).region}</strong>
                             <p><span>{t(language, "compareFirst")}:</span> {localizeDescriptor(item.first, language).text}</p>
                             <p><span>{t(language, "compareSecond")}:</span> {item.second ? localizeDescriptor(item.second, language).text : t(language, "compareMissing")}</p>
+                            {item.first.certainty !== item.second?.certainty && (
+                              <p><span>{t(language, "compareEvidence")}:</span> {evidenceLabel(item.first.certainty, language)} → {evidenceLabel(item.second?.certainty, language)}</p>
+                            )}
                             {item.ratioDelta !== null && <small>Δ {item.ratioDelta.toFixed(3)} {t(language, "measurementQualifier")}</small>}
                           </article>
                         ))}
                       </div>
+                      {comparison.threeSections && (
+                        <section className="consistency-observations" aria-label={t(language, "compareThreeSections")}>
+                          <h4>{t(language, "compareThreeSections")}</h4>
+                          <p className="privacy-detail">{t(language, "compareSectionLimits")}</p>
+                          {comparison.threeSections.map(part => (
+                            <p className="consistency-source-change" key={part.id}>
+                              <strong>{t(language, part.id === "upper" ? "compareUpperZone" : part.id === "middle" ? "compareMiddleZone" : "compareLowerZone")}</strong>:{" "}
+                              {part.firstPercent === null ? t(language, "compareMissing") : part.firstPercent.toFixed(1) + "%"} →{" "}
+                              {part.secondPercent === null ? t(language, "compareMissing") : part.secondPercent.toFixed(1) + "%"}
+                              {part.deltaPoints !== null && <small> (Δ {part.deltaPoints.toFixed(1)} {language === "en" ? "percentage points" : "个百分点"})</small>}
+                            </p>
+                          ))}
+                        </section>
+                      )}
                       <h4>{t(language, "compareSourceChanges")}</h4>
                       {comparison.historicalChangeCount === 0
                         ? <p>{t(language, "compareNoSource")}</p>
