@@ -67,6 +67,7 @@ export type FaceReading = {
   heading: string;
   overview: string;
   patternSummary: string;
+  crossRegionStudy: { title: string; narrative: string } | null;
   observations: Descriptor[];
   sourceLinks: CulturalLink[];
   featuredLinks: CulturalLink[];
@@ -205,6 +206,50 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     .slice(0, 2)
     .map(item => item.link);
 
+  // M14: a true cross-region paragraph only exists when TWO independently
+  // source-checked, usable photo directions in DIFFERENT regions are present.
+  // It is not an extra ancient compound rule or a personality inference.
+  const crossRegionStudy = featuredLinks.length === 2 ? {
+    title: language === "en" ? "Reading across two facial regions" : "跨部位古籍文化并读",
+    narrative: language === "en"
+      ? "In this photograph, " + featuredLinks[0].observation + "; separately, " +
+        featuredLinks[1].observation + ". The checked text contains the independent terms \"" +
+        featuredLinks[0].historicalTerm + "\" and \"" + featuredLinks[1].historicalTerm +
+        "\" for these respective regions. Their combination has not been verified as a single classical type. These photo-only comparisons do not establish personality, health, fortune or life events."
+      : "这张照片中分别观察到：" + featuredLinks[0].observation + "；以及：" +
+        featuredLinks[1].observation + "。已核对的《麻衣相法》在不同部位分别使用「" +
+        featuredLinks[0].historicalTerm + "」和「" + featuredLinks[1].historicalTerm +
+        "」等外形用语。两处仅可独立作局部文化对照，尚无依据合成为一个古籍相型，也不能据此判断性格、健康、财运或人生经历。"
+  } : null;
+
+  // Select photographic descriptions from distinct visible regions. Put the
+  // source-supported measurements first, then fill gaps from other regions.
+  // Do NOT promote borderline/unusable measurements into a 'face pattern'.
+  const sourceMetricIds = featuredLinks.flatMap(link =>
+    cards.find(card => card.id === link.cardId)?.conditions.map(c => c.metric) ?? []);
+  const priorityIds = [...new Set([...sourceMetricIds,
+    "face.aspect", "eyes.spacing", "nose.length", "chin.height",
+    "mouth.width", "jaw.width", "eyes.openness", "nose.width", "mouth.corner"] )];
+  const selectedRegions = new Set<string>();
+  const observedOverview: string[] = [];
+  for (const id of priorityIds) {
+    const d = byId.get(id);
+    if (!d || d.usable === false || d.certainty === "borderline" ||
+        d.certainty === "unavailable" || !Number.isFinite(d.ratio)) continue;
+    const region = id.split(".")[0] === "chin" ? "jaw" : id.split(".")[0];
+    if (selectedRegions.has(region)) continue;
+    selectedRegions.add(region);
+    observedOverview.push(localizeDescriptor(d, language).text);
+    if (observedOverview.length === 4) break;
+  }
+  const patternSummary = observedOverview.length
+    ? (language === "en" ? "Across distinct visible regions of this photo: " : "本次照片的跨部位外观观察：") +
+      observedOverview.join(language === "en" ? "; " : "；") +
+      (language === "en" ? ". All are provisional observations of this picture." : "。以上仅为本次照片的实验性描述。")
+    : (language === "en"
+      ? "No stable cross-region photo description is available; borderline or unmeasurable regions are left undecided."
+      : "本次缺少足够可用的跨部位形态线索；临界或不可测部位不勉强判断。");
+
   const briefInsights = featuredLinks.length
     ? featuredLinks.map(link => language === "en"
       ? "This image shows: " + link.observation + ". The checked Mai Yi Xiang Fa phrase \"" +
@@ -274,13 +319,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
         " 项实验性形态描述，其中 " +
         sourceLinks.filter(link => link.status === "related-observation").length +
         " 项可联系到已核对的古籍形态用语，但都不足以判定完整的传统相型。",
-    patternSummary: (() => {
-      const chosen = ["face.aspect", "eyes.spacing", "nose.length", "chin.height"]
-        .map(id => byId.get(id)).filter((d): d is Descriptor => !!d)
-        .map(d => localizeDescriptor(d, language).text);
-      return (language === "en" ? "Across the face: " : "跨部位观察：") + chosen.join(language === "en" ? "; " : "；") +
-        (language === "en" ? ". These describe this photo only." : "。以上仅描述本次照片。");
-    })(),
+    patternSummary,
+    crossRegionStudy,
     observations: analysis.descriptors.map(d => localizeDescriptor(d, language)),
     sourceLinks,
     featuredLinks,
@@ -305,6 +345,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "SHORT REPORT",
       reading.overview,
       reading.patternSummary,
+      ...(reading.crossRegionStudy ? [reading.crossRegionStudy.title, reading.crossRegionStudy.narrative] : []),
       ...(reading.threeSections ? [
         reading.threeSections.title,
         reading.threeSections.summary,
@@ -358,6 +399,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "【简洁报告】",
     reading.overview,
     reading.patternSummary,
+    ...(reading.crossRegionStudy ? [reading.crossRegionStudy.title, reading.crossRegionStudy.narrative] : []),
     ...(reading.threeSections ? [
       reading.threeSections.title,
       reading.threeSections.summary,
