@@ -16,7 +16,14 @@ export type DescriptorDifference = {
   first: Descriptor;
   second: Descriptor | null;
   ratioDelta: number | null;
-  labelChanged: boolean;
+  labelChanged: boolean; // includes provisional reliability status changes
+};
+
+export type SectionDifference = {
+  id: "upper" | "middle" | "lower";
+  firstPercent: number | null;
+  secondPercent: number | null;
+  deltaPoints: number | null; // percentage points, not percent change
 };
 
 export type HistoricalDifference = {
@@ -32,7 +39,16 @@ export type PhotoConsistency = {
   historical: HistoricalDifference[];
   labelChangeCount: number;
   historicalChangeCount: number;
+  threeSections: SectionDifference[] | null;
 };
+
+// These are PHOTO-ONLY zones, not the historical hairline-based 三停.
+// Requiring a valid normalized triplet avoids reporting nonsensical percentages.
+function validSections(parts: Analysis["threeSections"]): parts is NonNullable<Analysis["threeSections"]> {
+  return !!parts && [parts.upper, parts.middle, parts.lower].every(n =>
+    Number.isFinite(n) && n > 0 && n < 1) &&
+    Math.abs(parts.upper + parts.middle + parts.lower - 1) <= 0.02;
+}
 
 export function comparePhotoAnalyses(first: Analysis, second: Analysis): PhotoConsistency | null {
   if (first.status !== "ok" || second.status !== "ok") return null;
@@ -47,7 +63,8 @@ export function comparePhotoAnalyses(first: Analysis, second: Analysis): PhotoCo
       ratioDelta: current && Number.isFinite(current.ratio) && Number.isFinite(d.ratio)
         ? Number(Math.abs(current.ratio - d.ratio).toFixed(3)) : null,
       labelChanged: !current || d.text !== current.text ||
-        (d.usable !== false) !== (current.usable !== false)
+        (d.usable !== false) !== (current.usable !== false) ||
+        d.certainty !== current.certainty
     };
   });
 
@@ -68,10 +85,25 @@ export function comparePhotoAnalyses(first: Analysis, second: Analysis): PhotoCo
     };
   });
 
+  const firstZones = validSections(first.threeSections) ? first.threeSections : null;
+  const secondZones = validSections(second.threeSections) ? second.threeSections : null;
+  const threeSections: SectionDifference[] | null = firstZones || secondZones
+    ? (["upper", "middle", "lower"] as const).map(id => {
+        const a = firstZones?.[id] ?? null;
+        const b = secondZones?.[id] ?? null;
+        return {
+          id,
+          firstPercent: a === null ? null : Math.round(a * 1000) / 10,
+          secondPercent: b === null ? null : Math.round(b * 1000) / 10,
+          deltaPoints: a === null || b === null ? null : Math.round(Math.abs(a - b) * 1000) / 10
+        };
+      }) : null;
+
   return {
     descriptors,
     historical,
     labelChangeCount: descriptors.filter(d => d.labelChanged).length,
-    historicalChangeCount: historical.filter(item => item.changed).length
+    historicalChangeCount: historical.filter(item => item.changed).length,
+    threeSections
   };
 }
