@@ -1,4 +1,4 @@
-name: M16.7 REAL 1925 scan Qwen3-VL CPU inference (no uploaded book text)
+name: M16.7 REAL single-page CPU Qwen3-VL feasibility (bounded, no book text)
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 jobs:
   real-local-vision-cpu:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 25
     env:
       OLLAMA_HOST: "127.0.0.1:11434"
       OLLAMA_NUM_PARALLEL: "1"
@@ -79,7 +79,7 @@ jobs:
           print("Model digest:",matched[0]["digest"])
           PY
 
-      - name: REAL ORIGINAL-IMAGE inference on three book sections plus second scan
+      - name: REAL ORIGINAL-IMAGE inference on one verified-excerpt original page
         shell: bash
         run: |
           python - <<'PY'
@@ -96,17 +96,13 @@ jobs:
           model="qwen3-vl:2b-instruct"
           w=ReviewWorkspace(corpus,temp/"private-ocr",temp/"private-reviewed",
                             draft_dir=drafts)
-          # Historical source pages 27, 35, 87 have vetted short excerpts.
-          # Second scanned fascicle page 40 has no vetted excerpt and is
-          # evaluated by transcription presence/provenance only.
-          original_pages=[
-              ("nlc-44091",27),
-              ("nlc-44091",35),
-              ("nlc-44091",87),
-              ("nlc-44092",40),
-          ]
-          engine=OllamaLoopback("http://127.0.0.1:11434",model,timeout=900)
-          result=run_batch(w,drafts,original_pages,engine,dpi=150,keep_going=True)
+          # The 16GB / 4-vCPU free runner is NOT a GPU. Start with one
+          # page known to contain FIVE separately checked original snippets.
+          # Bound inference output and image size before considering more pages.
+          original_pages=[("nlc-44091",27)]
+          engine=OllamaLoopback("http://127.0.0.1:11434",model,
+                               timeout=360,max_output_tokens=640)
+          result=run_batch(w,drafts,original_pages,engine,dpi=120,keep_going=True)
           catalog=json.loads(Path("src/knowledge/maiyi-source-checked-v5.json").read_text(encoding="utf-8"))
           pages=[]
           anchor_total=0
