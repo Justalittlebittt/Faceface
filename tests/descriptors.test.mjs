@@ -93,6 +93,8 @@ test("nearly identical eye geometry on opposite sides of a provisional cutoff st
   assert.equal(b.ratio, .221);
   assert.equal(a.text, b.text);
   assert.match(a.text, /分类边界/);
+  assert.equal(a.certainty,"borderline");
+  assert.equal(b.certainty,"borderline");
 });
 
 test("additional eye-gap, nose-length and chin-height fields respond independently", () => {
@@ -156,6 +158,7 @@ test("open mouth produces an explicit unusable lip descriptor, not a confident l
   assert.equal(reading.status,"ok");
   const lip=reading.descriptors.find(d=>d.id==="mouth.lip");
   assert.equal(lip.usable,false);
+  assert.equal(lip.certainty,"unavailable");
   assert.match(lip.text,/暂不判断唇部厚薄/);
 });
 test("missing upper or lower lip contour cannot be silently filled in", () => {
@@ -176,4 +179,35 @@ test("M8: tiny chin ratio drift near the measured band edge remains explicitly u
   assert.equal(resized.ratio,.220);
   assert.equal(original.text,resized.text);
   assert.match(original.text,/实验分类边界/);
+});
+
+test("M12: real descriptor pipeline emits structured confidence instead of inferring it from Chinese text",()=>{
+  const output=describeLandmarks([sample()],image);
+  assert.equal(output.status,"ok");
+  assert.equal(output.descriptors.length,10);
+  assert.ok(output.descriptors.every(d=>["clear","borderline","unavailable"].includes(d.certainty)));
+  for(const descriptor of output.descriptors){
+    if(descriptor.text.includes("边界")){
+      assert.equal(descriptor.certainty,"borderline",descriptor.id);
+    }
+  }
+});
+
+test("M12: approximate Three Sections are measured along the same real face-landmark photo axes",()=>{
+  const output=describeLandmarks([sample()],image);
+  assert.equal(output.status,"ok");
+  assert.ok(output.threeSections);
+  const parts=output.threeSections;
+  assert.ok(Math.abs(parts.upper+parts.middle+parts.lower-1)<.00001);
+  assert.ok(parts.upper>0&&parts.middle>0&&parts.lower>0);
+  // This is not the old book's hairline-to-brow ruler; in this synthetic
+  // photo, upper spans .15 -> .38, middle .38 -> .51, lower .51 -> .85.
+  assert.ok(Math.abs(parts.upper-(.23/.70))<.00001);
+  assert.ok(Math.abs(parts.middle-(.13/.70))<.00001);
+  assert.ok(Math.abs(parts.lower-(.34/.70))<.00001);
+  const invalid=sample();
+  invalid[168]={x:.5,y:.11}; // an inverted upper section must not be reported
+  const result=describeLandmarks([invalid],image);
+  assert.equal(result.status,"ok");
+  assert.equal(result.threeSections,undefined);
 });

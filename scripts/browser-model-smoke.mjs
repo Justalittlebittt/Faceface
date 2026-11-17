@@ -234,6 +234,9 @@ try {
     detailedCollapsed: !document.querySelector("details.source-details")?.open,
     historicalCards: document.querySelectorAll(".source-detail").length,
     historicalFrameworks: document.querySelectorAll(".framework-note").length,
+    threeSectionsVisible: document.querySelectorAll(".three-sections-reading").length,
+    threeSectionsParts: document.querySelectorAll(".three-sections-part").length,
+    threeSectionsHasCaveat: (document.querySelector(".three-sections-reading small")?.textContent || "").includes("发际线"),
     sourceLabels: [...document.querySelectorAll(".source-detail h4")].map(node => node.textContent),
     detailedReport: document.querySelector(".source-details")?.textContent || null,
     modelTiming: document.querySelector(".report [role=status]")?.textContent || null
@@ -247,7 +250,9 @@ try {
   if (diagnostics.descriptionCount !== 10 ||
       diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 2 ||
       diagnostics.briefInsightCount < 1 || !diagnostics.detailedCollapsed ||
-      diagnostics.historicalCards !== 9 || diagnostics.historicalFrameworks !== 2 ||
+      diagnostics.historicalCards !== 9 || diagnostics.historicalFrameworks !== 3 ||
+      diagnostics.threeSectionsVisible !== 1 || diagnostics.threeSectionsParts !== 3 ||
+      !diagnostics.threeSectionsHasCaveat ||
       !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
@@ -277,6 +282,8 @@ try {
       !savedText.includes("扫描 PDF 零起页52") ||
       !savedText.includes("扫描 PDF 零起页77") ||
       !savedText.includes("扫描 PDF 零起页34") ||
+      !savedText.includes("面上三停仔細看") ||
+      !savedText.includes("PDF零起页35") ||
       !savedText.includes("扫描 PDF 零起页27")) {
     throw new Error("Local report export is missing observed content or source provenance");
   }
@@ -318,6 +325,8 @@ try {
       !englishReport.includes("PDF zero-based page 52") ||
       !englishReport.includes("PDF zero-based page 77") ||
       !englishReport.includes("PDF zero-based page 34") ||
+      !englishReport.includes("Three face sections (approximate photo study)") ||
+      !englishReport.includes("PDF zero-based page 35") ||
       !englishReport.includes("What the historic text says")) {
     throw new Error("English report export missing original phrases or source caveats");
   }
