@@ -84,8 +84,9 @@ test("expanded narrative remains cross-region rather than repeating a fixed fate
     { id:"chin.height",region:"下巴纵向",measurement:"chin",ratio:.24,text:"照片中下巴纵向比例处于中间区间",caveat:"实验" }
   ]};
   const reading = makeReading(extended);
-  assert.match(reading.patternSummary, /跨部位观察/);
-  assert.match(reading.patternSummary, /双眼内眼角间距/);
+  assert.match(reading.patternSummary, /跨部位外观观察/);
+  assert.match(reading.patternSummary, /眼部开合比例/);
+  assert.match(reading.patternSummary, /鼻部纵向比例/);
   assert.match(readingAsText(reading), /下巴纵向比例/);
 });
 
@@ -337,4 +338,51 @@ test("M12: source-checked Three Sections adds a photo-specific, not fate-predict
   assert.match(readingAsText(en,"en"),/PDF zero-based page 35/);
   assert.doesNotMatch(zh.threeSections.summary,/富贵|贫贱|寿命/);
   assert.equal(makeReading(ok).threeSections,null);
+});
+
+
+test("M14: source-backed reading combines two DIFFERENT regions without inventing a compound face type", () => {
+  const input={...ok,descriptors:descriptors.map(d =>
+    d.id==="mouth.width" ? {...d,ratio:.53,text:"口部横向比例相对偏大",certainty:"clear"} : d)};
+  const zh=makeReading(input,"zh"),en=makeReading(input,"en");
+  assert.deepEqual(zh.featuredLinks.map(x=>x.cardId),["MY25-EYE-01","MY25-MOUTH-01"]);
+  assert.deepEqual(en.featuredLinks.map(x=>x.cardId),zh.featuredLinks.map(x=>x.cardId));
+  assert.ok(zh.crossRegionStudy);
+  assert.match(zh.crossRegionStudy.narrative,/或細長/);
+  assert.match(zh.crossRegionStudy.narrative,/口須方大/);
+  assert.match(zh.crossRegionStudy.narrative,/独立作局部文化对照/);
+  assert.match(zh.crossRegionStudy.narrative,/尚无依据合成为一个古籍相型/);
+  assert.match(en.crossRegionStudy.narrative,/independent terms/i);
+  assert.match(en.crossRegionStudy.narrative,/not been verified as a single classical type/i);
+  assert.match(readingAsText(zh),/跨部位古籍文化并读/);
+  assert.match(readingAsText(en,"en"),/Reading across two facial regions/);
+  assert.equal(zh.featuredLinks[0].source.pdf_page_zero_based,27);
+  assert.equal(zh.featuredLinks[1].source.pdf_page_zero_based,27);
+});
+
+test("M14: one region or no matched source does not fabricate cross-region classical readings",()=>{
+  assert.equal(makeReading(ok).crossRegionStudy,null);
+  const neutral={...ok,descriptors:descriptors.map(d=>
+    d.id==="eyes.openness" ? {...d,ratio:.24,text:"眼部开合比例居中"}:d)};
+  assert.equal(makeReading(neutral).crossRegionStudy,null);
+  const sameOrgan={...ok,descriptors:[
+    ...descriptors.map(d=>d.id==="mouth.width"?{...d,ratio:.55,text:"口部横向比例偏大"}:
+      d.id==="eyes.openness"?{...d,ratio:.26,text:"眼部开合比例居中"}:d),
+    {id:"mouth.corner",region:"口角",ratio:.62,measurement:"corner",text:"双侧口角上扬",caveat:"expression",certainty:"clear"}
+  ]};
+  assert.equal(makeReading(sameOrgan).crossRegionStudy,null);
+});
+
+test("M14: borderline and unavailable metrics never enter the across-face summary or source synthesis",()=>{
+  const input={...ok,descriptors:descriptors.map(d=>
+    d.id==="eyes.openness" ? {...d,certainty:"borderline",text:"眼部开合比例接近实验分类边界"}:
+    d.id==="mouth.width" ? {...d,certainty:"unavailable",usable:false,text:"口部不可测"}:
+    d.id==="face.aspect" ? {...d,certainty:"clear"}:d)};
+  const reading=makeReading(input);
+  assert.doesNotMatch(reading.patternSummary,/眼部开合比例接近实验分类边界|口部不可测/);
+  assert.match(reading.patternSummary,/面部长宽比例相对均衡/);
+  assert.equal(reading.featuredLinks.length,0);
+  assert.equal(reading.crossRegionStudy,null);
+  const allUnusable={...input,descriptors:input.descriptors.map(d=>({...d,certainty:"unavailable",usable:false}))};
+  assert.match(makeReading(allUnusable).patternSummary,/缺少足够可用/);
 });
