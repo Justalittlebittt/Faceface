@@ -65,7 +65,7 @@ button:focus-visible { outline: 3px solid #a9d4bf; outline-offset: 3px; }
    Its native SVG aspect ratio is retained at both PC and phone sizes. */
 .face-guide-layer { position: absolute; inset: 0; display: flex; align-items: center;
   justify-content: center; pointer-events: none; z-index: 1; }
-.face-guide-svg { display: block; height: 85%; width: auto; max-width: 84%;
+.face-guide-svg { display: block; height: 95%; width: auto; max-width: 96%;
   overflow: visible; color: #fa696b; transition: color .18s ease; }
 .face-guide-svg--ready { color: #67e69b; }
 .face-guide-outline { fill: none; stroke: currentColor; stroke-width: 4.5;
@@ -137,7 +137,7 @@ footer {
   .stage-header h2 { font-size: 18px; }
   .privacy-mark { font-size: 10px; padding: 7px 8px; }
   .camera-stage { max-width: 100%; aspect-ratio: 3 / 4; }
-  .face-guide-svg { height: 86%; max-width: 82%; }
+  .face-guide-svg { height: 94%; max-width: 96%; }
   .guide-status { bottom: 8px; font-size: 12px; }
   .actions { flex-direction: column; }
   /* Keep capture/retake buttons reachable when a portrait camera fills the screen. */
@@ -239,3 +239,19 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
 .consistency-item small { font-size: 11px; color: #c2d2c6; }
 .consistency-source-change { font-size: 13px; line-height: 1.8; }
 @media (max-width: 650px) { .consistency-panel { padding: 14px; } .consistency-totals strong { font-size: 21px; } }
+
+/* M11: full-stage camera overlay following the REAL detected face, not a
+   fixed-size frame. Clockwise green scan is driven by uninterrupted hold. */
+.live-face-svg { position: absolute; inset: 0; width: 100%; height: 100%;
+  display: block; overflow: hidden; pointer-events: none; }
+.live-face-outline { fill: none; stroke: rgba(255,119,121,.77); stroke-width: 2.7;
+  stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 7; }
+.live-face-progress, .live-face-progress-glow { fill: none;
+  stroke: #62ef9d; stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke-dashoffset .17s linear; }
+.live-face-progress { stroke-width: 4.2; }
+.live-face-progress-glow { stroke-width: 10; opacity: .25; filter: blur(2px); }
+.live-face-svg--ready .live-face-outline { opacity: .14; }
+@media (prefers-reduced-motion: reduce) {
+  .live-face-progress, .live-face-progress-glow { transition: none; }
+}

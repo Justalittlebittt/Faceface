@@ -3,7 +3,10 @@ import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
 import { comparePhotoAnalyses } from "./consistency";
 import { FaceGuideOverlay } from "./FaceGuideOverlay";
-import { advanceHold, checkFrontGuide, EMPTY_HOLD, READY_HOLD_MS, type GuideMode, type GuideState } from "./faceGuide";
+import { LiveFaceOverlay } from "./LiveFaceOverlay";
+import { advanceStationaryHold, clockwiseFacePath, projectFaceGuide,
+  smoothFacePoints, EMPTY_HOLD, READY_HOLD_MS,
+  type GuideMode, type GuideState, type FaceAnchor, type XY } from "./faceGuide";
 import { makeReading, readingAsText } from "./reading";
 import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from "./i18n";
 
@@ -30,7 +33,8 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const guideSvgRef = useRef<SVGSVGElement>(null);
+  const previousFacePointsRef = useRef<XY[] | null>(null);
+  const faceAnchorRef = useRef<FaceAnchor | null>(null);
   const guideFrameRef = useRef<number | null>(null);
   const guideHoldRef = useRef(EMPTY_HOLD);
   const guideReadyRef = useRef(false);
@@ -53,6 +57,7 @@ export default function App() {
   const [guideStatus, setGuideStatus] = useState<GuideState>("loading");
   const [guideProgress, setGuideProgress] = useState(0);
   const [guideReady, setGuideReady] = useState(false);
+  const [liveFace, setLiveFace] = useState({ path: "", width: 1, height: 1 });
   const [photoSource, setPhotoSource] = useState<"camera" | "file" | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
   const reading = analysis ? makeReading(analysis, language) : null;
@@ -70,6 +75,8 @@ export default function App() {
     guideFrameRef.current = null;
     guideHoldRef.current = EMPTY_HOLD;
     guideReadyRef.current = false;
+    previousFacePointsRef.current = null;
+    faceAnchorRef.current = null;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -89,6 +96,7 @@ export default function App() {
     setGuideStatus("loading");
     setGuideProgress(0);
     setGuideReady(false);
+    setLiveFace({ path: "", width: 1, height: 1 });
     guideModeRef.current = "front";
     setGuideMode("front");
     const canvas = canvasRef.current;
@@ -130,6 +138,7 @@ export default function App() {
       setGuideStatus("loading");
       setGuideProgress(0);
       setGuideReady(false);
+      setLiveFace({ path: "", width: 1, height: 1 });
       guideModeRef.current = "front";
       setGuideMode("front");
       setError("");
@@ -158,6 +167,9 @@ export default function App() {
     setGuideProgress(0);
     setGuideReady(false);
     guideHoldRef.current = EMPTY_HOLD;
+    faceAnchorRef.current = null;
+    previousFacePointsRef.current = null;
+    setLiveFace({ path: "", width: 1, height: 1 });
     guideModeRef.current = "front";
     setGuideMode("front");
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -226,6 +238,9 @@ export default function App() {
     setGuideMode(mode);
     guideHoldRef.current = EMPTY_HOLD;
     guideReadyRef.current = false;
+    faceAnchorRef.current = null;
+    previousFacePointsRef.current = null;
+    setLiveFace({ path: "", width: 1, height: 1 });
     setGuideReady(false);
     setGuideProgress(0);
     setGuideStatus(mode === "side" ? "side-preview" : "loading");
@@ -242,14 +257,16 @@ export default function App() {
       if (request !== requestRef.current || !streamRef.current) return;
       const video = videoRef.current;
       const stage = stageRef.current;
-      const svg = guideSvgRef.current;
+
       if (guideModeRef.current === "side") {
         if (guideReadyRef.current) {
           guideReadyRef.current = false;
           setGuideReady(false);
         }
         guideHoldRef.current = EMPTY_HOLD;
-      } else if (video && stage && svg && video.readyState >= 2 &&
+        faceAnchorRef.current = null;
+        previousFacePointsRef.current = null;
+      } else if (video && stage && video.readyState >= 2 &&
                  video.videoWidth && video.videoHeight && now - lastRun >= 250) {
         lastRun = now;
         try {
@@ -258,19 +275,37 @@ export default function App() {
             const r = element.getBoundingClientRect();
             return { x: r.x, y: r.y, width: r.width, height: r.height };
           };
-          const result = checkFrontGuide(
+          const stageBox = box(stage);
+          const result = projectFaceGuide(
             detected.faceLandmarks, { width: video.videoWidth, height: video.videoHeight },
-            box(stage), box(svg), true
+            stageBox, true
           );
-          const hold = advanceHold(guideHoldRef.current, now, result.state === "aligned");
-          guideHoldRef.current = hold;
-          guideReadyRef.current = hold.complete;
-          setGuideStatus(result.state);
-          setGuideProgress(hold.progress);
-          setGuideReady(hold.complete);
+          const tracking = advanceStationaryHold(
+            guideHoldRef.current, faceAnchorRef.current,
+            result.anchor, now, result.state === "aligned"
+          );
+          const smoothed = result.points.length
+            ? smoothFacePoints(tracking.moved ? null : previousFacePointsRef.current,
+                result.points)
+            : [];
+          previousFacePointsRef.current = smoothed.length ? smoothed : null;
+          faceAnchorRef.current = tracking.anchor;
+          guideHoldRef.current = tracking.hold;
+          guideReadyRef.current = tracking.hold.complete;
+          setLiveFace({
+            path: clockwiseFacePath(smoothed),
+            width: stageBox.width,
+            height: stageBox.height
+          });
+          setGuideStatus(tracking.moved ? "moving" : result.state);
+          setGuideProgress(tracking.hold.progress);
+          setGuideReady(tracking.hold.complete);
         } catch (cause) {
           // A model failure cannot silently make the frame appear ready.
           guideHoldRef.current = EMPTY_HOLD;
+          faceAnchorRef.current = null;
+          previousFacePointsRef.current = null;
+          setLiveFace({ path: "", width: 1, height: 1 });
           guideReadyRef.current = false;
           setGuideProgress(0);
           setGuideReady(false);
@@ -460,8 +495,10 @@ export default function App() {
             {phase === "analyzing" && <div className="processing-layer" role="status">{t(language, "analyzing")}<small>{t(language, "analyzingHint")}</small></div>}
             {phase === "camera" && (
               <div className="face-guide-layer">
-                <FaceGuideOverlay ref={guideSvgRef} mode={guideMode}
-                  ready={guideMode === "front" && guideReady} progress={guideProgress} />
+                {guideMode === "front"
+                  ? <LiveFaceOverlay path={liveFace.path} frameWidth={liveFace.width}
+                      frameHeight={liveFace.height} progress={guideProgress} ready={guideReady} />
+                  : <FaceGuideOverlay mode="side" ready={false} progress={0} />}
                 <div className={"guide-status" + (guideReady ? " guide-status--ready" : "")}
                      role="status" aria-live="polite" data-guide-status={guideReady ? "ready" : guideStatus}>
                   {guideMode === "side" ? t(language, "guideSideNotice") :
@@ -477,6 +514,7 @@ export default function App() {
                       "too-small": "guideTooSmall",
                       "too-large": "guideTooLarge",
                       outside: "guideOutside",
+                      moving: "guideMoving",
                       "side-preview": "guideSideNotice"
                     } as const)[guideStatus])}
                 </div>
