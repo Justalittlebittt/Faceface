@@ -325,7 +325,7 @@ try {
       !englishReport.includes("PDF zero-based page 52") ||
       !englishReport.includes("PDF zero-based page 77") ||
       !englishReport.includes("PDF zero-based page 34") ||
-      !englishReport.includes("Three Sections (approximate photo study)") ||
+      !englishReport.includes("Three face sections (approximate photo study)") ||
       !englishReport.includes("PDF zero-based page 35") ||
       !englishReport.includes("What the historic text says")) {
     throw new Error("English report export missing original phrases or source caveats");
