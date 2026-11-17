@@ -1,0 +1,119 @@
+name: M16 Cangjie source-corpus gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-corpus.yml"
+      - "scripts/cangjie_corpus_stage.py"
+      - "tests/test_cangjie_corpus.py"
+      - "src/knowledge/maiyi-source-checked-v5.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-corpus-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install source inspection tools and Cangjie YAML dependency
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet pyyaml
+
+      - name: Deterministic staging tests (no OCR, no AI outputs)
+        run: python -m unittest discover -s tests -p test_cangjie_corpus.py -v
+
+      - name: Fetch and pin official Cangjie source
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git "$RUNNER_TEMP/cangjie-upstream"
+          git -C "$RUNNER_TEMP/cangjie-upstream" checkout --quiet --detach a28de55ba881b9928956a55048f743f7a9e3b23e
+          test "$(git -C "$RUNNER_TEMP/cangjie-upstream" rev-parse HEAD)" = "a28de55ba881b9928956a55048f743f7a9e3b23e"
+          python "$RUNNER_TEMP/cangjie-upstream/scripts/cangjie.py" doctor | tee "$RUNNER_TEMP/cangjie-doctor.log"
+
+      - name: Download BOTH official public 1925 scan fascicles (ephemeral)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/maiyi-scans"
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-scans/part1.pdf"
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-scans/part2.pdf"
+          test -s "$RUNNER_TEMP/maiyi-scans/part1.pdf"
+          test -s "$RUNNER_TEMP/maiyi-scans/part2.pdf"
+
+      - name: Build full 268-page SCAN manifest, reviewed-text gate and sample input
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/maiyi-transcripts"
+          python scripts/cangjie_corpus_stage.py \
+            --scan-dir "$RUNNER_TEMP/maiyi-scans" \
+            --transcripts-dir "$RUNNER_TEMP/maiyi-transcripts" \
+            --checked-cards src/knowledge/maiyi-source-checked-v5.json \
+            --out-dir "$RUNNER_TEMP/maiyi-audit"
+
+      - name: Execute OFFICIAL Cangjie deterministic preprocessing on EXISTING short excerpts
+        shell: bash
+        run: |
+          python "$RUNNER_TEMP/cangjie-upstream/scripts/build_chunks.py" \
+            "$RUNNER_TEMP/maiyi-audit/prechecked-excerpts-pilot.md" \
+            --sidecar "$RUNNER_TEMP/cangjie-sidecar" \
+            --source-id "faceface-v5-checked-excerpts-PILOT" \
+            --max-chars 1200
+
+      - name: Assert audit counters and Cangjie chunks are genuine (not distillation)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          tmp=Path(os.environ["RUNNER_TEMP"])
+          audit=json.loads((tmp/"maiyi-audit"/"corpus-audit.json").read_text(encoding="utf-8"))
+          pages=json.loads((tmp/"maiyi-audit"/"scan-page-index.json").read_text(encoding="utf-8"))
+          chunks=[json.loads(x) for x in (tmp/"cangjie-sidecar"/"chunks"/"chunks.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+          assert audit["scan_page_count"] == 268
+          assert len(pages) == 268 and len({x["page_id"] for x in pages}) == 268
+          assert [s["page_count"] for s in audit["source_files"]] == [153,115]
+          assert audit["page_text_status_counts"] == {"not_transcribed":268,"unreviewed":0,"reviewed":0}
+          assert audit["already_checked_short_excerpt_fixture_count"] == 13
+          assert audit["agent_cangjie_extraction_performed"] is False
+          assert audit["ready_for_full_book_extraction"] is False
+          assert chunks and all(c["source_id"] == "faceface-v5-checked-excerpts-PILOT" for c in chunks)
+          print("Actual originals verified: 2 PDF files / 268 pages; original full-book transcribed pages: 0")
+          print("Pinned official Cangjie doctor: passed; build_chunks produced",len(chunks),"pilot-only chunks")
+          print("Original book AI extraction NOT run; no user or face photos involved.")
+          PY
+
+      # Upload metadata and task sheet only; NEVER full scans, OCR, faces or text archives.
+      - name: Prepare safe source-audit artifact
+        if: always()
+        run: |
+          mkdir -p cangjie-audit-public
+          for name in corpus-audit.json scan-page-index.json CANGJIE_AGENT_TASKS.md; do
+            if test -f "$RUNNER_TEMP/maiyi-audit/$name"; then
+              cp "$RUNNER_TEMP/maiyi-audit/$name" cangjie-audit-public/
+            fi
+          done
+          if test -f "$RUNNER_TEMP/cangjie-doctor.log"; then
+            cp "$RUNNER_TEMP/cangjie-doctor.log" cangjie-audit-public/
+          fi
+
+      - name: Preserve public-source hashes, page coverage and handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-cangjie-source-audit-no-book-text
+          path: cangjie-audit-public/
+          if-no-files-found: warn
+          retention-days: 14
