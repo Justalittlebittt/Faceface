@@ -1,0 +1,88 @@
+name: M16.4 PP-OCRv5 original-scan benchmark (unreviewed)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-paddleocr-benchmark.yml"
+      - "scripts/cangjie_paddleocr_benchmark.py"
+      - "tests/test_cangjie_paddleocr_benchmark.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test metadata, schema and vertical column order without model download
+        run: python -m unittest discover -s tests -p 'test_cangjie_paddleocr_benchmark.py' -v
+
+  compare-original-pages:
+    needs: adapter-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { source: nlc-44091, pdf: part1.pdf }
+          - { source: nlc-44092, pdf: part2.pdf }
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned PaddlePaddle CPU and PP-OCRv5 engine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+          python - <<'PY'
+          import paddle, paddleocr
+          print("CPU PaddlePaddle:",paddle.__version__)
+          print("PaddleOCR imported successfully")
+          PY
+
+      - name: Download original scan (ephemeral, never publish PDF/text)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/m16-scan"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/m16-scan/${{ matrix.pdf }}"
+          test -s "$RUNNER_TEMP/m16-scan/${{ matrix.pdf }}"
+
+      - name: ACTUAL PP-OCRv5 inference on SAME M16.3 original scan pages
+        run: |
+          python -m scripts.cangjie_paddleocr_benchmark \
+            --scan "$RUNNER_TEMP/m16-scan/${{ matrix.pdf }}" \
+            --source "${{ matrix.source }}" \
+            --catalog src/knowledge/maiyi-source-checked-v5.json \
+            --out "m16-paddle-${{ matrix.source }}.json"
+
+      - name: Upload ONLY OCR page statistics and anchor counts, never page images/text
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-paddleocr-metadata-${{ matrix.source }}
+          path: m16-paddle-*.json
+          retention-days: 14
+          if-no-files-found: warn
