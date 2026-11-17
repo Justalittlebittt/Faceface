@@ -84,7 +84,7 @@ try {
         const srcHeight = image.naturalHeight / zoom;
         const paint = () => context.drawImage(image,
           (image.naturalWidth - srcWidth) / 2,
-          (image.naturalHeight - srcHeight) / 2,
+          (image.naturalHeight - srcHeight) * 0.25,
           srcWidth, srcHeight, 0, 0, canvas.width, canvas.height);
         paint();
         const stream = canvas.captureStream(15);
@@ -137,6 +137,7 @@ try {
     } catch (cause) {
       const diagnostic = await page.evaluate(() => ({
         guide: document.querySelector(".guide-status")?.getAttribute("data-guide-status"),
+        reason: document.querySelector(".guide-status")?.getAttribute("data-guide-reason"),
         hint: document.querySelector(".guide-status")?.textContent,
         error: document.querySelector(".error-message")?.textContent,
         videoSize: (() => { const v=document.querySelector("video");return v ? [v.videoWidth,v.videoHeight,v.readyState,v.currentTime] : null; })(),
