@@ -160,14 +160,16 @@ def main() -> None:
     parser.add_argument("--scan-dir", required=True, type=Path)
     parser.add_argument("--ocr-dir", required=True, type=Path)
     parser.add_argument("--reviewed-dir", required=True, type=Path)
+    parser.add_argument("--draft-dir", type=Path, help="Private M16.6 vision-agent draft location")
     parser.add_argument("--port", default=8765, type=int)
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error("Port must be 1024..65535")
-    workspace = ReviewWorkspace(args.scan_dir, args.ocr_dir, args.reviewed_dir)
+    workspace = ReviewWorkspace(args.scan_dir, args.ocr_dir, args.reviewed_dir,
+                                draft_dir=args.draft_dir)
     server = ReviewServer(args.port, workspace)
     print(f"Faceface PRIVATE local scan review: http://127.0.0.1:{args.port}")
-    print("No internet service or OCR API; all review text remains on THIS computer.")
+    print("No internet service or OCR API; all review text and agent drafts remain on THIS computer.")
     print(json.dumps(workspace.summary(), ensure_ascii=False))
     try:
         server.serve_forever()
