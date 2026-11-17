@@ -24,7 +24,7 @@ CONFIGS = (
     ("baseline_chi_vert_170", 170, "chi_tra_vert", 5, False),
     ("crop_chi_vert_220", 220, "chi_tra_vert", 5, True),
     ("crop_chi_vert_psm3_220", 220, "chi_tra_vert", 3, True),
-    ("crop_hant_vert_220", 220, "script/HanT_vert", 5, True),
+    ("crop_hant_vert_220", 220, "HanT_vert", 5, True),
 )
 SECOND_SCAN_TEST_PAGES = (10, 40, 80)
 
