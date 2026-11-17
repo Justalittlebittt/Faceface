@@ -189,6 +189,45 @@ python -m scripts.cangjie_vision_draft_audit --scan-dir C:/faceface-corpus/scans
 
 **本轮真实CI覆盖口径：** GitHub Actions实际下载原版两份PDF、核实源文件并生成268个任务，从两份原PDF渲染图片，另用**本机模拟的Ollama HTTP服务**测试图像base64、JSON Schema、续跑、失效与不晋升。**CI并未下载运行Qwen3-VL或执行268页AI转录，也未取得任何真人完整页校勘（0/268）**。只有本地用户启用实际模型运行后才会产生真实Agent草稿；必须提供运行报告而非口头宣称。
 
+## M16.7｜已在真实1925原版两份PDF完成PP-OCRv5整书识别，并建立未校勘语料到官方仓颉分块的连接
+
+**实际工程：[PR #29](https://github.com/Justalittlebittt/Faceface/pull/29)。**
+
+- **[真实全书 OCR Action #44058499243](https://github.com/Justalittlebittt/Faceface/actions/runs/44058499243)**：使用固定原版的两份扫描文件，六个独立分片执行 **PP-OCRv5 真实CPU推理268/268页**；268页均有非空候选，共 **53,977个未经校勘汉字**。精确SHA256、零起页ID和页数审计通过；没有遗漏或重复页，`human_reviewed_pages=0`、`full_book_agent_extraction_performed=false`。过去Tesseract产字51,101，但不能从53,977比51,101多推断整页识别更准确。
+- **为何不选2B视觉模型为主OCR：** [真实四页Qwen转录CI #44054742425](https://github.com/Justalittlebittt/Faceface/actions/runs/44054742425) 只有1/4页得到符合结构的全页草稿，3页因长JSON输出被截断；成功页检出了该页2/2段已核查短句，但不能推断该页准确率。缩减输出的单页试验也失败。改为版面分类后[3/3页输出有效JSON](https://github.com/Justalittlebittt/Faceface/actions/runs/44058070763)，却**3页全部表示`uncertain`**。因此不继续消耗免费CPU让小型VLM写长篇原文；保留其后续辅助高风险图谱工作的可能，正文采用PP-OCRv5候选。
+- **[真实OCR脚本](../scripts/cangjie_paddleocr_candidates.py)** 可在用户Windows本机对全部两份原书持续生成 `paddle-ocr/transcripts/nlc-44091/027.txt` 等候选，逐页保存正确的原PDF SHA256、`candidate_text_sha256`、OCR引擎及置信度字段，且全部 `requires_manual_page_review=true`、`eligible_for_cangjie_verified_corpus=false`。**运行于GitHub Actions的识别原文只存在临时Runner；没有持久公开仓库或长期私有工作区**。应在本机工作区运行以下命令，才能实际保留53,977字规模的可续跑研究语料，产生数字可能因模型包及环境改变。
+- **[私有仓颉工作语料组装器](../scripts/cangjie_working_corpus.py)** 从两份原PDF、逐页来源匹配的候选及人工已核实原文，生成`working-corpus-OCR-UNVERIFIED.md`和每页状态台账：`ocr_unreviewed/reviewed/missing_or_invalid`。带 `--cangjie-root` 时验证固定Cangjie commit并真正运行其原版 `scripts/build_chunks.py`。**[CI #44059580189](https://github.com/Justalittlebittt/Faceface/actions/runs/44059580189) 已执行原版chunker并产生2个仅供联调的未核验chunk**，尚未让官方Agent实际读完整268页语料，未进行Adler/五类Agent候选提取。
+- **进入下一阶段的具体策略：** 允许未校勘的全文用于仓颉 **`source_unverified`候选挖掘**，而非必须先让人手打/审核全部268页；对最终准备让照片触发的每条古籍形态规则单独核原页，核对旧字形、必要及干扰条件，只有通过的人像可见条件才纳入版本化发布库。纯图谱/模糊页必须标记，绝不把机器文字冒充原著确证内容。印刷五卷与这两份扫描PDF的页码映射仍是单独缺口。
+
+### Windows / Codex：将已成功跑通的全书OCR在私有目录持久化并生成仓颉输入
+
+在Faceface项目仓库根目录运行；确保同一1925年版本的`part1.pdf`和`part2.pdf`保存到`C:/faceface-corpus/scans/`，电脑已装Python3.11及Windows Poppler（`pdfinfo.exe`、`pdftoppm.exe`可在PATH找到）。经PaddleOCR官方文档验证的CPU版本安装命令为：
+
+~~~powershell
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+python -m pip install paddleocr==3.3.2 pyyaml
+$env:PADDLE_PDX_MODEL_SOURCE="BOS"
+python -c "import paddle; print(paddle.__version__)"
+~~~
+
+执行两份固定PDF全文识别（**本机模型及Poppler运行需实际验证，不把Linux CI成功冒充用户Windows已安装通过**）：
+
+~~~powershell
+python -m scripts.cangjie_paddleocr_candidates --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/paddle-ocr --source nlc-44091
+python -m scripts.cangjie_paddleocr_candidates --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/paddle-ocr --source nlc-44092
+~~~
+
+取得官方仓颉已审核的固定版本并组装私有研究语料：
+
+~~~powershell
+git clone https://github.com/kangarooking/cangjie-skill.git C:/faceface-corpus/cangjie-skill
+git -C C:/faceface-corpus/cangjie-skill checkout a28de55ba881b9928956a55048f743f7a9e3b23e
+python C:/faceface-corpus/cangjie-skill/scripts/cangjie.py doctor
+python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/paddle-ocr --reviewed-dir C:/faceface-corpus/reviewed --out-dir C:/faceface-corpus/cangjie-working --cangjie-root C:/faceface-corpus/cangjie-skill
+~~~
+
+**私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
