@@ -51,6 +51,7 @@ export default function App() {
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
   const [guideMode, setGuideMode] = useState<GuideMode>("front");
   const [guideStatus, setGuideStatus] = useState<GuideState>("loading");
+  const [guideReason, setGuideReason] = useState("");
   const [guideProgress, setGuideProgress] = useState(0);
   const [guideReady, setGuideReady] = useState(false);
   const [photoSource, setPhotoSource] = useState<"camera" | "file" | null>(null);
@@ -266,6 +267,7 @@ export default function App() {
           guideHoldRef.current = hold;
           guideReadyRef.current = hold.complete;
           setGuideStatus(result.state);
+          setGuideReason(result.reason ?? "");
           setGuideProgress(hold.progress);
           setGuideReady(hold.complete);
         } catch (cause) {
@@ -463,7 +465,8 @@ export default function App() {
                 <FaceGuideOverlay ref={guideSvgRef} mode={guideMode}
                   ready={guideMode === "front" && guideReady} progress={guideProgress} />
                 <div className={"guide-status" + (guideReady ? " guide-status--ready" : "")}
-                     role="status" aria-live="polite" data-guide-status={guideReady ? "ready" : guideStatus}>
+                     role="status" aria-live="polite" data-guide-status={guideReady ? "ready" : guideStatus}
+                     data-guide-reason={guideReason}>
                   {guideMode === "side" ? t(language, "guideSideNotice") :
                     guideReady ? t(language, "guideReady") :
                     guideStatus === "aligned" ?
