@@ -228,6 +228,30 @@ python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --o
 
 **私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
 
+## M16.8｜正式启动仓颉原版提示词驱动的AI知识提取（不再只有确定性分块）
+
+**真实执行代码：** [`scripts/cangjie_semantic_agents.py`](../scripts/cangjie_semantic_agents.py)；[仓颉Stage0+五提取器真实模型CI](../.github/workflows/cangjie-real-semantic-agents.yml)；[PR #30](https://github.com/Justalittlebittt/Faceface/pull/30)。
+
+此前`cangjie.py doctor`和`build_chunks.py`虽然是真正运行的官方确定性工具，却**不是语言模型进行的知识蒸馏**。M16.8增加真正的模型推理，从固定 SHA 的1925年原PDF与逐页OCR候选中取得上下文，在`kangarooking/cangjie-skill@a28de55ba881b9928956a55048f743f7a9e3b23e`原版提示文件指导下分别运行：
+
+- **Stage0 Adler研究试点：** 加载官方`methodology/01-stage0-adler.md`，从实得OCR抽取结构/术语/局限等假说。即使该程序一次拿到268页，当前轻量模型输入采用小样本上下文，也只能输出`BOOK_OVERVIEW_SOURCE_UNVERIFIED_PILOT.json`：**不可谎称已生成完整全书BOOK_OVERVIEW**。
+- **Stage1 五类独立提取：** 分别读取原版`framework-extractor.md`、`principle-extractor.md`、`case-extractor.md`、`counter-example-extractor.md`、`glossary-extractor.md`；无并行Agent时按官方允许的独立串行后备方案调用**真实本机Ollama文本文模型**（`qwen2.5:1.5b-instruct`）。每个角色只看到指定原书页和它自己完整角色提示，不接收其它角色提取结果。**不强迫每个角色非空**：书中没有真实案例就可返回空数组，图谱/命名相形不自称真实人物事件。
+- **第一层机器来源检验：** 每个候选的`source_quote`必须是**本页OCR中的连续汉字子串**（标点/换行可不同，繁简不偷换）；页码、原PDF SHA、OCR文本 SHA、证据状态附在候选中。找不到就剔除，不允许“模型知道的古籍原文”冒充来源。该核验只证明**OCR字串上有它**，不证明扫描原书如此写；所有未校勘条目仍`source_unverified`、`needs_original_image_review_before_publication=true`。
+- **私有研究数据：** OCR原文、候选短引文与Agent解释只写`--out-dir`所指定的个人/CI临时目录，**绝不自动进入Faceface的10张已核实的上线规则、报告文案或网站仓库**。CI只留执行统计与失败计数，不上传整书正文、扫描图像或OCR短引文。
+
+Windows本机要求已完成M16.7的`C:/faceface-corpus/paddle-ocr/transcripts/`私有全文候选准备和固定仓颉版本检出，再运行：
+
+~~~powershell
+ollama pull qwen2.5:1.5b-instruct
+# 先用多种原文页试点；本机Ollama应在127.0.0.1:11434运行
+python -m scripts.cangjie_semantic_agents --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/paddle-ocr --reviewed-dir C:/faceface-corpus/reviewed --upstream-root C:/faceface-corpus/cangjie-skill --out-dir C:/faceface-corpus/cangjie-agent-research --model qwen2.5:1.5b-instruct --pages nlc-44091:p027,nlc-44091:p087,nlc-44092:p040
+
+# 去掉 --pages 将对整套268个原PDF页索引逐页运行5个独立提取器
+# 注意：CPU上1340次潜在模型请求可能很耗时，先检验试点质量；机器必须实际有已保存OCR
+~~~
+
+**关键后续:** 这里已经从“只对十几条引用做确定性分块”前进一步到真实AI提取，但尚需：持久保存268页OCR于私有目录、可断点续跑的全书多页模型任务、覆盖审计、Adler全局分层综合、官方Stage1.5三重验证、图谱/异体字对图校勘、候选与现代可观察照片的有效映射。模型对原文样本推理不能伪装成五卷全部蒸馏已完成。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
