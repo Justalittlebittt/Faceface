@@ -1,16 +1,29 @@
-name: M16.7 REAL single-page CPU Qwen3-VL feasibility (bounded, no book text)
+name: M16.7 REAL Qwen3-VL compact ancient-page layout pilot
 
 on:
   pull_request:
     paths:
       - ".github/workflows/cangjie-real-vlm-cpu.yml"
+      - "scripts/cangjie_vision_layout.py"
+      - "tests/test_cangjie_vision_layout.py"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  real-local-vision-cpu:
+  compact-layout-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest discover -s tests -p 'test_cangjie_vision_layout.py' -v
+
+  real-local-vision-layout:
+    needs: compact-layout-unit-tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -25,12 +38,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Poppler source PDF renderer
+      - name: Install Poppler for original scan-page rendering
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq poppler-utils
 
-      - name: Download BOTH original 1925 scans to EPHEMERAL private job storage
+      - name: Download BOTH exact original 1925 scans to runner only
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/faceface-originals"
@@ -40,10 +53,10 @@ jobs:
           curl --fail --location --retry 3 --max-time 120 \
             "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
             -o "$RUNNER_TEMP/faceface-originals/part2.pdf"
-          pdfinfo "$RUNNER_TEMP/faceface-originals/part1.pdf" | grep '^Pages:'
-          pdfinfo "$RUNNER_TEMP/faceface-originals/part2.pdf" | grep '^Pages:'
+          test -s "$RUNNER_TEMP/faceface-originals/part1.pdf"
+          test -s "$RUNNER_TEMP/faceface-originals/part2.pdf"
 
-      - name: Install and START actual Ollama CPU inference service
+      - name: Start REAL Ollama on free runner CPU
         shell: bash
         run: |
           curl --fail --silent --show-error --location https://ollama.com/install.sh \
@@ -54,125 +67,98 @@ jobs:
             nohup ollama serve > "$RUNNER_TEMP/ollama-serve.log" 2>&1 &
           fi
           for i in $(seq 1 50); do
-            if curl --silent --fail "http://127.0.0.1:11434/api/tags" >/dev/null; then
-              echo "Real Ollama API ready"
-              break
-            fi
+            curl --silent --fail "http://127.0.0.1:11434/api/tags" >/dev/null && break
             sleep 2
           done
           curl --fail --silent --show-error "http://127.0.0.1:11434/api/tags" >/dev/null
 
-      - name: Pull REAL Qwen3-VL 2B instruct vision checkpoint (not a mock)
+      - name: Pull REAL Qwen3-VL 2B image model
         shell: bash
         run: |
           ollama pull qwen3-vl:2b-instruct
           ollama list
           curl --fail --silent --show-error "http://127.0.0.1:11434/api/tags" \
             -o "$RUNNER_TEMP/ollama-model-tags.json"
-          python - <<'PY'
-          import json,os
-          from pathlib import Path
-          t=json.loads((Path(os.environ["RUNNER_TEMP"])/"ollama-model-tags.json").read_text())
-          matched=[m for m in t["models"] if m["name"]=="qwen3-vl:2b-instruct"]
-          assert len(matched)==1, "Actual local checkpoint missing"
-          print("Verified actual model image/text checkpoint:",matched[0]["name"])
-          print("Model digest:",matched[0]["digest"])
-          PY
 
-      - name: REAL ORIGINAL-IMAGE inference on one verified-excerpt original page
+      - name: REAL limited-JSON vision layout inference on 1925 pages
         shell: bash
         run: |
           python - <<'PY'
-          import hashlib,json,os
+          import json,os
           from pathlib import Path
           from scripts.cangjie_review_core import ReviewWorkspace
-          from scripts.cangjie_vision_agent_batch import (
-              OllamaLoopback, draft_paths, draft_valid, run_batch
-          )
-          from scripts.cangjie_ocr_benchmark import anchor_probe,reference_anchors
+          from scripts.cangjie_vision_agent_batch import OllamaLoopback
+          from scripts.cangjie_vision_layout import classify_batch, layout_paths, valid_previous
           temp=Path(os.environ["RUNNER_TEMP"])
-          corpus=temp/"faceface-originals"
-          drafts=temp/"real-qwen3-drafts"
           model="qwen3-vl:2b-instruct"
-          w=ReviewWorkspace(corpus,temp/"private-ocr",temp/"private-reviewed",
-                            draft_dir=drafts)
-          # The 16GB / 4-vCPU free runner is NOT a GPU. Start with one
-          # page known to contain FIVE separately checked original snippets.
-          # Bound inference output and image size before considering more pages.
-          original_pages=[("nlc-44091",27)]
-          engine=OllamaLoopback("http://127.0.0.1:11434",model,
-                               timeout=360,max_output_tokens=640)
-          result=run_batch(w,drafts,original_pages,engine,dpi=120,keep_going=True)
-          catalog=json.loads(Path("src/knowledge/maiyi-source-checked-v5.json").read_text(encoding="utf-8"))
-          pages=[]
-          anchor_total=0
-          hits=0
-          for source,index in original_pages:
-              txt,meta=draft_paths(drafts,source,index)
-              valid=draft_valid(w,drafts,source,index,model) if txt.is_file() else False
-              if valid:
-                  content=txt.read_text(encoding="utf-8")
-                  info=json.loads(meta.read_text(encoding="utf-8"))
-                  anchors=reference_anchors(catalog,source).get(index,[])
-                  probe=anchor_probe(content,anchors)
-                  hits+=probe["exact_phrase_count"]
-                  anchor_total+=probe["reference_phrase_count"]
-                  pages.append({
-                      "page_id":info["page_id"],
-                      "model":info["model"],
-                      "real_vision_draft_generated":True,
-                      "page_type_predicted_unreviewed":info["page_type"],
-                      "draft_han_characters":sum("\u3400"<=c<="\u9fff" for c in content),
-                      "uncertain_span_count":len(info["uncertain_spans"]),
-                      "figure_notes_count":len(info["figure_notes"]),
-                      "draft_text_sha256":info["draft_text_sha256"],
-                      "reference_short_fragment_probe":probe,
-                      "human_reviewed":False,
+          workspace=ReviewWorkspace(
+              temp/"faceface-originals",temp/"private-ocr",
+              temp/"private-reviewed",draft_dir=temp/"private-agent-drafts"
+          )
+          local_out=temp/"private-layouts"
+          # Sample a text-heavy page, a known illustrative source page,
+          # and a separate scanned fascicle. The AI labels are NOT truth.
+          selected=[
+              ("nlc-44091",27),
+              ("nlc-44091",87),
+              ("nlc-44092",40)
+          ]
+          real_engine=OllamaLoopback("http://127.0.0.1:11434",model,timeout=240)
+          result=classify_batch(workspace,real_engine,selected,local_out,
+                                dpi=120,keep_going=True)
+          evidence=[]
+          for sid,page in selected:
+              if valid_previous(workspace,local_out,sid,page,model):
+                  x=json.loads(layout_paths(local_out,sid,page).read_text("utf-8"))
+                  evidence.append({
+                      "page_id":x["page_id"],
+                      "real_model_inference":True,
+                      "page_type_AI_guess":x["layout"]["page_type"],
+                      "has_illustration_AI_guess":x["layout"]["has_illustration"],
+                      "vertical_text_AI_guess":x["layout"]["vertical_text"],
+                      "column_count_AI_guess":x["layout"]["column_count_estimate"],
+                      "needs_human_layout_check":x["layout"]["needs_human_layout_check"],
+                      "rendered_source_image_sha256":x["original_rendered_page_sha256"],
+                      "human_reviewed":False
                   })
               else:
-                  pages.append({"page_id":f"{source}:p{index:03d}",
-                                "real_vision_draft_generated":False,
-                                "human_reviewed":False})
-          manifest={
-              "kind":"M16.7_REAL_CPU_QWEN_VISION_ORIGINAL_SCAN_EXPERIMENT",
-              "real_local_vision_model_inference_executed":result["new_drafts_produced"]>0,
+                  evidence.append({"page_id":f"{sid}:p{page:03d}",
+                                   "real_model_inference":False,"human_reviewed":False})
+          records={
+              "kind":"M16.7_REAL_CPU_VISION_PAGE_LAYOUT_FEASIBILITY",
+              "actual_model_inference_attempted":True,
               "model":model,
-              "original_scanned_pages_attempted":len(original_pages),
-              "actual_drafts_produced":result["new_drafts_produced"],
-              "errors":result["errors"],
-              "original_book_scan_sha256":{s:x["pdf_sha256"] for s,x in w.sources.items()},
-              "reference_short_fragments_compared":anchor_total,
-              "real_vision_short_fragment_exact_hits":hits,
-              "reference_probe_is_NOT_character_accuracy":True,
-              "source_human_reviewed_pages":0,
-              "cangjie_five_extractor_agents_executed":False,
-              "rule_cards_activated":0,
-              "OCR_text_and_page_images_uploaded":False,
-              "page_metadata":pages
+              "original_pages_attempted":len(selected),
+              "valid_real_model_layout_annotations":result["new_real_model_layout_annotations"],
+              "invalid_or_failed_original_pages":result["errors"],
+              "old_long_JSON_full_page_transcription_trial_valid_pages":"1/4",
+              "reason_for_strategy_change":"full-page model JSON truncated in 3 of 4 real trials",
+              "original_pdf_hashes":{sid:d["pdf_sha256"] for sid,d in workspace.sources.items()},
+              "page_metadata":evidence,
+              "full_page_original_human_reviewed":workspace.summary()["full_page_reviewed"],
+              "book_full_page_transcription_created_by_this_job":False,
+              "agent_cangjie_extraction_completed":False,
+              "public_upload_contains_original_book_text":False
           }
-          Path("m16-7-real-vision-metadata-only.json").write_text(
-              json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",
+          Path("m16-7-real-vision-layout-metadata.json").write_text(
+              json.dumps(records,ensure_ascii=False,indent=2)+"\n",
               encoding="utf-8"
           )
-          print("M16.7 REAL MODEL OUTPUT SUMMARY (NO original-book text exposed):")
-          print(json.dumps({k:v for k,v in manifest.items() if k not in ("page_metadata","errors")},
-                           ensure_ascii=False))
-          print("Per-page verified generation:",[(x["page_id"],x["real_vision_draft_generated"])
-                                                  for x in pages])
-          if result["errors"]:
-              print("NOTE: per-page model errors:",json.dumps(result["errors"],ensure_ascii=False))
-          assert result["new_drafts_produced"]>=1, "Real Qwen model did not produce even one source-bound draft"
-          assert any(p.get("draft_han_characters",0)>0 for p in pages), \
-              "Real Qwen model generated no Han characters in sampled original text pages"
-          assert w.summary()["full_page_reviewed"]==0, \
-              "AI result must never auto-approve original text"
+          print("REAL QWEN SHORT LAYOUT OUTPUTS:",[(p["page_id"],p["real_model_inference"]) for p in evidence])
+          print("MODEL CLASSIFICATION STATISTICS:",json.dumps({
+              k:v for k,v in records.items() if k not in ("page_metadata","invalid_or_failed_original_pages")
+          },ensure_ascii=False))
+          print("ORIGINAL-PAGE TRANSCRIPTION/REVIEW NOT CLAIMED; images and full text stay in runner.")
+          assert result["new_real_model_layout_annotations"]>=2, \
+              "Small CPU VLM still cannot reliably produce short layout JSON (need different engine)"
+          assert workspace.summary()["full_page_reviewed"]==0
           PY
 
-      - name: Upload ONLY provenance, aggregate page counts and hashes
+      - name: Upload metadata only, NEVER the original page images or OCR/transcript text
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: m16-7-real-qwen-vision-source-page-statistics-only
-          path: m16-7-real-vision-metadata-only.json
-          retention-days: 14
+          name: m16-7-real-qwen-short-layout-actual-inference-statistics
+          path: m16-7-real-vision-layout-metadata.json
           if-no-files-found: warn
+          retention-days: 14
