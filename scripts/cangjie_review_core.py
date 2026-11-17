@@ -126,7 +126,8 @@ class ReviewWorkspace:
             "ocr_candidate_provenance_ok": candidate_provenance_ok,
             "ocr_diagnostic": {
                 "engine": ocr_meta.get("engine"), "han_char_count": ocr_meta.get("han_char_count"),
-                "mean_word_confidence": ocr_meta.get("mean_word_confidence")
+                "mean_word_confidence": ocr_meta.get("mean_word_confidence"),
+                "text_sha256": ocr_meta.get("candidate_text_sha256") if candidate_provenance_ok else None
             },
             "reviewed_text": existing_text,
             "is_reviewed_full_page": bool(existing_text),
