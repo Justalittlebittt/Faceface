@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Faceface · 古籍原页校勘台</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif;color:#e8e9ee;background:#111419;font-size:14px}
+    *{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}
+    button{cursor:pointer;background:#262e36;color:#e3e8ed;border:1px solid #4a525b;border-radius:9px;padding:10px 14px}
+    button:hover{background:#37424d}button:disabled{cursor:not-allowed;opacity:.45}
+    button.primary{background:#2d8965;border-color:#42ab7d;color:white;font-weight:650}
+    button.primary:hover{background:#37a277}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #85e0b4;outline-offset:2px}
+    input,select,textarea{background:#191f26;color:#eef3f2;border:1px solid #414d56;border-radius:8px;padding:10px;max-width:100%}
+    input[type=number]{width:90px}input[type=range]{accent-color:#43b981;padding:0}
+    input[type=checkbox]{accent-color:#43b981;width:18px;height:18px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 24px;background:#191e24;border-bottom:1px solid #363e48}
+    h1{font-size:20px;margin:0;letter-spacing:.01em}h2{font-size:15px;margin:0}p{line-height:1.6}
+    .eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#82cba8;margin-bottom:5px}
+    .muted{color:#aab6bf}.tag{font-size:12px;border-radius:50px;background:#252f35;border:1px solid #3e4e52;padding:7px 13px}
+    main{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:calc(100vh - 84px)}
+    aside{padding:22px 18px;background:#171d23;border-right:1px solid #343d48}
+    aside>section{padding-bottom:20px;margin-bottom:22px;border-bottom:1px solid #343d48}
+    .group{display:grid;gap:10px;margin-top:14px}
+    label{display:block;font-weight:580;color:#d8dfe3}label small{display:block;color:#9daab4;font-weight:400;margin-top:5px}
+    .nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .content{padding:24px;min-width:0}.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:stretch}
+    .panel{background:#191f26;border:1px solid #3b4650;border-radius:14px;overflow:hidden;min-width:0}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 17px;border-bottom:1px solid #39434b}
+    .image-scroller{height:70vh;overflow:auto;background:#323437;text-align:center;padding:16px}
+    #scan-img{display:block;margin:auto;height:auto;max-width:none;width:100%;box-shadow:0 8px 30px #0005}
+    .editor{display:flex;flex-direction:column;height:70vh;padding:16px;gap:12px}
+    textarea{width:100%;flex:1;resize:vertical;min-height:240px;line-height:1.75;font-family:"Noto Serif CJK TC","Songti SC","SimSun",serif;font-size:17px;letter-spacing:.03em}
+    .hint{font-size:12px;color:#acbbc3;line-height:1.5}.warning{color:#f0c48c}.success{color:#8fe0ac}
+    .signoff{background:#1e2928;border:1px solid #37574c;border-radius:14px;padding:18px;margin-top:18px}
+    .signoff h2{margin-bottom:14px}.signoff-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .check-row{display:flex;gap:10px;align-items:flex-start;margin:16px 0;font-size:13px;line-height:1.5;font-weight:500}
+    .footer-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+    #notice{font-size:13px;line-height:1.5}.meta{font-size:12px;line-height:1.7;color:#b3bdc7;overflow-wrap:anywhere}
+    .score{font-size:28px;font-weight:700;letter-spacing:-.04em;margin:7px 0;color:#dcece6}
+    @media(max-width:1180px){main{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid #343d48;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}aside>section{margin:0;border:0;padding:0}}
+    @media(max-width:760px){header{padding:16px}.tag{display:none}.split{grid-template-columns:1fr}.content{padding:12px}.image-scroller{height:52vh}.editor{height:57vh}.signoff-grid{grid-template-columns:1fr}aside{grid-template-columns:1fr;padding:14px}.panel-head{padding:13px}}
+  </style>
+</head>
+<body>
+<header>
+  <div><div class="eyebrow">Faceface / M16.5 / Local Review</div><h1>《麻衣相法》原页校勘台</h1></div>
+  <span class="tag">仅本机 · 不上传正文 · 1925 固定底本</span>
+</header>
+<main>
+  <aside>
+    <section>
+      <h2>原典来源</h2>
+      <div class="group">
+        <label>扫描文件
+          <select id="source" style="width:100%;margin-top:7px">
+            <option value="nlc-44091">原PDF 1 · 153页</option>
+            <option value="nlc-44092">原PDF 2 · 115页</option>
+          </select>
+        </label>
+        <label>PDF 零起页码
+          <div class="nav" style="margin-top:7px">
+            <button id="prev" type="button" title="前一页">‹</button>
+            <input type="number" id="index" min="0" max="152" value="27" aria-label="PDF 零起页码">
+            <button id="next" type="button" title="后一页">›</button>
+            <button id="go" type="button">定位</button>
+          </div>
+        </label>
+        <div id="page-label" class="meta">正在读取页面索引…</div>
+      </div>
+    </section>
+    <section>
+      <h2>底本校勘进度</h2>
+      <div class="score" id="review-count">— / 268</div>
+      <div class="meta">必须逐页比对原图并确认，才能获得完整页面复核状态。已有13条古籍短引文不计入整页进度。</div>
+      <div class="meta" id="candidate-count" style="margin-top:10px"></div>
+    </section>
+    <section>
+      <h2>操作范围</h2>
+      <p class="muted">左侧为固定原版PDF扫描图，右侧为OCR候选文本。按照古籍从右往左、逐列自上而下的阅读顺序，校正整页内容；包含图谱的页面需核对图文位置与标题。</p>
+      <p class="warning">这套工具不会自动判定人脸、人格、命运，也不把 OCR 文本当作已审核古籍。人工签名仅为本机校勘记录，不是第三方准确率认证。</p>
+    </section>
+  </aside>
+  <div class="content">
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>原始扫描 · 原图</h2><span class="hint" id="scan-state">只从本机PDF渲染</span></div>
+          <div class="nav">
+            <label for="zoom" style="font-size:12px">缩放</label>
+            <input id="zoom" type="range" min="100" max="240" step="20" value="100">
+          </div>
+        </div>
+        <div class="image-scroller" id="image-scroll">
+          <img id="scan-img" alt="1925年《麻衣相法》原始扫描页">
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>全文校勘 · 可编辑</h2><span class="hint" id="text-state">未校勘文本不得用于仓颉最终知识库</span></div>
+          <span class="hint" id="char-count">—</span>
+        </div>
+        <div class="editor">
+          <div class="nav">
+            <button type="button" id="copy-ocr">将此页OCR候选复制到编辑区</button>
+            <span class="hint" id="ocr-state"></span>
+          </div>
+          <textarea id="transcription" spellcheck="false" aria-label="校订后的古籍整页文字" placeholder="请根据左侧原图完成整页文字转录；没有OCR候选时可手动输入。保留原来的繁体和旧字形。"></textarea>
+          <p class="hint">保留右起竖列的阅读顺序与必要段落换行。旧字形、图谱标签、正文卷章需对照原图；不确定的文字写入下方校勘备注，不得编造成确定原文。</p>
+        </div>
+      </div>
+    </div>
+    <section class="signoff">
+      <h2>提交本页校勘（仅本地文件）</h2>
+      <div class="signoff-grid">
+        <label>校勘人标识
+          <input id="reviewer" type="text" autocomplete="off" placeholder="请输入实际复核人" style="width:100%;margin-top:6px">
+        </label>
+        <label>正文卷次（选填）
+          <input id="volume" type="text" placeholder="例如：卷二" style="width:100%;margin-top:6px">
+        </label>
+        <label>篇章（选填）
+          <input id="section" type="text" placeholder="例如：相口" style="width:100%;margin-top:6px">
+        </label>
+      </div>
+      <div class="group" style="margin-top:12px">
+        <label>页面类别
+          <select id="type" style="margin-top:5px">
+            <option value="text">正文为主</option>
+            <option value="text_and_figures">正文与图谱混排</option>
+            <option value="title_or_verse">标题、诗诀等</option>
+          </select>
+        </label>
+        <label>校勘备注
+          <textarea id="notes" rows="2" style="height:74px;min-height:58px" placeholder="图谱、异文、疑难字、缺损说明；未解决疑义需明确记录。"></textarea>
+        </label>
+      </div>
+      <label class="check-row"><input id="confirmed" type="checkbox">我已逐字对照左侧的完整扫描原页，核查文字是否齐全、旧字形和列序；不是直接将OCR结果标为已审核。</label>
+      <div class="footer-actions">
+        <button class="primary" id="save" type="button">保存此页校勘与来源哈希</button>
+        <span id="notice" aria-live="polite" class="muted">尚未提交。自动化不会替你签署校勘结论。</span>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+"use strict";
+const TOKEN = __LOCAL_REVIEW_TOKEN_JSON__;
+const $ = id => document.getElementById(id);
+let currentSource = "nlc-44091", currentIndex = 27, candidate = "", loading = false;
+const counts = { "nlc-44091":153, "nlc-44092":115 };
+const enc = encodeURIComponent;
+
+function message(text,good=false) {
+  $("notice").textContent = text;
+  $("notice").className = good ? "success" : "warning";
+}
+async function request(url,options) {
+  const response = await fetch(url, {cache:"no-store",...options});
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || ("HTTP " + response.status));
+  return result;
+}
+function locationQuery() {
+  return "source=" + enc(currentSource) + "&index=" + currentIndex;
+}
+function updateCounter() {
+  $("char-count").textContent = $("transcription").value.length + " 字符（含换行）";
+}
+function setIndex(index) {
+  const last = counts[currentSource]-1;
+  if (!Number.isSafeInteger(index) || index < 0 || index > last) {
+    message("无效页码。该PDF可用范围为0–" + last);
+    return;
+  }
+  currentIndex = index;
+  $("index").value = index;
+  loadPage();
+}
+async function loadStatus() {
+  const s = await request("/api/status");
+  $("review-count").textContent = s.full_page_reviewed + " / " + s.total_original_scan_pages;
+  $("candidate-count").textContent =
+    "已找到OCR候选：" + s.ocr_candidate_available + "页；"
+    + "符合原PDF哈希的候选：" + s.ocr_provenance_ok + "页。";
+}
+async function loadPage() {
+  if (loading) return;
+  loading = true;
+  $("source").disabled = $("prev").disabled = $("next").disabled = $("go").disabled = true;
+  message("正在读取本机原页与文本…");
+  try {
+    const response = await request("/api/page?" + locationQuery());
+    $("page-label").textContent = "数字PDF第 " + (currentIndex+1) + " / " + response.page_count + " 页 · 零起 " + currentIndex;
+    candidate = response.ocr_candidate;
+    $("ocr-state").textContent = response.ocr_candidate_available
+      ? (response.ocr_candidate_provenance_ok ? "候选来源校验通过（尚未审核）" : "OCR来源哈希不匹配，已阻止引用")
+      : "此页尚无OCR候选";
+    $("text-state").textContent = response.is_reviewed_full_page
+      ? "此前有本机复核记录 · 可继续修订" : "未校勘 · 不得供仓颉正式知识提取";
+    $("transcription").value = response.reviewed_text || candidate || "";
+    $("volume").value = response.review?.printed_volume || "";
+    $("section").value = response.review?.section || "";
+    $("notes").value = response.review?.notes || "";
+    $("type").value = response.review?.content_type || "text";
+    $("confirmed").checked = false;
+    $("scan-img").src = "/api/image?" + locationQuery() + "&dpi=150";
+    $("scan-state").textContent = "从已锁定SHA256的原始PDF本地生成 · PDF零起页 " + currentIndex;
+    updateCounter();
+    message(response.is_reviewed_full_page ? "已载入之前的校勘。再次编辑须重新逐字确认。" : "请逐字核对原图，修正后显式确认。", true);
+  } catch (e) {
+    $("scan-img").removeAttribute("src");
+    message("无法加载此页：" + e.message);
+  } finally {
+    loading = false;
+    $("source").disabled = $("prev").disabled = $("next").disabled = $("go").disabled = false;
+  }
+}
+$("source").addEventListener("change",()=>{
+  currentSource = $("source").value;
+  $("index").max = counts[currentSource] - 1;
+  setIndex(Math.min(currentIndex, counts[currentSource]-1));
+});
+$("prev").addEventListener("click",()=>setIndex(currentIndex-1));
+$("next").addEventListener("click",()=>setIndex(currentIndex+1));
+$("go").addEventListener("click",()=>setIndex(Number($("index").value)));
+$("zoom").addEventListener("input",() => $("scan-img").style.width = $("zoom").value+"%");
+$("transcription").addEventListener("input",updateCounter);
+$("copy-ocr").addEventListener("click",()=>{
+  if (!candidate) {message("此页没有通过来源校验的OCR候选。");return;}
+  $("transcription").value = candidate;
+  $("confirmed").checked = false;
+  updateCounter();
+  message("已复制OCR候选。必须核对全部原图后才可标记为校勘完成。");
+});
+$("save").addEventListener("click",async()=>{
+  $("save").disabled = true;
+  const requestBody = {
+    source:currentSource,index:currentIndex,text:$("transcription").value,
+    reviewer:$("reviewer").value,
+    confirmed_against_image:$("confirmed").checked,
+    content_type:$("type").value,
+    printed_volume:$("volume").value,section:$("section").value,
+    notes:$("notes").value
+  };
+  try {
+    const result = await request("/api/review",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","X-Faceface-Review-Token":TOKEN},
+      body:JSON.stringify(requestBody)
+    });
+    $("confirmed").checked = false;
+    message("本机校勘记录已保存：" + result.page_id + " · SHA256 " + result.text_sha256.slice(0,12) + "…",true);
+    await loadStatus();
+  } catch (e) { message("未保存：" + e.message); }
+  finally {$("save").disabled = false;}
+});
+$("scan-img").addEventListener("error",()=>{$("scan-state").textContent="原图生成失败；请检查 Poppler/pdf 和哈希";});
+loadStatus().catch(e=>message(e.message));
+loadPage();
+</script>
+</body>
+</html>
