@@ -1,0 +1,142 @@
+name: M16.7 REAL PP-OCRv5 268-page whole-book candidate OCR
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-paddleocr-whole-book.yml"
+      - "scripts/cangjie_paddleocr_candidates.py"
+      - "tests/test_cangjie_paddleocr_candidates.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-book-ocr-contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify original SHA256, no fake text review and candidate output contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_paddleocr_candidates.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_ocr_audit.py' -v
+
+  full-scan-OCR-shards:
+    needs: full-book-ocr-contract-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - { source: nlc-44091, pdf: part1.pdf, start: 0, end: 50 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 51, end: 101 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 102, end: 152 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 0, end: 38 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 39, end: 77 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 78, end: 114 }
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install original-PDF renderer and real PP-OCRv5 CPU runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+          python - <<'PY'
+          import paddle
+          from paddleocr import PaddleOCR
+          print("Actual PaddlePaddle CPU version:",paddle.__version__)
+          PY
+
+      - name: Download one exact source PDF into private ephemeral runner
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-originals"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/faceface-originals/${{ matrix.pdf }}"
+          test -s "$RUNNER_TEMP/faceface-originals/${{ matrix.pdf }}"
+
+      - name: Perform ACTUAL PP-OCRv5 vertical ancient-text inference for EVERY shard page
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --out-dir "$RUNNER_TEMP/private-paddle-ocr" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} \
+            --end ${{ matrix.end }} --dpi 170
+
+      - name: Stage page statistics ONLY (no original-PDF scan/OCR text)
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p public-audit
+          find "$RUNNER_TEMP/private-paddle-ocr/reports" -maxdepth 1 -name '*.json' \
+            -exec cp {} public-audit/ \; 2>/dev/null || true
+
+      - name: Upload source/quality hashes and page counts, never book text
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m16-7-ppocr-statistics-${{ matrix.source }}-${{ matrix.start }}-${{ matrix.end }}
+          path: public-audit/
+          retention-days: 14
+          if-no-files-found: warn
+
+  exact-268-page-coverage-audit:
+    needs: full-scan-OCR-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: m16-7-ppocr-statistics-*
+          path: full-scan-reports
+          merge-multiple: true
+
+      - name: Prove every original source page was actually attempted, no review inflation
+        run: |
+          python -m scripts.cangjie_ocr_audit \
+            full-scan-reports/*.json --out m16-7-ppocr-full-268-audit.json
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-7-ppocr-full-268-audit.json",encoding="utf-8"))
+          assert r["ocr_attempted_pages"]==268
+          assert r["human_reviewed_pages"]==0
+          assert r["full_book_agent_extraction_performed"] is False
+          print("REAL PP-OCRv5 268/268 scanned original pages attempted.")
+          print("Nonblank candidates:",r["candidate_text_pages"])
+          print("Unreviewed Han character candidates:",r["ocr_candidate_han_chars"])
+          print("NOT original-proofread, NOT five-agent Cangjie extraction.")
+          PY
+
+      - name: Upload exact-268-page statistics only
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-7-real-ppocrv5-full-book-candidate-statistics-only
+          path: m16-7-ppocr-full-268-audit.json
+          retention-days: 14

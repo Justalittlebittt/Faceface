@@ -182,7 +182,8 @@ class NoRemoteRedirect(HTTPRedirectHandler):
 
 
 class OllamaLoopback:
-    def __init__(self, url: str, model: str, timeout: int = 240):
+    def __init__(self, url: str, model: str, timeout: int = 240,
+                 max_output_tokens: int | None = None):
         self.url = base_url(url)
         if not isinstance(model,str) or not model or len(model)>120:
             raise ValueError("Invalid vision model name")
@@ -190,6 +191,9 @@ class OllamaLoopback:
         if not 10 <= timeout <= 900:
             raise ValueError("Timeout must be 10..900 seconds")
         self.timeout = timeout
+        if max_output_tokens is not None and not (128 <= max_output_tokens <= 8192):
+            raise ValueError("max_output_tokens must be 128..8192")
+        self.max_output_tokens = max_output_tokens
         # Disable proxy environment for source images. Localhost only.
         self.opener = build_opener(ProxyHandler({}), NoRemoteRedirect())
 
@@ -212,9 +216,12 @@ class OllamaLoopback:
                 "\n未校勘OCR候选（有错误、漏字和错列风险，千万不要照抄；以图为准）：\n"
                 + ocr_hint[:MAX_OCR_CONTEXT]
             )
+        options = {"temperature": 0}
+        if self.max_output_tokens is not None:
+            options["num_predict"] = self.max_output_tokens
         body = {
             "model":self.model,"stream":False,"format":SCHEMA,
-            "options":{"temperature":0},
+            "options":options,
             "messages":[
                 {"role":"system","content":SYSTEM},
                 {"role":"user","content":context,

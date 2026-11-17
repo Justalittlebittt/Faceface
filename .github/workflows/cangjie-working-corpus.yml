@@ -1,0 +1,63 @@
+name: M16.7 private working OCR corpus and official Cangjie chunker
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-working-corpus.yml"
+      - "scripts/cangjie_working_corpus.py"
+      - "tests/test_cangjie_working_corpus.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  working-corpus-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Test full-page ledger and strict original-review segregation
+        run: python -m unittest discover -s tests -p 'test_cangjie_working_corpus.py' -v
+
+      - name: Actually execute pinned upstream Cangjie chunker on UNVERIFIED pilot
+        run: |
+          python -m pip install --quiet PyYAML
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git \
+            "$RUNNER_TEMP/cangjie-skill"
+          git -C "$RUNNER_TEMP/cangjie-skill" checkout --quiet \
+            a28de55ba881b9928956a55048f743f7a9e3b23e
+          mkdir -p "$RUNNER_TEMP/faceface-working"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          path=Path(os.environ["RUNNER_TEMP"])/"faceface-working"/"unverified-pilot.md"
+          path.write_text(
+              "# UNVERIFIED OCR pilot — never claim original-page review\n\n"
+              "## ORIGINAL SCAN PAGE nlc-44091:p027\n"
+              "Evidence status: ocr_unreviewed\n"
+              "WARNING: short test wording, not proofread text.\n\n"
+              "口須方大，眼或細長。OCR may misread vertical columns.\n",
+              encoding="utf-8"
+          )
+          PY
+          python "$RUNNER_TEMP/cangjie-skill/scripts/build_chunks.py" \
+            "$RUNNER_TEMP/faceface-working/unverified-pilot.md" \
+            --sidecar "$RUNNER_TEMP/faceface-working/sidecar" \
+            --source-id faceface-M16-7-UNVERIFIED-PILOT --max-chars 1800
+          python - <<'PY'
+          from pathlib import Path
+          import json,os
+          path=Path(os.environ["RUNNER_TEMP"])/"faceface-working"/"sidecar"
+          chunks=list(path.rglob("chunks.jsonl"))
+          assert chunks, "official Cangjie source chunker produced no chunk file"
+          lines=[json.loads(x) for x in chunks[0].read_text("utf-8").splitlines() if x.strip()]
+          assert lines, "official Cangjie produced no page-bearing chunks"
+          print("ACTUAL official Cangjie chunker: PASS")
+          print("Unverified pilot chunks:",len(lines))
+          print("NO Adler or five AI extractor semantic stages were performed.")
+          PY
