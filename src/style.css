@@ -150,6 +150,14 @@ footer {
   footer { flex-direction: column; padding-bottom: max(40px, env(safe-area-inset-bottom)); }
 }
 
+/* M14 links separate regional photo observations without inventing a new ancient type. */
+.cross-region-reading { margin: 18px 0; padding: 18px; border: 1px solid #4e685b; border-radius: 12px; background: #203129; }
+.cross-region-reading h4 { margin: 0 0 8px; font-size: 17px; color: #d7eadb; }
+.cross-region-reading p { font-size: 14px; line-height: 1.8; color: #d1dfd6; margin: 0; }
+.cross-region-citations { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.cross-region-citations a { color: #bfe6cb; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 650px) { .cross-region-reading { padding: 14px; } .cross-region-citations { flex-direction: column; } }
+
 /* M2 seed cultural source cards: the source terms are NOT personalized verdicts. */
 .cultural-reading { border-top: 1px solid #3c5548; margin-top: 27px; padding-top: 24px; }
 .reading-heading h3 { margin: 10px 0; font-size: 23px; font-weight: 600; }
