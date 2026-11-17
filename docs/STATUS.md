@@ -1,5 +1,15 @@
 # Faceface｜项目进度总览（2026-11-17）
 
+## 2026-11-17 M16.6：整书268页私有视觉Agent草稿队列与校勘UI整合（真实底本验收已通过）
+
+- [x] **[PR #28](https://github.com/Justalittlebittt/Faceface/pull/28)** 新增 `scripts/cangjie_vision_agent_batch.py`：提供真实可运行的 Windows 本地 `plan/run`，以固定1925原版两个PDF、两份文件SHA256、逐页零起索引为准。批量构建 153+115＝**268**个互不重叠的视觉任务，支持指定原PDF范围、少量先测、断点跳过旧的有效Agent草稿及已签名人工页面、提示词/模型/输入OCR哈希失效时自动重做。**不是每轮一个古籍条目。**
+- [x] **真实的视觉模型接口程序**：按Ollama官方多模态 `/api/chat` JSON Schema + base64 PNG调用`qwen3-vl:4b`等**需安装在本机**的视觉模型；服务地址只允许 `127.0.0.1/localhost`，不接受外网OCR图片上传。模型按原图转录繁体右至左纵列、疑难字、图谱、空白/图页暂分类及卷章猜测。结果存`agent-drafts/<source>/<page>.draft.txt/.json`，与`reviewed/`分离，`eligible_for_cangjie_verified_corpus=false`。
+- [x] **校勘台整合**：`scripts/cangjie_review_ui.html`显示已匹配原PDF、OCR及Agent草稿状态，允许将未经审核的Agent候选载入编辑区，把不确定字、图谱及卷章猜测列明。复制Agent文字不会自动勾选人工已核对选项或改动已审原文。OCR来源SHA256改变时旧草稿立即被拒绝。
+- [x] **[M16.6真实PDF队列验收CI](https://github.com/Justalittlebittt/Faceface/actions/runs/44052979183)**：使用1925原PDF实际生成**268/268**个页面任务，并从两份原PDF真实渲染各一页 PNG；localhost模型JSON接口的图像、原始数据校验、断点续跑、安全隔离用自建**模拟**Ollama HTTP服务测试。GitHub Actions不下载模型、不运行真实AI生成文本、不上传书页图片、OCR全文或人工记录。
+- [ ] **没有虚报进度：** `actual_vision_model_called=false`（仅本地程序完成后才会变为真实），`0/268`历史完整原页已人工校勘，**真正官方仓颉Adler和五路Agent语义蒸馏尚未执行**，线上10张原版来源卡不变。下一阶段优先支持用户Windows/Codex或合法可访问的模型运行真正的批量文本生产，随后按层分开“未经校勘的候选挖掘”和“有原图依据的网站正式规则”，防止昂贵的全书逐页人审变成不必要的系统阻塞。当前主站用户已认可的M11手动拍照不变。
+
+
+
 ## 2026-11-17 M16.5：本机原页图文并排校勘＋完整页CER工具（实装并通过真实扫描测试）
 
 - [x] **[PR #27](https://github.com/Justalittlebittt/Faceface/pull/27)**：实现`scripts/cangjie_page_review.py`、`cangjie_review_ui.html`、`cangjie_review_core.py`及`cangjie_review_quality.py`。本地Windows可直接通过`127.0.0.1`网页左看1925原PDF扫描、右侧编辑保留的OCR候选，逐页录入印刷卷章、图谱说明和复核人；原始PDF与未校勘OCR保持只读，复核文字写入独立**不公开**目录。
@@ -71,7 +81,7 @@
 - [ ] **M13只增强复核能力，不是准确率验证：** iOS Safari/Android Chrome物理相机、授权不同人像样本、第三方SDK与设备级隐私审计依然未完成；古籍三停仍是照片近似示意而非发际线定义的经典分段。
 
 
-> 状态：**M16.5已交付Windows本地原书图文校勘台与基于完整页复核文字的CER计算；真实两份PDF渲染与本机API通过测试，但目前0/268页被真人完成整页原文校勘，仓颉正式五提取器Agent尚未执行，已上线的10条历史文化卡及M11用户相机保持不变。**
+> 状态：**M16.6已为1925原书268页全部生成可验证的真实来源任务队列，完成本机Ollama视觉模型运行器与古籍校勘UI对接，原PDF和模拟模型协议CI通过。真正的Qwen3-VL模型推理未在当前CI执行，原书完整页人工校勘仍0/268，官方仓颉五类Agent整书提取尚未完成；现有Faceface线上相机/报告不变。**
 
 ## 2026-11-17 M12：古籍匹配临界一致性＋《三停》来源化近似观察（已合并）
 
