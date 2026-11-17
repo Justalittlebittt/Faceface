@@ -56,6 +56,27 @@ python C:/cangjie-skill/scripts/build_chunks.py C:/faceface-corpus/audit/prechec
 
 现阶段**不得声称**268页已转录或校勘、仓颉五提取器已运行、候选库已蒸馏完成。下一完整输入Gate是从原书每页取得可复核的竖排古籍文本并录入 reviewed 页面，再由Agent全书提取。
 
+## M16.2｜整书竖排繁体OCR候选产线（不是校勘完成）
+
+**实际程序：** [cangjie_ocr_candidates.py](../scripts/cangjie_ocr_candidates.py)、[cangjie_ocr_audit.py](../scripts/cangjie_ocr_audit.py)、[六片并行OCR Actions](../.github/workflows/cangjie-ocr.yml)。
+
+- 对M16.1的两份原PDF（153页＋115页）使用Poppler逐页渲染及 Tesseract `chi_tra_vert` + `--psm 5` 竖排繁体模型，不把横排OCR错当古籍正文。每页以 **PDF零起页码** 记录扫描SHA256、OCR候选文字SHA256、汉字数、词级平均置信度；0字页记 `empty_ocr_candidate`，不会生成空文本冒充已转录。
+- GitHub CI矩阵分6片（第1份0–50／51–101／102–152；第2份0–38／39–77／78–114），**每片下载该扫描源、真正OCR全部指定页**。汇总任务逐页核对268个唯一ID及来源文件SHA256，缺页／重页／OCR自动提升为正式证据均使工作流失败。完成运行结果以实际Actions证据为准。
+- **版权与可校勘性边界：** CI完整OCR候选仅在临时runner内生成，GitHub公开Artifacts保留页级元数据和统计，**不保留/公布完整扫描或未经核对的OCR正文**。这意味着生产环境长期使用的候选正文应通过Windows本地执行本脚本存放在本地私有工作区，或后续在许可确认后迁至经批准的受控存储，不得把临时CI运行误作已持久落库。
+- **人工或逐图Agent校勘是独立阶段。** OCR文字很可能有旧字形、图谱、阅读列序的错误，`mean_word_confidence`只是OCR引擎内部统计，**不是正确率**。输出一律 `requires_manual_page_review=true`、`eligible_for_cangjie_verified_corpus=false`；现有M16.1校勘哈希验证仍为强制准入。OCR成功的页数**不等于**已校勘页数，也不能直接传仓颉五提取器。
+
+在用户 Windows/Codex 项目本地，需安装Tesseract和包含繁体竖排 `chi_tra_vert` 语言包，以及Poppler的 `pdfinfo`、`pdftoppm`：
+
+~~~powershell
+python scripts/cangjie_ocr_candidates.py --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/ocr --source nlc-44091
+python scripts/cangjie_ocr_candidates.py --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/ocr --source nlc-44092
+python -m scripts.cangjie_ocr_audit C:/faceface-corpus/ocr/reports/*.json --out C:/faceface-corpus/ocr/full-audit.json
+~~~
+
+**Windows PowerShell 通配符注意：** Python接收通配符路径在不同shell下行为不一致，可在Codex任务中枚举 `reports` 目录的JSON文件并传入本脚本，或者使用兼容的shell。OCR候选输出位于 `ocr/transcripts/nlc-44091/000.txt` 等页面路径，`.ocr.json` 包含待审核元数据。与M16.1的 `cangjie_corpus_stage.py --transcripts-dir ...` 对接时，这些未人工校勘候选会标记为 `unreviewed`，只有含一致SHA256的独立 `.review.json` 才成为 `reviewed`。没有图片校勘不可伪造复核人或直接创建review凭证。
+
+**M16.2 Gate：** 全部268页的OCR操作有真实可检索日志和非正文metadata，双源页码不缺漏；正式全文 `reviewed` 的比例须独立报告。下阶段应集中做批量视觉校勘与卷章索引，再运行真正的仓颉Adler和五Agent候选蒸馏，不能恢复每次只选一条古籍规则。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
