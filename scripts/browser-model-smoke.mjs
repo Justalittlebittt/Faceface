@@ -356,6 +356,12 @@ try {
       (await page.locator(".consistency-source-change").count()) !== 0) {
     throw new Error("M9 local comparison did not explain all ten descriptors");
   }
+  // M13: the same actual model frame also produces three explicitly
+  // approximate photo-only zones, compared without identity inference.
+  const sections = await page.locator(".consistency-zone-row").allTextContents();
+  if (sections.length !== 3 || sections.some(value => !value.includes("%") || !value.includes("Δ"))) {
+    throw new Error("M13 comparison omitted photo-based three-zone measurements: " + JSON.stringify(sections));
+  }
   // The local comparison is session memory only and must be gone on reset.
   await page.getByRole("button", { name: "Clear photo / Take another" }).click();
   if (await page.locator(".consistency-panel").count()) {
