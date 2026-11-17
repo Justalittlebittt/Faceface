@@ -53,6 +53,9 @@ class CorpusStagingTests(unittest.TestCase):
         review = text.with_suffix(".review.json")
         review.write_text(json.dumps({
             "reviewed_by": "human-reviewer",
+            "source_id": "nlc-44091",
+            "confirmed_against_full_original_image": True,
+            "contains_complete_page_transcription_attested_by_reviewer": True,
             "source_pdf_sha256": "fake-hash",
             "pdf_page_zero_based": 27,
             "text_sha256": stage.sha256(text.read_bytes()),
