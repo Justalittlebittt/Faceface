@@ -110,7 +110,28 @@ try {
       const video = document.querySelector("video");
       return video instanceof HTMLVideoElement && video.readyState >= 2 && video.videoWidth > 0;
     }, { timeout: 15000 });
-    await page.getByRole("button", { name: "拍摄并本地分析" }).click();
+    // M10: the shutter is intentionally manual. A red outline must NOT
+    // permit capture. After 3 continuous seconds of real model alignment,
+    // the SVG turns green, but the page must not capture by itself.
+    const shutter=page.getByRole("button", { name: "拍摄并本地分析" });
+    if (await shutter.isEnabled()) {
+      throw new Error("M10 shutter should not be available before 3s positioning");
+    }
+    if (await page.locator(".face-guide-svg").count() !== 1 ||
+        await page.locator(".guide-oval").count() !== 0) {
+      throw new Error("M10 anatomical guide SVG has not replaced CSS ellipse");
+    }
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+      null, { timeout: 40000 });
+    if (await page.locator(".face-guide-svg--ready").count() !== 1 ||
+        !(await shutter.isEnabled())) {
+      throw new Error("M10 manual shutter did not unlock after green face outline");
+    }
+    if (await page.locator(".report").count()) {
+      throw new Error("M10 triggered an automatic photo without explicit consent");
+    }
+    await shutter.click();
   }
 
   await page.waitForFunction(() => {
