@@ -134,7 +134,7 @@ export const copy = {
     guideHolding: "正在沿脸部轮廓描绘绿色进度，还需 {seconds} 秒",
     guideReady: "绿色人脸轮廓已画满，可以点击拍照",
     guideSideNotice: "侧脸轮廓仅作预览，现阶段的面相分析仍只支持正脸照片。",
-    guideReadyHint: "保持面部稳定约 3 秒，绿色线条会沿真实人脸轮廓顺时针画满；完成后仍需手动拍照。"
+    guideReadyHint: "保持面部稳定约 3 秒，绿色线条会沿真实人脸轮廓顺时针画满；完成后仍需手动拍照。",
     closeCamera: "关闭相机",
     cancelAnalysis: "取消分析并清除画面",
     retake: "清除画面 / 重新拍摄",
