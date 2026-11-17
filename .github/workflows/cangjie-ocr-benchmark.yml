@@ -1,0 +1,77 @@
+name: M16.3 Classical vertical OCR configuration benchmark
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-ocr-benchmark.yml"
+      - "scripts/cangjie_ocr_benchmark.py"
+      - "tests/test_cangjie_ocr_benchmark.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest discover -s tests -p 'test_cangjie_ocr_benchmark.py' -v
+
+  reference-pages:
+    needs: benchmark-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {source: nlc-44091, pdf: part1.pdf}
+          - {source: nlc-44092, pdf: part2.pdf}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install both Traditional Chinese vertical OCR models
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils tesseract-ocr \
+            tesseract-ocr-chi-tra-vert tesseract-ocr-script-hant-vert
+          python -m pip install --quiet pillow
+          tesseract --list-langs 2>&1 | grep -x 'chi_tra_vert'
+          tesseract --list-langs 2>&1 | grep -x 'script/HanT_vert'
+
+      - name: Download one original 1925 PDF to temporary runner disk
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-scans"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/faceface-scans/${{ matrix.pdf }}"
+
+      - name: Run FOUR OCR configurations on original cited pages or fixed scan-two samples
+        env:
+          OMP_THREAD_LIMIT: "1"
+        run: |
+          python -m scripts.cangjie_ocr_benchmark \
+            --scan "$RUNNER_TEMP/faceface-scans/${{ matrix.pdf }}" \
+            --source "${{ matrix.source }}" \
+            --catalog src/knowledge/maiyi-source-checked-v5.json \
+            --out "m16-benchmark-${{ matrix.source }}.json"
+
+      - name: Upload ONLY source/quality metadata (never original PDF/OCR text)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-ocr-benchmark-${{ matrix.source }}
+          path: m16-benchmark-*.json
+          retention-days: 14
