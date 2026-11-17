@@ -18,7 +18,7 @@ export type GuideState =
   "too-large" | "outside" | "aligned" | "side-preview";
 
 export type Rect = { x: number; y: number; width: number; height: number };
-export type GuideCheck = { state: GuideState; coverage: number; reason?: string };
+export type GuideCheck = { state: GuideState; coverage: number };
 export type Hold = { startedAt: number | null; lastSeenAt: number | null; progress: number; complete: boolean };
 
 export const EMPTY_HOLD: Hold = { startedAt: null, lastSeenAt: null, progress: 0, complete: false };
@@ -71,7 +71,7 @@ export function checkFrontGuide(
   // multi-person or incomplete front-facing landmarks.
   const validity = describeLandmarks(faces, image);
   if (validity.status !== "ok") {
-    return { state: "pose", coverage: 0, reason: validity.message };
+    return { state: "pose", coverage: 0 };
   }
   const face = faces[0];
   if (FACE_OVAL_INDICES.some(index => !face[index] ||
@@ -99,12 +99,8 @@ export function checkFrontGuide(
   const ys = mapped.map(p => p.y);
   const faceWidth = Math.max(...xs) - Math.min(...xs);
   const faceHeight = Math.max(...ys) - Math.min(...ys);
-  const debugSize = "guide-relative width " + Math.round(faceWidth) +
-    ", height " + Math.round(faceHeight) +
-    ", center " + Math.round((Math.max(...xs) + Math.min(...xs)) / 2) +
-    "/" + Math.round((Math.max(...ys) + Math.min(...ys)) / 2);
-  if (faceWidth < 115 || faceHeight < 215) return { state: "too-small", coverage: 0, reason: debugSize };
-  if (faceWidth > 224 || faceHeight > 366) return { state: "too-large", coverage: 0, reason: debugSize };
+  if (faceWidth < 115 || faceHeight < 215) return { state: "too-small", coverage: 0 };
+  if (faceWidth > 224 || faceHeight > 366) return { state: "too-large", coverage: 0 };
 
   const coverage = mapped.filter(point => insideOutline(point.x, point.y)).length / mapped.length;
   const centerX = (Math.max(...xs) + Math.min(...xs)) / 2;
@@ -112,12 +108,7 @@ export function checkFrontGuide(
   // >=85% of the perimeter fits the actual silhouette; geometric center
   // must also be near the guide middle. No false confidence for a tiny face.
   if (coverage < 0.85 || Math.abs(centerX - 150) > 32 ||
-      Math.abs(centerY - 207) > 46) return {
-        state: "outside", coverage,
-        reason: "coverage " + Math.round(coverage * 100) +
-          "%, center " + Math.round(centerX) + "/" + Math.round(centerY) +
-          ", " + debugSize
-      };
+      Math.abs(centerY - 207) > 46) return { state: "outside", coverage };
   return { state: "aligned", coverage };
 }
 
