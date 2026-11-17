@@ -133,10 +133,19 @@ try {
     if (await shutter.isEnabled()) {
       throw new Error("M10 shutter should not be available before 3s positioning");
     }
-    if (await page.locator(".face-guide-svg").count() !== 1 ||
+    if (await page.locator(".live-face-svg").count() !== 1 ||
         await page.locator(".guide-oval").count() !== 0) {
-      throw new Error("M10 anatomical guide SVG has not replaced CSS ellipse");
+      throw new Error("M11 live SVG contour has not replaced the fixed camera guide");
     }
+    await page.waitForFunction(() => {
+      const svg = document.querySelector(".live-face-svg");
+      const path = svg?.querySelector(".live-face-outline");
+      const progress = Number(svg?.getAttribute("data-progress") || 0);
+      return path?.getAttribute("d")?.includes(" C ") &&
+        progress > 0 && progress < 1 &&
+        !!svg?.querySelector(".live-face-progress");
+    }, null, { timeout: 20000 });
+    console.log("M11: green contour is visibly tracing the true face clockwise; no shutter triggered");
     try {
       await page.waitForFunction(() =>
         document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
@@ -153,12 +162,12 @@ try {
       }));
       throw new Error("M10 alignment not ready: " + JSON.stringify(diagnostic) + " " + String(cause));
     }
-    if (await page.locator(".face-guide-svg--ready").count() !== 1 ||
+    if (await page.locator(".live-face-svg--ready").count() !== 1 ||
         !(await shutter.isEnabled())) {
-      throw new Error("M10 manual shutter did not unlock after green face outline");
+      throw new Error("M11 manual shutter did not unlock after green face outline");
     }
     if (await page.locator(".report").count()) {
-      throw new Error("M10 triggered an automatic photo without explicit consent");
+      throw new Error("M11 triggered an automatic photo without explicit consent");
     }
     // Side SVG is a deliberate preview, not a supported face-reading mode.
     await page.getByRole("button", { name: "侧脸轮廓（预览）" }).click();
@@ -176,8 +185,9 @@ try {
       document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "no-face",
       null, { timeout: 8000 });
     if (await shutter.isEnabled() ||
-        await page.locator(".face-guide-svg--ready").count() !== 0) {
-      throw new Error("M10 face loss did not immediately revoke green capture readiness");
+        await page.locator(".live-face-svg--ready").count() !== 0 ||
+        await page.locator(".live-face-progress").count() !== 0) {
+      throw new Error("M11 face loss did not immediately clear the green contour");
     }
     await page.evaluate(() => { window.__facefaceTestBlank = false; });
     await page.waitForFunction(() =>
