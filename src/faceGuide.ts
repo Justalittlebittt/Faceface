@@ -99,8 +99,12 @@ export function checkFrontGuide(
   const ys = mapped.map(p => p.y);
   const faceWidth = Math.max(...xs) - Math.min(...xs);
   const faceHeight = Math.max(...ys) - Math.min(...ys);
-  if (faceWidth < 115 || faceHeight < 215) return { state: "too-small", coverage: 0 };
-  if (faceWidth > 224 || faceHeight > 366) return { state: "too-large", coverage: 0 };
+  const debugSize = "guide-relative width " + Math.round(faceWidth) +
+    ", height " + Math.round(faceHeight) +
+    ", center " + Math.round((Math.max(...xs) + Math.min(...xs)) / 2) +
+    "/" + Math.round((Math.max(...ys) + Math.min(...ys)) / 2);
+  if (faceWidth < 115 || faceHeight < 215) return { state: "too-small", coverage: 0, reason: debugSize };
+  if (faceWidth > 224 || faceHeight > 366) return { state: "too-large", coverage: 0, reason: debugSize };
 
   const coverage = mapped.filter(point => insideOutline(point.x, point.y)).length / mapped.length;
   const centerX = (Math.max(...xs) + Math.min(...xs)) / 2;
