@@ -5,3 +5,9 @@ dist/
 !.env.example
 .DS_Store
 coverage/
+
+# M16 local private original scans/OCR transcriptions/review attestations
+# Keep your corpus OUTSIDE this public repository; these prevent common accidents.
+private-corpus/
+local-corpus/
+faceface-corpus-local/

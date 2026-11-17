@@ -53,6 +53,9 @@ class CorpusStagingTests(unittest.TestCase):
         review = text.with_suffix(".review.json")
         review.write_text(json.dumps({
             "reviewed_by": "human-reviewer",
+            "source_id": "nlc-44091",
+            "confirmed_against_full_original_image": True,
+            "contains_complete_page_transcription_attested_by_reviewer": True,
             "source_pdf_sha256": "fake-hash",
             "pdf_page_zero_based": 27,
             "text_sha256": stage.sha256(text.read_bytes()),
@@ -93,6 +96,47 @@ class CorpusStagingTests(unittest.TestCase):
                 {"source_id": "nlc-44091", "page_count": 153},
                 {"source_id": "nlc-44092", "page_count": 115},
             ])
+
+
+    def test_unsigned_legacy_review_cannot_enter_verified_corpus(self):
+        text = self.transcripts / "nlc-44091" / "027.txt"
+        text.parent.mkdir(parents=True)
+        text.write_text("面上三停", encoding="utf-8")
+        text.with_suffix(".review.json").write_text(json.dumps({
+            "source_id": "nlc-44091", "reviewed_by": "human-reviewer",
+            "source_pdf_sha256": stage.sha256((self.scans/"part1.pdf").read_bytes()),
+            "pdf_page_zero_based": 27, "text_sha256": stage.sha256(text.read_bytes())
+        }), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "complete-page"):
+            stage.verify_page_review(
+                text, stage.sha256((self.scans/"part1.pdf").read_bytes()), 27
+            )
+
+    def test_removed_source_review_retracts_old_verified_export(self):
+        text = self.transcripts / "nlc-44091" / "027.txt"
+        text.parent.mkdir(parents=True)
+        text.write_text("或細長", encoding="utf-8")
+        review_path = text.with_suffix(".review.json")
+        review_path.write_text(json.dumps({
+            "source_id": "nlc-44091", "reviewed_by": "human-reviewer",
+            "confirmed_against_full_original_image": True,
+            "contains_complete_page_transcription_attested_by_reviewer": True,
+            "source_pdf_sha256": stage.sha256((self.scans/"part1.pdf").read_bytes()),
+            "pdf_page_zero_based": 27, "text_sha256": stage.sha256(text.read_bytes()),
+            "printed_volume": "卷一", "section": "五官"
+        }, ensure_ascii=False), encoding="utf-8")
+        output = self.root / "out"
+        with patch.object(stage, "pdf_pages", side_effect=self.pdf_counts):
+            result = stage.stage(self.scans, self.transcripts, self.catalog, output)
+        self.assertEqual(result["page_text_status_counts"]["reviewed"],1)
+        self.assertTrue((output/"reviewed-transcription.md").is_file())
+        self.assertIn("或細長",(output/"reviewed-transcription.md").read_text(encoding="utf-8"))
+        review_path.unlink()
+        text.unlink()
+        with patch.object(stage, "pdf_pages", side_effect=self.pdf_counts):
+            result = stage.stage(self.scans, self.transcripts, self.catalog, output)
+        self.assertEqual(result["page_text_status_counts"]["reviewed"],0)
+        self.assertFalse((output/"reviewed-transcription.md").exists())
 
 
 if __name__ == "__main__":

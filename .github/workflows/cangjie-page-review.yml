@@ -1,0 +1,125 @@
+name: M16.5 Original-page review and real full-page CER gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-page-review.yml"
+      - "scripts/cangjie_review_core.py"
+      - "scripts/cangjie_page_review.py"
+      - "scripts/cangjie_review_ui.html"
+      - "scripts/cangjie_review_quality.py"
+      - "scripts/cangjie_corpus_stage.py"
+      - "tests/test_cangjie_page_review.py"
+      - "tests/test_cangjie_corpus.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-review-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Strict source review and CER regression tests (synthetic fixtures)
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_page_review.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_corpus.py' -v
+
+  real-original-image-smoke:
+    needs: source-review-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Poppler original-page rendering
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
+      - name: Obtain the same 1925 original scans (never upload scans or texts)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-scans"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-scans/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-scans/part2.pdf"
+
+      - name: Actually render original page and run local read-only HTTP API
+        shell: bash
+        run: |
+          python - <<'PY'
+          import http.client, json, os, threading
+          from pathlib import Path
+          from scripts.cangjie_review_core import ReviewWorkspace
+          from scripts.cangjie_page_review import ReviewServer
+          from scripts.cangjie_review_quality import evaluate
+          temp = Path(os.environ["RUNNER_TEMP"])
+          w=ReviewWorkspace(temp/"faceface-scans",temp/"private-ocr",temp/"private-reviewed")
+          assert w.summary()["total_original_scan_pages"]==268
+          assert w.summary()["full_page_reviewed"]==0
+          assert w.sources["nlc-44091"]["pdf_sha256"]=="466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649"
+          assert w.sources["nlc-44092"]["pdf_sha256"]=="ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+          rendered=w.image_path("nlc-44091",27,dpi=120)
+          assert rendered.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+          server=ReviewServer(0,w)
+          thread=threading.Thread(target=server.serve_forever,daemon=True)
+          thread.start()
+          try:
+              host=f"127.0.0.1:{server.server_port}"
+              conn=http.client.HTTPConnection("127.0.0.1",server.server_port,timeout=30)
+              conn.request("GET","/",headers={"Host":host})
+              resp=conn.getresponse()
+              html=resp.read().decode("utf-8")
+              assert resp.status==200 and "古籍原页校勘台" in html
+              assert "__LOCAL_REVIEW_TOKEN_JSON__" not in html
+              conn.request("GET","/api/image?source=nlc-44091&index=27&dpi=120",headers={"Host":host})
+              resp=conn.getresponse()
+              assert resp.status==200 and resp.read().startswith(b"\x89PNG")
+              conn.request("GET","/api/page?source=nlc-44091&index=27",headers={"Host":host})
+              resp=conn.getresponse()
+              data=json.loads(resp.read())
+              assert resp.status==200 and not data["is_reviewed_full_page"]
+              conn.close()
+          finally:
+              server.shutdown()
+              server.server_close()
+              thread.join(timeout=4)
+          result=evaluate(w)
+          assert result["original_scan_pages"]==268
+          assert result["pages_with_page_specific_review_attestation"]==0
+          assert result["pages_compared_with_source_provenance_ocr"]==0
+          assert result["micro_average_han_CER_on_reviewed_pages_only"] is None
+          assert result["whole_book_review_gate_met"] is False
+          assert result["actual_cangjie_agent_extraction_performed"] is False
+          # No real reviewed source content exists; do not manufacture one in CI.
+          (Path("m16-review-smoke-metadata.json")).write_text(
+              json.dumps({
+                  "original_scans_verified":2,"original_pages":268,
+                  "real_1925_page_image_rendered":True,
+                  "local_HTTP_review_UI_checked":True,
+                  "full_page_human_reviewed":0,
+                  "full_page_CER_samples":0,
+                  "cangjie_agent_extraction":False
+              },indent=2),encoding="utf-8")
+          print("ORIGINAL-IMAGE SMOKE PASS: 2 PDFs / 268 pages; local review UI + PNG")
+          print("NO HUMAN REVIEW PERFORMED: 0/268, no valid CER, no Cangjie distillation")
+          PY
+
+      - name: Upload tiny metadata only, not private book PDFs, scans or OCR text
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-page-review-original-image-smoke-metadata
+          path: m16-review-smoke-metadata.json
+          if-no-files-found: error
+          retention-days: 14
