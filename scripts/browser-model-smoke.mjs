@@ -280,10 +280,20 @@ try {
   }
   // M9: a willing participant can re-analyze another local photo and inspect
   // changes without sending either photo or landmark coordinates to a server.
-  // This uses the SAME public sample twice, testing the actual private UI
-  // workflow, not multi-person validity or identity matching.
+  // The emulated camera now *reframes* the public portrait to align its face.
+  // For an exact same-image comparison we must upload that CAPTURED frame,
+  // not the different, uncropped original file. WebKit already used the
+  // original photo both times. No CI image is persisted after the test.
+  const secondPhoto = engine === "chromium"
+    ? {
+        name: "same-captured-frame.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(await page.locator("canvas.photo-canvas").evaluate(el =>
+          el.toDataURL("image/png").split(",")[1]), "base64")
+      }
+    : "dist/ci-portrait.jpg";
   await page.locator('input[aria-label="Choose a second photo of the same person"]')
-    .setInputFiles("dist/ci-portrait.jpg");
+    .setInputFiles(secondPhoto);
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
   if (comparisonStats.join("|") !== "0 / 10|0 / 9") {
