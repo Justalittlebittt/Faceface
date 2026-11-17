@@ -18,7 +18,7 @@ import hashlib
 import json
 from pathlib import Path
 from urllib.parse import urlsplit
-from urllib.request import build_opener, ProxyHandler, Request
+from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Request
 
 from scripts.cangjie_review_core import ReviewWorkspace, atomic_write, file_sha256
 
@@ -176,6 +176,11 @@ def parse_model_content(content: str) -> dict:
     return {**obj,"draft_text":text}
 
 
+class NoRemoteRedirect(HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        raise ValueError("Local vision API redirect refused; page images never leave loopback")
+
+
 class OllamaLoopback:
     def __init__(self, url: str, model: str, timeout: int = 240):
         self.url = base_url(url)
@@ -186,7 +191,7 @@ class OllamaLoopback:
             raise ValueError("Timeout must be 10..900 seconds")
         self.timeout = timeout
         # Disable proxy environment for source images. Localhost only.
-        self.opener = build_opener(ProxyHandler({}))
+        self.opener = build_opener(ProxyHandler({}), NoRemoteRedirect())
 
     def models(self) -> set[str]:
         req = Request(self.url+"/api/tags",method="GET")
