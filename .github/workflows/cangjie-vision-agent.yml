@@ -5,9 +5,11 @@ on:
     paths:
       - ".github/workflows/cangjie-vision-agent.yml"
       - "scripts/cangjie_vision_agent_batch.py"
+      - "scripts/cangjie_vision_draft_audit.py"
       - "scripts/cangjie_review_core.py"
       - "scripts/cangjie_review_ui.html"
       - "tests/test_cangjie_vision_agent_batch.py"
+      - "tests/test_cangjie_vision_draft_audit.py"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +26,7 @@ jobs:
           python-version: "3.11"
       - name: Validate all-source 268-page plan, mock localhost image API, resume and review isolation
         run: |
-          python -m unittest discover -s tests -p 'test_cangjie_vision_agent_batch.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_vision_*.py' -v
           python -m unittest discover -s tests -p 'test_cangjie_page_review.py' -v
           python -m unittest discover -s tests -p 'test_cangjie_corpus.py' -v
 
