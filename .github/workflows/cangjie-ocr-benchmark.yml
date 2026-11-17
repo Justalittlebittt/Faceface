@@ -45,7 +45,7 @@ jobs:
             tesseract-ocr-chi-tra-vert tesseract-ocr-script-hant-vert
           python -m pip install --quiet pillow
           tesseract --list-langs 2>&1 | grep -x 'chi_tra_vert'
-          tesseract --list-langs 2>&1 | grep -x 'script/HanT_vert'
+          tesseract --list-langs 2>&1 | grep -x 'HanT_vert'
 
       - name: Download one original 1925 PDF to temporary runner disk
         shell: bash
