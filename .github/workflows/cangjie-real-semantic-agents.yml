@@ -1,0 +1,172 @@
+name: M16.8 REAL pinned Cangjie Adler pilot + five independent AI extractors
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-real-semantic-agents.yml"
+      - "scripts/cangjie_semantic_agents.py"
+      - "tests/test_cangjie_semantic_agents.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cangjie-five-role-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate source-bound OCR, five role schemas, upstream pin and no-live-rule gate
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_semantic_agents.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_working_corpus.py' -v
+
+  real-1925-Adler-five-extractors:
+    needs: cangjie-five-role-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+      OLLAMA_HOST: "127.0.0.1:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install actual original-PDF OCR and Cangjie dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2 PyYAML
+
+      - name: Obtain BOTH actual source-sha-pinned 1925 scans into private runner
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part2.pdf"
+
+      - name: ACTUAL PP-OCRv5 on source pages p027 p087 and second-scan p040
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44091 \
+            --start 27 --end 27
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44091 \
+            --start 87 --end 87
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44092 \
+            --start 40 --end 40
+
+      - name: Pin and verify REAL official upstream Cangjie prompts + chunker
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git \
+            "$RUNNER_TEMP/cangjie"
+          git -C "$RUNNER_TEMP/cangjie" checkout --quiet \
+            a28de55ba881b9928956a55048f743f7a9e3b23e
+          git -C "$RUNNER_TEMP/cangjie" rev-parse HEAD
+          python "$RUNNER_TEMP/cangjie/scripts/cangjie.py" doctor
+          python -m scripts.cangjie_working_corpus \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --ocr-dir "$RUNNER_TEMP/ocr-private" \
+            --reviewed-dir "$RUNNER_TEMP/reviewed-private" \
+            --out-dir "$RUNNER_TEMP/cangjie-private" \
+            --cangjie-root "$RUNNER_TEMP/cangjie"
+
+      - name: Install and START ACTUAL local Qwen2.5 1.5B instruct text model
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location \
+            https://ollama.com/install.sh -o "$RUNNER_TEMP/install-ollama.sh"
+          sh "$RUNNER_TEMP/install-ollama.sh"
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 50); do
+            curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
+            sleep 2
+          done
+          ollama pull qwen2.5:1.5b-instruct
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen
+          models=json.load(urlopen("http://127.0.0.1:11434/api/tags"))["models"]
+          actual=[m for m in models if m["name"]=="qwen2.5:1.5b-instruct"]
+          assert len(actual)==1
+          print("REAL MODEL DIGEST:",actual[0]["digest"])
+          PY
+
+      - name: EXECUTE actual Cangjie Adler sample + five independently prompted LLM roles
+        shell: bash
+        run: |
+          python -m scripts.cangjie_semantic_agents \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --ocr-dir "$RUNNER_TEMP/ocr-private" \
+            --reviewed-dir "$RUNNER_TEMP/reviewed-private" \
+            --upstream-root "$RUNNER_TEMP/cangjie" \
+            --out-dir "$RUNNER_TEMP/cangjie-agents-private" \
+            --model qwen2.5:1.5b-instruct --timeout 240 \
+            --max-output-tokens 520 --max-candidates-per-role 2 \
+            --pages nlc-44091:p027,nlc-44091:p087,nlc-44092:p040
+
+      - name: Audit REAL Stage-0 and five independent-role LLM execution
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          temp=Path(os.environ["RUNNER_TEMP"])
+          f=temp/"cangjie-agents-private"/"m16-8-extraction-run-report.json"
+          r=json.loads(f.read_text(encoding="utf-8"))
+          assert r["original_scanned_book_pages"]==268
+          assert r["source_OCR_pages_in_this_execution"]==3
+          assert len(r["independent_extractor_roles_invoked"])==5
+          assert r["actual_extractor_calls_successful"]>=8, \
+            "Less than 8/15 REAL independent Cangjie role calls completed"
+          assert r["new_live_faceface_rules"]==0
+          assert r["human_reviewed_pages_added"]==0
+          assert r["source_quote_verified_against_original_PDF_image"] is False
+          public={
+              k:v for k,v in r.items()
+              if k not in ("errors","per_role_page_results")
+          }
+          public["failed_call_count"]=r["actual_extractor_calls_failed"]
+          public["extraction_is_pilot_not_full_book"]=True
+          public["all_source_quotes_original_image_verified"]=False
+          public["no_OCR_original_text_published"]=True
+          Path("m16-8-real-five-roles-statistics-only.json").write_text(
+              json.dumps(public,ensure_ascii=False,indent=2)+"\n",encoding="utf-8"
+          )
+          print("ACTUAL CANGJIE 5-ROLE MODEL PILOT:",json.dumps(public,ensure_ascii=False))
+          print("WARNING: all source quotes are OCR-matched, not 1925 original-page checked.")
+          PY
+
+      - name: Publish metadata-only, no PDF/OCR text or unverified source quote
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-8-actual-cangjie-adler-five-extractor-aggregate-only
+          path: m16-8-real-five-roles-statistics-only.json
+          retention-days: 14
+          if-no-files-found: warn
