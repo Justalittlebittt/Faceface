@@ -65,7 +65,7 @@ button:focus-visible { outline: 3px solid #a9d4bf; outline-offset: 3px; }
    Its native SVG aspect ratio is retained at both PC and phone sizes. */
 .face-guide-layer { position: absolute; inset: 0; display: flex; align-items: center;
   justify-content: center; pointer-events: none; z-index: 1; }
-.face-guide-svg { display: block; height: min(85%, 490px); width: auto; max-width: 84%;
+.face-guide-svg { display: block; height: 85%; width: auto; max-width: 84%;
   overflow: visible; color: #fa696b; transition: color .18s ease; }
 .face-guide-svg--ready { color: #67e69b; }
 .face-guide-outline { fill: none; stroke: currentColor; stroke-width: 4.5;
