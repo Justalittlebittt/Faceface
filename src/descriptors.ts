@@ -13,28 +13,33 @@ export type Descriptor = {
   text: string;
   caveat: string;
   usable?: boolean; // false when the photo cannot support this specific observation
+  certainty?: "clear" | "borderline" | "unavailable"; // provisional threshold evidence; never personality certainty
 };
 export type Analysis = {
   status: "ok" | "no-face" | "multiple-faces" | "poor-quality";
   message: string;
   descriptors: Descriptor[];
+  threeSections?: { upper: number; middle: number; lower: number }; // approximate PHOTO-only zones
 };
 
 const empty = (status: Exclude<Analysis["status"], "ok">, message: string): Analysis =>
   ({ status, message, descriptors: [] });
 
+type ClassifiedLabel = { text: string; certainty: "clear" | "borderline" | "unavailable" };
 function category(
   value: number, lower: number, upper: number, margin: number,
   low: string, middle: string, high: string, borderline: string
-): string {
+): ClassifiedLabel {
   // A measured ratio near a cutoff is not a reliable categorical trait.
   // The 0.003-wide additional guard prevents rounding/resize drift at the
   // edge of our provisional band (observed .218 vs .220 on one image).
   // This is a conservative display rule, NOT population/device calibration.
   const displayGuard = margin + 0.003;
   if (Math.abs(value - lower) <= displayGuard ||
-      Math.abs(value - upper) <= displayGuard) return borderline;
-  return value < lower ? low : value > upper ? high : middle;
+      Math.abs(value - upper) <= displayGuard) {
+    return { text: borderline, certainty: "borderline" };
+  }
+  return { text: value < lower ? low : value > upper ? high : middle, certainty: "clear" };
 }
 
 /** Pure, testable transform. Input comes from a REAL FaceLandmarker.detect() call in App.tsx. */
@@ -109,8 +114,9 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
   const chinRatio = d(17, 152) / faceHeight;
 
   const caveat = "探索阶段的比例区间，尚未经过多设备/人群标定；拍摄角度、表情与妆容可能影响结果。";
-  const make = (id: string, region: string, measurement: string, ratio: number, text: string): Descriptor =>
-    ({ id, region, measurement, ratio: Number(ratio.toFixed(3)), text, caveat });
+  const make = (id: string, region: string, measurement: string, ratio: number, label: ClassifiedLabel): Descriptor =>
+    ({ id, region, measurement, ratio: Number(ratio.toFixed(3)), text: label.text,
+      certainty: label.certainty, caveat });
 
   const descriptors = [
     make("face.aspect", "整体脸型", "脸部高度 / 颧部横向跨度", faceRatio,
@@ -136,15 +142,31 @@ export function describeLandmarks(faces: readonly (readonly Point[])[], image: {
           ? category(lipFullness, 0.06, 0.11, 0.012,
               "本次照片中唇部可见厚度相对偏薄", "本次照片中唇部可见厚度处于中间区间",
               "本次照片中唇部可见厚度相对偏丰", "唇厚比例接近实验分类边界，暂不做厚薄判定")
-          : "照片中嘴唇有明显张开，暂不判断唇部厚薄"), usable: lipsUsable }
+          : { text: "照片中嘴唇有明显张开，暂不判断唇部厚薄",
+              certainty: "unavailable" }), usable: lipsUsable }
   ];
 
   if (descriptors.some(item => !Number.isFinite(item.ratio) || item.ratio <= 0 || item.ratio > 3)) {
     return empty("poor-quality", "关键点比例异常，无法稳定描述；请重拍。");
   }
+  // 《三停》 concerns historical upper/middle/lower face sections. Landmarks
+  // 10 (upper forehead, not hairline), 168 (nasal root), 4 (nose tip), 152
+  // (chin) provide only an APPROXIMATE vertical photo study, never a
+  // confirmed ancient three-section measurement or a fortune prediction.
+  const upperPx = (p(168).y - p(10).y) * image.height;
+  const middlePx = (p(4).y - p(168).y) * image.height;
+  const lowerPx = (p(152).y - p(4).y) * image.height;
+  const sumSections = upperPx + middlePx + lowerPx;
+  const threeSections = upperPx > 0 && middlePx > 0 && lowerPx > 0 && sumSections > 30
+    ? {
+        upper: upperPx / sumSections,
+        middle: middlePx / sumSections,
+        lower: lowerPx / sumSections
+      } : undefined;
   return {
     status: "ok",
     message: "以下描述来自本次相机帧的模型关键点与实验性比例计算，不代表传统面相判词。",
-    descriptors
+    descriptors,
+    ...(threeSections ? { threeSections } : {})
   };
 }
