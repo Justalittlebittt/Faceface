@@ -591,6 +591,21 @@ export default function App() {
                     </div>
                     <p className="report-intro">{reading.overview}</p>
                     <p className="report-intro">{reading.patternSummary}</p>
+                    {reading.crossRegionStudy && (
+                      <section className="cross-region-reading" aria-label={reading.crossRegionStudy.title}>
+                        <h4>{reading.crossRegionStudy.title}</h4>
+                        <p>{reading.crossRegionStudy.narrative}</p>
+                        <div className="cross-region-citations">
+                          {reading.featuredLinks.map(link => (
+                            <a key={link.cardId} href={link.source.source_url}
+                              target="_blank" rel="noopener noreferrer">
+                              {link.organ} · {link.historicalTerm} · {link.source.volume}《{link.source.section}》
+                              ({t(language, "pageIndex")} {link.source.pdf_page_zero_based})
+                            </a>
+                          ))}
+                        </div>
+                      </section>
+                    )}
                     {reading.threeSections && (
                       <section className="three-sections-reading" aria-label={reading.threeSections.title}>
                         <h4>{reading.threeSections.title}</h4>
