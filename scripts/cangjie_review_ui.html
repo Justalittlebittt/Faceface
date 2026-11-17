@@ -243,8 +243,8 @@ $("copy-ocr").addEventListener("click",()=>{
   message("已复制OCR候选。必须核对全部原图后才可标记为校勘完成。");
 });
 $("copy-agent").addEventListener("click",()=>{
-  if (!$("copy-agent").disabled && agentDraft !== "") {
-    $("transcription").value = agentDraft;
+  if (!$("copy-agent").disabled) {
+    if (agentDraft.trim()) $("transcription").value = agentDraft;
     $("confirmed").checked = false;
     // Source-page guesses cannot override existing manually reviewed metadata.
     if (!$("volume").value && agentDiagnostic.printed_volume_guess) {
@@ -262,9 +262,11 @@ $("copy-agent").addEventListener("click",()=>{
     ].filter(Boolean).join("\n");
     if (notes) $("notes").value = [$("notes").value,notes].filter(Boolean).join("\n").slice(0,2000);
     updateCounter();
-    message("AI草稿已放入编辑区，但不构成校勘。请逐字对照原图后签署。");
+    message(agentDraft.trim()
+      ? "AI草稿已放入编辑区，不构成校勘。请逐字对照原图后签署。"
+      : "Agent暂判本页无可转录正文；图谱/空白仅为草稿分类，已附备注，必须对照原图确认。");
   } else {
-    message("草稿没有可转录正文，可能是图谱/空白页；仍需在原图确认分类。");
+    message("没有通过来源核验的视觉Agent草稿。");
   }
 });
 $("save").addEventListener("click",async()=>{
