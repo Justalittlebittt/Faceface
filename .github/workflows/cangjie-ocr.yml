@@ -1,0 +1,133 @@
+name: M16.2 Full-book OCR candidate coverage (unreviewed)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-ocr.yml"
+      - "scripts/cangjie_ocr_candidates.py"
+      - "scripts/cangjie_ocr_audit.py"
+      - "tests/test_cangjie_ocr.py"
+      - "tests/test_cangjie_ocr_audit.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ocr-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test OCR provenance and 268-page aggregate gates
+        run: python -m unittest discover -s tests -p 'test_cangjie_ocr*.py' -v
+
+  ocr-shards:
+    needs: ocr-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include:
+          - { source: nlc-44091, pdf: part1.pdf, start: 0, end: 50 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 51, end: 101 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 102, end: 152 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 0, end: 38 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 39, end: 77 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 78, end: 114 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install vertical Traditional Chinese OCR engine and PDF renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils tesseract-ocr tesseract-ocr-chi-tra-vert
+          tesseract --list-langs 2>&1 | grep -x 'chi_tra_vert'
+          tesseract --version | head -1
+
+      - name: Download only this shard's original PDF (ephemeral)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-scans"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/faceface-scans/${{ matrix.pdf }}"
+          test -s "$RUNNER_TEMP/faceface-scans/${{ matrix.pdf }}"
+
+      - name: Run ACTUAL vertical Chinese OCR on each source page in shard
+        env:
+          OMP_THREAD_LIMIT: "1"
+        run: |
+          python scripts/cangjie_ocr_candidates.py \
+            --scan-dir "$RUNNER_TEMP/faceface-scans" \
+            --out-dir "$RUNNER_TEMP/faceface-ocr" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} \
+            --end ${{ matrix.end }} --dpi 170
+          echo "Candidate OCR: ${{ matrix.source }} page ${{ matrix.start }}..${{ matrix.end }}; none manually reviewed."
+
+      # Raw OCR text remains in ephemeral runner temp. Artifacts publish only
+      # per-page SHA256, attempted page IDs, char counts and confidence values.
+      - name: Stage metadata-only audit
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ocr-audit-public
+          find "$RUNNER_TEMP/faceface-ocr/reports" -maxdepth 1 -name '*.json' \
+            -exec cp {} ocr-audit-public/ \; 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m16-ocr-audit-${{ matrix.source }}-p${{ matrix.start }}-${{ matrix.end }}
+          path: ocr-audit-public/
+          retention-days: 14
+          if-no-files-found: warn
+
+  coverage-audit:
+    needs: ocr-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: m16-ocr-audit-*
+          path: ocr-shard-reports
+          merge-multiple: true
+
+      - name: Verify ALL 268 attempted pages (do not treat OCR as reviewed)
+        run: |
+          python -m scripts.cangjie_ocr_audit \
+            ocr-shard-reports/*.json --out ocr-total-audit.json
+          python - <<'PY'
+          import json
+          a=json.load(open("ocr-total-audit.json",encoding="utf-8"))
+          assert a["ocr_attempted_pages"]==268
+          assert a["human_reviewed_pages"]==0
+          assert a["full_book_agent_extraction_performed"] is False
+          print("268 source pages OCR attempted; 0 manually reviewed; 0 Cangjie knowledge candidates certified")
+          PY
+
+      - name: Publish ONLY full-book audit counts, not original text
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-ocr-all-pages-statistics-only
+          path: ocr-total-audit.json
+          retention-days: 14
