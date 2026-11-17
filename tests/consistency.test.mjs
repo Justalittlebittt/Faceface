@@ -21,7 +21,7 @@ test("same photo descriptors yield no spurious category or classical source chan
   assert.ok(result);
   assert.equal(result.labelChangeCount,0);
   assert.equal(result.historicalChangeCount,0);
-  assert.equal(result.historical.length,9);
+  assert.equal(result.historical.length,10);
   assert.ok(result.descriptors.every(d=>d.ratioDelta===0));
 });
 
