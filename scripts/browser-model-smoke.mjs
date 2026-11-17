@@ -230,6 +230,8 @@ try {
     cameraError: document.querySelector(".workbench .error-message")?.textContent || null,
     descriptionCount: document.querySelectorAll(".observation").length,
     historicalHighlights: document.querySelectorAll(".source-highlight").length,
+    crossRegionCardCount: document.querySelectorAll(".cross-region-reading").length,
+    crossRegionCitationCount: document.querySelectorAll(".cross-region-citations a").length,
     briefInsightCount: document.querySelectorAll(".reading-insights p").length,
     detailedCollapsed: !document.querySelector("details.source-details")?.open,
     historicalCards: document.querySelectorAll(".source-detail").length,
@@ -257,6 +259,13 @@ try {
       diagnostics.cameraError || scriptErrors.length) {
     throw new Error("Real browser face-to-source-linked report integration failed");
   }
+  if (diagnostics.historicalHighlights === 2 &&
+      (diagnostics.crossRegionCardCount !== 1 || diagnostics.crossRegionCitationCount !== 2)) {
+    throw new Error("M14 failed to produce a two-source, cross-region reading from real model evidence");
+  }
+  if (diagnostics.historicalHighlights < 2 && diagnostics.crossRegionCardCount !== 0) {
+    throw new Error("M14 invented a cross-region reading without two independent source links");
+  }
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
     page.getByRole("button", { name: "保存或分享文化报告" }).click()
@@ -264,7 +273,9 @@ try {
   const downloadedPath = await download.path();
   if (!downloadedPath) throw new Error("No downloadable report file");
   const savedText = await readFile(downloadedPath, "utf8");
-  if (!savedText.includes("【简洁报告】") ||
+  if ((diagnostics.crossRegionCardCount === 1 &&
+       (!savedText.includes("跨部位古籍文化并读") || !savedText.includes("尚无依据合成为一个古籍相型"))) ||
+      !savedText.includes("【简洁报告】") ||
       !savedText.includes("【详细版：全部面部形态观察") ||
       !savedText.includes("或細長") ||
       !savedText.includes("口須方大") ||
@@ -303,6 +314,10 @@ try {
       englishObservations.some(x => !/[A-Za-z]/.test(x))) {
     throw new Error("English measurements not rendered after language switch");
   }
+  if (diagnostics.crossRegionCardCount === 1 &&
+      !(await page.locator(".cross-region-reading").textContent())?.includes("single classical type")) {
+    throw new Error("M14 English cross-region summary lost its combination limitation");
+  }
   if (!(await page.locator(".cultural-reading").textContent())?.includes("Source:")) {
     throw new Error("English cultural references were not displayed");
   }
@@ -313,7 +328,9 @@ try {
   const englishPath = await englishDownload.path();
   if (!englishPath) throw new Error("Missing English downloaded file");
   const englishReport = await readFile(englishPath, "utf8");
-  if (!englishReport.includes("SHORT REPORT") ||
+  if ((diagnostics.crossRegionCardCount === 1 &&
+       !englishReport.includes("Reading across two facial regions")) ||
+      !englishReport.includes("SHORT REPORT") ||
       !englishReport.includes("DETAILED OBSERVATIONS") ||
       !englishReport.includes("Original wording: 或細長") ||
       !englishReport.includes("not a certified translation") ||
