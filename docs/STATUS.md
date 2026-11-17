@@ -1,5 +1,16 @@
 # Faceface｜项目进度总览（2026-11-17）
 
+## 2026-11-17 M16.8：真实仓颉五路语义提取试验——质量门未通过，已停止盲目放大模型
+
+- [x] **[PR #30](https://github.com/Justalittlebittt/Faceface/pull/30)试验分支**构建并通过 `scripts/cangjie_semantic_agents.py` 单元测试：固定官方仓颉`kangarooking/cangjie-skill@a28de55ba881b9928956a55048f743f7a9e3b23e`的Adler和五个原版Extractor提示词，独立使用本机Ollama文本模型；页码、PDF SHA和OCR文本SHA绑定；只接受从指定页OCR中选中的短片段，不允许未经原图核验的成果上线。
+- [x] **[Qwen2.5 1.5B原文复制方案](https://github.com/Justalittlebittt/Faceface/actions/runs/44062461853)**：三张原始PDF样本页、15/15次真实提取器模型调用结构成功，**0条能进入研究候选池**，Adler未形成有效JSON。
+- [x] **[Qwen2.5 1.5B来源短片段编号方案](https://github.com/Justalittlebittt/Faceface/actions/runs/44063948361)**：同三页、15/15次真实提取器调用结构成功，仍**0条有效候选**，Adler`JSONDecodeError`。说明复制方式不是唯一瓶颈。
+- [x] **[Qwen3 4B Instruct质量门](https://github.com/Justalittlebittt/Faceface/actions/runs/44065305929)**：收紧为第一份PDF零起页27、五类角色5/5次结构成功、**Adler部分样本结构成功**，但候选仍**0条**，硬门失败。三轮合计**35次真实Extractor模型调用、0条合格来源匹配候选**，即使模型更强也没有实用的候选生产量。Adler仅为单页/小样本假说，绝非全268页理解。
+- [ ] **质量判断：拒绝把结构化API调用成功率伪装为有效蒸馏。** `PR #30`的语义提取方案尚未通过质量门，不把它合并为生产知识处理器，也不改前台相机和10张已核实文化规则。**原书268页PP-OCRv5真实扫描覆盖仍已完成**（53,977未经校勘汉字，M16.7）；实际全文的人手校勘仍0/268。这个实验不能证明OCR中的所有文字无意义，只说明当前小模型+当前噪声OCR+严格提取规范的组合未产生符合依据的候选。
+- [ ] **下一步直接做来源片段预筛（减法）**：不再连续替换模型重跑全书。先对268页已有来源哈希的OCR逐页做**面型、眼、鼻、口、耳、下颌、发际、印堂、眉骨、图谱等形态关键词/常见描述模式检索**，形成一份可追溯页码、OCR片段与干扰因素的`source_unverified`候选索引，并核查来自不同卷/不同版面的实际命中率。对候选量和原页可读性达标的文本段再调用仓颉Extractor做语义归类，对未通过原图核验的内容绝不自动加入用户报告。**避免重复消耗免费CPU在35次已验证为空的同类模型流程。**
+
+
+
 ## 2026-11-17 M16.7：268页全部真实运行PP-OCRv5；小型视觉模型质量否决；私有仓颉工作语料接通
 
 - [x] **[PR #29](https://github.com/Justalittlebittt/Faceface/pull/29)** 已合并（`17255a18a80595ff11c4374120b70ec06f4ecbb8`）：真正使用 **PaddleOCR PP-OCRv5** 在1925年《麻衣相法》两份原PDF全部153+115＝**268页**进行OCR；不是PDF页码清点，也不是3/13页抽样，全部6片实测通过。
