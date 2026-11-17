@@ -1,14 +1,14 @@
 /**
  * Faceface camera guidance. The visible outline is an anatomical SVG hint,
  * not a biometric identity boundary. Only an actual MediaPipe face with a
- * mostly-inside facial perimeter can start the three-second countdown.
+ * mostly-inside facial perimeter can start the three-second readiness countdown. Capture is always manual.
  *
  * Calculations are pure and account for mirrored front-camera video and
  * object-fit:contain letterboxing. No image or landmark data is persisted.
  */
 import { describeLandmarks, type Point } from "./descriptors.ts";
 
-export const AUTO_CAPTURE_MS = 3000;
+export const READY_HOLD_MS = 3000;
 export const MAX_SAMPLE_GAP_MS = 1100;
 export const GUIDE_VIEW = { width: 300, height: 420 } as const;
 
@@ -117,6 +117,6 @@ export function advanceHold(state: Hold, now: number, aligned: boolean): Hold {
       now < state.lastSeenAt || now - state.lastSeenAt > MAX_SAMPLE_GAP_MS) {
     return { startedAt: now, lastSeenAt: now, progress: 0, complete: false };
   }
-  const progress = Math.min(1, Math.max(0, (now - state.startedAt) / AUTO_CAPTURE_MS));
+  const progress = Math.min(1, Math.max(0, (now - state.startedAt) / READY_HOLD_MS));
   return { startedAt: state.startedAt, lastSeenAt: now, progress, complete: progress >= 1 };
 }
