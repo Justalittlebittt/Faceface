@@ -68,7 +68,7 @@ test("historical excerpts are conditionally related only when measured direction
   };
   const reading = makeReading(onlyMouth);
   assert.deepEqual(reading.sourceLinks.map(link => link.status),
-    ["insufficient", "related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
+    ["insufficient", "related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.match(reading.sourceLinks[1].explanation, /局部相似/);
   const neither = {
     ...onlyMouth, descriptors: onlyMouth.descriptors.map(d => d.id === "mouth.width"
