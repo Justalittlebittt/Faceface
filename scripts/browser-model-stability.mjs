@@ -22,7 +22,8 @@ const server = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "previe
 const sourceIds = [
   "MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01",
   "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01",
-  "MY25-FACE-ROUND-01", "MY25-NOSE-LONG-01", "MY25-CHIN-WIDE-01"
+  "MY25-FACE-ROUND-01", "MY25-NOSE-LONG-01", "MY25-CHIN-WIDE-01",
+  "MY25-MOUTH-CATFISH-01"
 ];
 const descriptorIds = [
   "face.aspect", "eyes.openness", "nose.width", "mouth.width",

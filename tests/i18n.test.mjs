@@ -62,7 +62,7 @@ test("English and Chinese reports share source IDs and retain original historica
   assert.match(englishText,/Original wording: 頦為地，欲方而闊/);
   for(const page of [34,52,77]) assert.ok(englishText.includes("PDF zero-based page "+page));
   for(const phrase of ["面圓光澤","鼻長有壽","頦為地"]) assert.ok(chineseText.includes(phrase));
-  assert.equal(en.sourceLinks.length,9);
+  assert.equal(en.sourceLinks.length,10);
   assert.match(englishText,/Ox mouth/);
   assert.match(englishText,/What the historic text says/);
   assert.match(englishText,/Four Rivers/);

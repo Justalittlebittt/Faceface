@@ -252,7 +252,7 @@ try {
   if (diagnostics.descriptionCount !== 10 ||
       diagnostics.historicalHighlights < 1 || diagnostics.historicalHighlights > 2 ||
       diagnostics.briefInsightCount < 1 || !diagnostics.detailedCollapsed ||
-      diagnostics.historicalCards !== 9 || diagnostics.historicalFrameworks !== 3 ||
+      diagnostics.historicalCards !== 10 || diagnostics.historicalFrameworks !== 3 ||
       diagnostics.threeSectionsVisible !== 1 || diagnostics.threeSectionsParts !== 3 ||
       !diagnostics.threeSectionsHasCaveat ||
       !diagnostics.detailedReport?.includes("不据此作出相型判断") ||
@@ -286,6 +286,8 @@ try {
       !savedText.includes("面圓光澤") ||
       !savedText.includes("鼻長有壽") ||
       !savedText.includes("頦為地") ||
+      !savedText.includes("鮎魚口闊角低尖") ||
+      !savedText.includes("扫描 PDF 零起页89") ||
       !savedText.includes("古籍文化解读（非现实预测）") ||
       !savedText.includes("【古籍取象背景") ||
       !savedText.includes("PDF 零起页86") ||
@@ -339,6 +341,8 @@ try {
       !englishReport.includes("Four Rivers") ||
       !englishReport.includes("PDF zero-based page 86") ||
       !englishReport.includes("PDF zero-based page 87") ||
+      !englishReport.includes("PDF zero-based page 89") ||
+      !englishReport.includes("Original wording: 鮎魚口闊角低尖") ||
       !englishReport.includes("PDF zero-based page 52") ||
       !englishReport.includes("PDF zero-based page 77") ||
       !englishReport.includes("PDF zero-based page 34") ||
@@ -365,7 +369,7 @@ try {
     .setInputFiles(secondPhoto);
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
-  if (comparisonStats.join("|") !== "0 / 10|0 / 9") {
+  if (comparisonStats.join("|") !== "0 / 10|0 / 10") {
     throw new Error("M9 identical-picture local comparison drifted: " + comparisonStats.join("|"));
   }
   await page.locator(".consistency-details summary").click();

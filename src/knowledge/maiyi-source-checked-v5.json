@@ -1,0 +1,373 @@
+{
+  "dataset": "faceface-source-checked-v5",
+  "revision": "2026-11-17",
+  "provenance": {
+    "original_record": "五官原文规则卡_V0.6.json",
+    "version": "0.6.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "edition": "1925年文明书局秦慎安校勘本",
+    "volume": "卷一",
+    "section": "五官总论",
+    "pdf_page_zero_based": 27,
+    "verification": "original page re-inspected on 2026-11-13; terminology is historical evidence, NOT a facial trait inference",
+    "revision_note": "M15: preserve nine V4 historical morphology cards and three framework notes; add a page-89 visually verified illustrated 鮎魚口 source with two distinct PHOTO-ONLY cues (mouth width and downward mouth-corner direction). Remaining illustrated conditions, expression effects and pejorative fortune assertions are NOT asserted. V4 is retained for source audit.",
+    "note_on_container": "The scan PDF named 第1卷 contains pages labeled 卷二 inside it; digital PDF index 66, 86, 87 refers to that same FIRST digital file, not the separate digital file named 第2卷."
+  },
+  "policy": {
+    "no_fate_prediction": true,
+    "no_automatic_classification_from_unvalidated_thresholds": true,
+    "no_side_to_front_metric_substitution": true,
+    "no_personality_health_fate_from_appearance": true,
+    "conditions_are_modern_experiments_not_book_thresholds": true,
+    "never_confirm_complete_type": true
+  },
+  "cards": [
+    {
+      "id": "MY25-EYE-01",
+      "organ": "眼",
+      "traditional_name": "监察官",
+      "source_phrase": "或細長",
+      "modern_observation": "眼部宽高比例",
+      "mode": "geometry_only",
+      "linked_metric": "eye_aspect_ratio",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "现代眼部宽高比只能作为相关观测，不等于古籍细长标准",
+      "conditions": [
+        {
+          "metric": "eyes.openness",
+          "operator": "lt",
+          "value": 0.205
+        }
+      ],
+      "historical_view_zh": "卷一《五官总论》把眼部形态作为传统五官描述的一部分，提到细长的形态用语；这里仅展示文字与照片局部特征的联系。",
+      "historical_view_en": "The chapter on the five facial features uses 'slender and long' as a historical eye-shape term. Only a partial visual correspondence is reported here."
+    },
+    {
+      "id": "MY25-MOUTH-01",
+      "organ": "口",
+      "traditional_name": "出纳官",
+      "source_phrase": "口須方大",
+      "modern_observation": "口部轮廓及宽度",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "可展示口宽比例，但古籍未给出现代“方大”数值判定",
+      "conditions": [
+        {
+          "metric": "mouth.width",
+          "operator": "gt",
+          "value": 0.495
+        }
+      ],
+      "historical_view_zh": "卷一《五官总论》把口的宽阔轮廓纳入传统形态描述，并没有提供现代数值比例；相同观察不等于古籍断语成立。",
+      "historical_view_en": "The classic describes broad mouth contours, but specifies no modern numeric criterion; observed width does not confirm a traditional type."
+    },
+    {
+      "id": "MY25-NOSE-01",
+      "organ": "鼻",
+      "traditional_name": "审辨官",
+      "source_phrase": "梁柱端直",
+      "modern_observation": "鼻梁的直线形态",
+      "mode": "not_measured",
+      "linked_metric": null,
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五官总论",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_pdf_scan_page_27_read_2026-11-11"
+      },
+      "caveat": "鼻尖中线偏移不能代替整条鼻梁的端直判断",
+      "conditions": [],
+      "historical_view_zh": "卷一《五官总论》提及鼻梁端直；当前仅有鼻宽、鼻部纵向比例，尚不能测出真实鼻梁立体直线形态。",
+      "historical_view_en": "The original mentions a straight nasal bridge, which cannot be established from the currently available front-view width and length ratios."
+    },
+    {
+      "id": "MY25-MOUTH-ARC-01",
+      "organ": "口",
+      "traditional_name": "口形图示",
+      "source_phrase": "仰月口",
+      "modern_observation": "单张照片两侧口角相对于唇部中线的垂直位置",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_corner_index",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相口·仰月口图",
+        "pdf_page_zero_based": 86,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_86_visual_read_2026-11-13"
+      },
+      "caveat": "古籍插图展示整口弧线；现代照片仅量口角上扬趋势，笑容和表情可瞬时改变形态，绝不可确认为仰月口完整相型",
+      "conditions": [
+        {
+          "metric": "mouth.corner",
+          "operator": "gt",
+          "value": 0.55
+        }
+      ],
+      "historical_view_zh": "卷二《相口》使用“仰月口”图式描绘上弯口线，是传统象形分类；微笑可能造成暂时上扬，不能因此判成固定相型。",
+      "historical_view_en": "The historical diagram uses an upward crescent curve. A smile may transiently raise the corners, so this is not a verified fixed face type."
+    },
+    {
+      "id": "MY25-EYE-OX-01",
+      "organ": "眼",
+      "traditional_name": "眼形图示",
+      "source_phrase": "牛眼·眼大睛圓",
+      "modern_observation": "照片中眼裂高度相对眼宽的开合比例（只涉及图示局部方向）",
+      "mode": "geometry_only",
+      "linked_metric": "eye_aspect_ratio",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相目·牛眼图",
+        "pdf_page_zero_based": 66,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "visual_scan_2026-11-13_page_66"
+      },
+      "caveat": "图示涉及整体眼形、眼珠外观及眼周条件；高眼裂开合比例仅是拍照当时的局部特征，不证明属于牛眼",
+      "conditions": [
+        {
+          "metric": "eyes.openness",
+          "operator": "gt",
+          "value": 0.335
+        }
+      ],
+      "historical_view_zh": "古籍图示以“牛眼”命名一种眼形，强调眼部形状。这是历史的象形比喻，照片中的开合比例不能说明个人性格或未来。",
+      "historical_view_en": "The illustrated 'ox eyes' category emphasizes eye shape. This is historical animal imagery; a photo's eye-opening ratio cannot establish personality or destiny."
+    },
+    {
+      "id": "MY25-MOUTH-OX-01",
+      "organ": "口",
+      "traditional_name": "口形图示",
+      "source_phrase": "牛口·雙唇厚且豐",
+      "modern_observation": "仅在口部相对宽且闭合时上下唇可见厚度相对丰满的照片中记录局部组合",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相口·牛口图",
+        "pdf_page_zero_based": 87,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "visual_scan_2026-11-13_page_87"
+      },
+      "caveat": "原书是完整口部插图与吉祥叙事；现代照片受微笑、妆容和张口影响，宽度加唇厚只能代表两项局部条件，不可确认完整牛口相型或财富走势",
+      "conditions": [
+        {
+          "metric": "mouth.width",
+          "operator": "gt",
+          "value": 0.495
+        },
+        {
+          "metric": "mouth.lip",
+          "operator": "gt",
+          "value": 0.122
+        }
+      ],
+      "historical_view_zh": "《相口》在“牛口”图式下写有“平生衣祿更昌隆”等吉祥寓意。这是原书的传统说法，并不是对当事人现实财富或人生的预测。",
+      "historical_view_en": "The original 'ox mouth' diagram associates this style with auspicious livelihood imagery. That is the text's historical claim, not a prediction of anyone's actual finances."
+    },
+    {
+      "id": "MY25-FACE-ROUND-01",
+      "organ": "面",
+      "traditional_name": "论面形态",
+      "source_phrase": "面圓光澤",
+      "modern_observation": "照片中的整体脸部长宽比相对偏宽；不以此断言面部完整外轮廓为圆形",
+      "mode": "geometry_only",
+      "linked_metric": "face_aspect_ratio",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "论面",
+        "pdf_page_zero_based": 52,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_visual_scan_verified_2026-11-16_pdf_index_52"
+      },
+      "caveat": "原句同时描述面形与面部光泽；当前仅测脸部二维长宽比，不能认定圆面轮廓、肤色或原书整句条件，更不能推断人格与运势",
+      "conditions": [
+        {
+          "metric": "face.aspect",
+          "operator": "lt",
+          "value": 1.26
+        }
+      ],
+      "historical_view_zh": "《论面》用「面圓光澤」描写一种面部外观。这里只借其有关面形的传统语言说明照片里的宽长比例，光泽等其余条件尚未检测。",
+      "historical_view_en": "The 'On the Face' chapter describes a round, lustrous appearance. Here only the broad-versus-long facial ratio loosely relates to the shape wording; luster and full contour are not assessed."
+    },
+    {
+      "id": "MY25-NOSE-LONG-01",
+      "organ": "鼻",
+      "traditional_name": "论鼻形态",
+      "source_phrase": "鼻長有壽",
+      "modern_observation": "照片中鼻根至鼻尖二维纵向跨度相对脸高的比例",
+      "mode": "geometry_only",
+      "linked_metric": "nose_length_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相鼻·诗",
+        "pdf_page_zero_based": 77,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_visual_scan_verified_2026-11-16_pdf_index_77"
+      },
+      "caveat": "古籍语句将鼻长与长寿联系，是旧时相术观念；现代照片只测二维鼻部纵向比例，不能判断鼻梁立体结构、健康情况或实际寿命",
+      "conditions": [
+        {
+          "metric": "nose.length",
+          "operator": "gt",
+          "value": 0.255
+        }
+      ],
+      "historical_view_zh": "《相鼻》诗句以「鼻長有壽」将鼻部长度与寿数相联系，这是古代相术的历史说法，不是对本人的健康或寿命预测。",
+      "historical_view_en": "A verse in 'On the Nose' links a long nose with longevity as a traditional belief. This is historical attribution, not a health assessment or lifespan prediction."
+    },
+    {
+      "id": "MY25-CHIN-WIDE-01",
+      "organ": "頦",
+      "traditional_name": "三才三停",
+      "source_phrase": "頦為地，欲方而闊",
+      "modern_observation": "照片里下颌两侧横向跨度相对颧部跨度的比例；仅观察面部下部宽度方向",
+      "mode": "geometry_only",
+      "linked_metric": "jaw_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "三才三停",
+        "pdf_page_zero_based": 34,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_visual_scan_verified_2026-11-16_pdf_index_34"
+      },
+      "caveat": "下颌相对颧部的宽度不能代表真正的颏部正面方正程度、骨骼或立体轮廓；《三才三停》的‘富’属于历史传统解释，不代表现实财务状况",
+      "conditions": [
+        {
+          "metric": "jaw.width",
+          "operator": "gt",
+          "value": 0.785
+        }
+      ],
+      "historical_view_zh": "《三才三停》将颏部喻为「地」，偏好方阔外形，并附带传统吉祥含义。当前仅能比较照片中的下部脸宽，不能判断颏部方正，也不据此预测财富。",
+      "historical_view_en": "In 'Three Talents and Three Sections,' the chin represents Earth, with a preference for breadth and squareness in historical physiognomy. This photo measures only relative lower-face width, not squareness or financial destiny."
+    },
+    {
+      "id": "MY25-MOUTH-CATFISH-01",
+      "organ": "口",
+      "traditional_name": "相口·鮎魚口图",
+      "source_phrase": "鮎魚口闊角低尖",
+      "modern_observation": "同一张合格正脸照片中口部横向比例相对较大，且双侧口角平均位置相对偏下；只比较两项外形方向",
+      "mode": "geometry_only",
+      "linked_metric": "mouth_width_norm",
+      "conclusion_from_metric_allowed": false,
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷二",
+        "section": "相口·鮎魚口图",
+        "pdf_page_zero_based": 89,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_web_pdf_screenshot_verified_2026-11-17_page_89"
+      },
+      "caveat": "古籍图式不仅包含口宽与低口角，还描述尖角、双唇等整口外观；本模型不能证明全部条件，微表情、说话和镜头角度可使口角变化。原书的贫富等贬抑断语属历史偏见，不用于评价用户。",
+      "conditions": [
+        {
+          "metric": "mouth.width",
+          "operator": "gt",
+          "value": 0.495
+        },
+        {
+          "metric": "mouth.corner",
+          "operator": "lt",
+          "value": 0.445
+        }
+      ],
+      "historical_view_zh": "卷二《相口》以「鮎魚口」命名一种插图口形，涉及较宽的口部与较低的口角。这里仅对照本次照片两项局部方向；该书同时包含对贫富的旧式贬抑说法，不构成对当事人的现实判断。",
+      "historical_view_en": "The volume-two mouth illustration uses the historical label 'catfish mouth' for an overall pictured contour including a broad mouth and downturned corners. Only two visible photo directions are compared here; its derogatory fortune claims reflect an old belief, not a judgment about the person."
+    }
+  ],
+  "framework_notes": [
+    {
+      "id": "MY25-FRAME-MOUNTAINS-01",
+      "title_zh": "五岳：面部作为山岳的空间比喻",
+      "title_en": "Five Mountains: mapping facial regions to mountains",
+      "quote": "額為衡山；鼻為嵩山",
+      "explanation_zh": "古籍借山岳比喻额与鼻等面部位置，是传统分类的历史背景；不能用单张照片推断人生走势。",
+      "explanation_en": "The classic maps the forehead and nose to mountain imagery. This explains its historical vocabulary; it does not predict personal outcomes.",
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "五岳",
+        "pdf_page_zero_based": 27,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_27_visual_read_2026-11-13"
+      }
+    },
+    {
+      "id": "MY25-FRAME-RIVERS-01",
+      "title_zh": "四渎：五官与水系的取象",
+      "title_en": "Four Rivers: facial features as waterways",
+      "quote": "耳為江；目為河；口為淮；鼻為濟",
+      "explanation_zh": "古籍用江河等水系来组织耳、目、口、鼻的观察。这是文化取象，不是性格、财富或健康的科学推断。",
+      "explanation_en": "The classic compares ears, eyes, mouth and nose to waterways. It is a historical metaphor, not a scientific diagnosis or a personality forecast.",
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "四渎",
+        "pdf_page_zero_based": 28,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_scan_pdf_zero_based_page_28_visual_read_2026-11-13"
+      }
+    },
+    {
+      "id": "MY25-FRAME-THREE-01",
+      "title_zh": "三停：上、中、下面部结构",
+      "title_en": "Three Sections: upper, middle and lower face",
+      "quote": "面上三停仔細看",
+      "explanation_zh": "原文要求观察上、中、下三段面部，并包含历史吉凶说法；本站只用鼻根、鼻尖与额部关键点做二维比例示意。额上方的模型点不是发际线，因此不能据此认定古籍所说的三停均匀或吉凶。",
+      "explanation_en": "The text organizes the face into upper, middle and lower sections and includes old fortune interpretations. Our 2D landmark ratios are merely an illustration: the model's upper-forehead point is not a hairline. They cannot establish the traditional Three Sections or predict life outcomes.",
+      "source": {
+        "work": "麻衣相法",
+        "edition": "1925年文明书局秦慎安校勘本",
+        "volume": "卷一",
+        "section": "三停",
+        "pdf_page_zero_based": 35,
+        "source_url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+        "verification": "direct_web_pdf_screenshot_verified_2026-11-17_page_35"
+      }
+    }
+  ]
+}

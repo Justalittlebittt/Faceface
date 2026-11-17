@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-source-checked-v4.json" with { type: "json" };
+import catalog from "./knowledge/maiyi-source-checked-v5.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 
@@ -123,6 +123,11 @@ const englishSource: Record<string, { organ: string; title: string; gloss: strin
     organ: "Chin", title: "Three Talents and Three Sections",
     gloss: "Chin as Earth; broadly square [partial descriptive gloss]",
     caveat: "Jaw width relative to cheekbones does not demonstrate a square chin. This traditional description does not predict wealth."
+  },
+  "MY25-MOUTH-CATFISH-01": {
+    organ: "Mouth", title: "Catfish-mouth illustration (historical chart)",
+    gloss: "Catfish mouth: broad opening and lowered corners [partial illustrated description]",
+    caveat: "The drawing additionally describes pointed corners and lips; broad mouth width plus lowered corners cannot establish the full illustration. Expression can change the photo. The text's pejorative fortune statements are historical prejudice, not an assessment of the person."
   }
 };
 
@@ -331,8 +336,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); and 'Three Talents and Three Sections' (三才三停) on page 34 and the 'Three Sections' passage on page 35 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）及《三停》（页35）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); the 'Catfish-mouth' illustration in 'On the Mouth' on page 89 (printed volume 2), and 'Three Talents and Three Sections' (三才三停) on page 34 and the 'Three Sections' passage on page 35 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87、89）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）及《三停》（页35）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
