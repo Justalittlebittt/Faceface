@@ -106,8 +106,8 @@ test("mouth-corner source is conditional, and no complete illustrated type is co
 test("non-personal Five Mountains and Four Rivers notes remain source-traceable in both languages", () => {
   const zh=makeReading(ok,"zh"),en=makeReading(ok,"en");
   assert.deepEqual(zh.frameworkNotes.map(x=>x.id),
-    ["MY25-FRAME-MOUNTAINS-01","MY25-FRAME-RIVERS-01"]);
-  assert.deepEqual(zh.frameworkNotes.map(x=>x.source.pdf_page_zero_based),[27,28]);
+    ["MY25-FRAME-MOUNTAINS-01","MY25-FRAME-RIVERS-01","MY25-FRAME-THREE-01"]);
+  assert.deepEqual(zh.frameworkNotes.map(x=>x.source.pdf_page_zero_based),[27,28,35]);
   assert.deepEqual(en.frameworkNotes.map(x=>x.id),zh.frameworkNotes.map(x=>x.id));
   assert.match(readingAsText(zh),/古籍取象背景/);
   assert.match(readingAsText(zh),/鼻為濟/);
@@ -284,4 +284,57 @@ test("the nasal length reference never substitutes for nasal bridge straightness
   assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-LONG-01").status,"related-observation");
   assert.equal(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-01").status,"insufficient");
   assert.match(reading.sourceLinks.find(x=>x.cardId==="MY25-NOSE-LONG-01").historicalView,/不是对本人的健康或寿命预测/);
+});
+
+test("M12: reported borderline or unavailable metrics must NEVER trigger historical-source associations", () => {
+  // These ratios cross the old historical card cutoffs, but the actual
+  // photo classification considers them too close to experimental bands.
+  const observed=[
+    ...descriptors.map(d => d.id==="eyes.openness"
+      ? {...d,ratio:.203,certainty:"borderline",text:"眼部开合比例接近实验分类边界"}
+      : d.id==="mouth.width"
+      ? {...d,ratio:.497,certainty:"borderline",text:"口部横向比例接近实验分类边界"}
+      : d),
+    {id:"nose.length",region:"鼻部纵向",ratio:.256,measurement:"nose",
+      text:"鼻部纵向比例接近实验分类边界",caveat:"实验",certainty:"borderline"},
+    {id:"jaw.width",region:"下颌",ratio:.787,measurement:"jaw",
+      text:"下颌与颧部宽度比例接近实验分类边界",caveat:"实验",certainty:"borderline"},
+    {id:"mouth.lip",region:"唇部厚度",ratio:.16,measurement:"lip",
+      text:"本次照片中唇部可见厚度相对偏丰",caveat:"实验",certainty:"clear",usable:true}
+  ];
+  const input={...ok,descriptors:observed};
+  for(const lang of ["zh","en"]){
+    const reading=makeReading(input,lang);
+    for(const id of ["MY25-EYE-01","MY25-MOUTH-01","MY25-MOUTH-OX-01",
+                      "MY25-NOSE-LONG-01","MY25-CHIN-WIDE-01"]){
+      const link=reading.sourceLinks.find(x=>x.cardId===id);
+      assert.equal(link.status,"insufficient",id+" "+lang);
+      assert.match(link.explanation,lang==="en"?/near a provisional boundary/:/实验分类边界/);
+    }
+  }
+  const confident=input.descriptors.map(d => d.certainty==="borderline"
+    ? {...d,certainty:"clear"}:d);
+  const allowed=makeReading({...ok,descriptors:confident});
+  assert.equal(allowed.sourceLinks.find(x=>x.cardId==="MY25-MOUTH-01").status,"related-observation");
+  assert.equal(allowed.sourceLinks.find(x=>x.cardId==="MY25-NOSE-LONG-01").status,"related-observation");
+});
+
+test("M12: source-checked Three Sections adds a photo-specific, not fate-predicting cultural note",()=>{
+  const input={...ok,threeSections:{upper:.30,middle:.28,lower:.42}};
+  const zh=makeReading(input,"zh");
+  const en=makeReading(input,"en");
+  assert.equal(zh.frameworkNotes.length,3);
+  assert.equal(zh.frameworkNotes[2].quote,"面上三停仔細看");
+  assert.equal(zh.frameworkNotes[2].source.pdf_page_zero_based,35);
+  assert.ok(zh.threeSections);
+  assert.deepEqual(zh.threeSections.parts.map(x=>x.percent),[30,28,42]);
+  assert.equal(zh.threeSections.source.pdf_page_zero_based,35);
+  assert.match(zh.threeSections.summary,/下段.*相对更长/);
+  assert.match(zh.threeSections.caveat,/不是真正发际线/);
+  assert.match(en.threeSections.summary,/lower portion looks relatively longer/i);
+  assert.match(en.threeSections.caveat,/not the real hairline/i);
+  assert.match(readingAsText(zh),/PDF零起页35/);
+  assert.match(readingAsText(en,"en"),/PDF zero-based page 35/);
+  assert.doesNotMatch(zh.threeSections.summary,/富贵|贫贱|寿命/);
+  assert.equal(makeReading(ok).threeSections,null);
 });
