@@ -1,5 +1,15 @@
 # Faceface｜项目进度总览（2026-11-17）
 
+## 2026-11-17 M16.8：仓颉真实语言模型五角色提取试点与质量门（PR #30）
+
+- [x] 已开发并通过单元测试的 [`scripts/cangjie_semantic_agents.py`](../scripts/cangjie_semantic_agents.py) 从1925年两份原PDF经PP-OCRv5产生的、带原书页码/源文件SHA256/候选文本SHA256的**真实OCR内容**中调用原版仓颉方法论。严格验证`kangarooking/cangjie-skill@a28de55ba881b9928956a55048f743f7a9e3b23e`和它的`methodology/01-stage0-adler.md`、五个`extractors/*-extractor.md`原件。五个角色使用**相互独立的模型请求**（官方允许环境不支持并行subagent时分别执行），输出不进入前台规则库。
+- [x] **[真实1.5B文本模型初试](https://github.com/Justalittlebittt/Faceface/actions/runs/44062461853)**：三张原版扫描页`nlc-44091:p027`、`nlc-44091:p087`、`nlc-44092:p040`，实际OCR后执行Adler样本与五个独立提取器各3次，共**15/15结构化模型调用成功，但原页OCR匹配合格候选为0**；Adler返回JSON无效、不能称完成。
+- [x] **[1.5B来源短片段编号复试](https://github.com/Justalittlebittt/Faceface/actions/runs/44063948361)**：为避免小模型誊抄OCR字词时编造，引导其只选择程序预先从**同页OCR提取的短片段ID**，保留相同的精确原文SHA256绑定。仍是**15/15角色请求结构成功、0条合格候选，Adler JSONDecodeError**。客观结论：`qwen2.5:1.5b-instruct`虽然可调用，但在这套高噪声古籍OCR上目前无法完成有用的仓颉语义蒸馏，拒绝把调用成功率当知识提取成功率。
+- [ ] [**更强Qwen3 4B-instruct真实原版页质量门**](https://github.com/Justalittlebittt/Faceface/actions/runs/44065305929) 已开始：限定第一份原PDF零起页27，必须同时**至少1条可对应OCR短片段的候选**与**有效结构Adler样本结果**，否则判失败、不宣称完成。注意：即使4B通过，也仅为原始**1页试点**，绝非268页五Agent已经全书运行；传统面相断语未经原图核查不能进入正式规则。
+- [ ] 全书268页的OCR目前在公开GitHub Actions中只持有过临时文本，尚未在持久私有位置留存完整正文。后续应该首先**低成本批量建立可核实的候选内容索引**，按所需原始页核查，而不是继续盲目让小模型对全部268页做高耗时重复空调用。正式网站手动拍照、绿色脸框、已审核文化卡保持不变。
+
+
+
 ## 2026-11-17 M16.7：268页全部真实运行PP-OCRv5；小型视觉模型质量否决；私有仓颉工作语料接通
 
 - [x] **[PR #29](https://github.com/Justalittlebittt/Faceface/pull/29)** 已合并（`17255a18a80595ff11c4374120b70ec06f4ecbb8`）：真正使用 **PaddleOCR PP-OCRv5** 在1925年《麻衣相法》两份原PDF全部153+115＝**268页**进行OCR；不是PDF页码清点，也不是3/13页抽样，全部6片实测通过。
