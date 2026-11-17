@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { advanceHold, checkFrontGuide, EMPTY_HOLD, READY_HOLD_MS } from "../src/faceGuide.ts";
+import {
+  advanceHold, advanceStationaryHold, clockwiseFacePath, EMPTY_HOLD,
+  projectFaceGuide, READY_HOLD_MS, smoothFacePoints, FACE_OVAL_INDICES
+} from "../src/faceGuide.ts";
 
 function sample() {
   const face=Array.from({length:478},()=>({x:.5,y:.5}));
@@ -15,49 +18,83 @@ function sample() {
 }
 const image={width:800,height:800};
 const stage={x:0,y:0,width:300,height:420};
-const svg={x:0,y:0,width:300,height:420};
 
-test("fits a valid near-frontal face to the actual outline, not an ellipse",()=>{
-  const result=checkFrontGuide([sample()],image,stage,svg);
-  assert.equal(result.state,"aligned");
-  assert.ok(result.coverage>=.85);
+test("front contour comes from actual face landmarks, not a fixed-size overlay",()=>{
+  const a=projectFaceGuide([sample()],image,stage);
+  assert.equal(a.state,"aligned");
+  assert.equal(a.points.length,FACE_OVAL_INDICES.length);
+  assert.ok(a.anchor.width>.4);
+  const shifted=sample().map(p=>({x:p.x+.12,y:p.y}));
+  const b=projectFaceGuide([shifted],image,stage);
+  assert.equal(b.state,"aligned"); // no tiny fixed outline to fit into
+  assert.ok(a.points[0].x>b.points[0].x); // mirrored camera projects opposite way
+  assert.notEqual(clockwiseFacePath(a.points),clockwiseFacePath(b.points));
 });
-test("a blank scene and multiple people are not capture-ready",()=>{
-  assert.equal(checkFrontGuide([],image,stage,svg).state,"no-face");
-  assert.equal(checkFrontGuide([sample(),sample()],image,stage,svg).state,"multiple");
+test("blank scene, multiple faces and cropped head are not capture-ready",()=>{
+  assert.equal(projectFaceGuide([],image,stage).state,"no-face");
+  assert.equal(projectFaceGuide([sample(),sample()],image,stage).state,"multiple");
+  const clipped=sample();clipped[10]={x:.5,y:.002};
+  assert.notEqual(projectFaceGuide([clipped],image,stage).state,"aligned");
 });
-test("shifting the face outside the outline immediately rejects alignment",()=>{
-  const shifted=sample().map(p=>({x:p.x+.18,y:p.y}));
-  assert.notEqual(checkFrontGuide([shifted],image,stage,svg).state,"aligned");
+test("small and huge faces are rejected based on actual VIDEO area, not SVG proportions",()=>{
+  const small=sample().map(p=>({x:.5+(p.x-.5)*.20,y:.5+(p.y-.5)*.20}));
+  assert.equal(projectFaceGuide([small],image,stage).state,"too-small");
+  const huge=sample().map(p=>({x:.5+(p.x-.5)*1.42,y:.5+(p.y-.5)*1.22}));
+  assert.notEqual(projectFaceGuide([huge],image,stage).state,"aligned");
 });
-test("video letterboxing and mirroring change where the oval appears on the stage",()=>{
-  const result=checkFrontGuide([sample()],image,{x:10,y:30,width:360,height:420},
-    {x:40,y:30,width:300,height:420},true);
-  assert.equal(result.state,"aligned");
+test("mirroring and object-fit:contain letterboxing follow the actual face",()=>{
+  const mirrored=projectFaceGuide([sample()],image,stage,true);
+  const notMirrored=projectFaceGuide([sample()],image,stage,false);
+  assert.ok(Math.abs(mirrored.points[1].x+notMirrored.points[1].x-300)<.001);
+  const wide=projectFaceGuide([sample()],image,{x:20,y:30,width:360,height:420},true);
+  assert.equal(wide.state,"aligned");
+  assert.ok(wide.points[0].x>mirrored.points[0].x);
 });
-test("three continuous seconds unlock readiness, never trigger a shutter",()=>{
+test("clockwise path always begins on forehead and closes a smooth face loop",()=>{
+  const cw=[{x:50,y:0},{x:100,y:50},{x:50,y:100},{x:0,y:50}];
+  const ccw=[cw[0],cw[3],cw[2],cw[1]];
+  const a=clockwiseFacePath(cw),b=clockwiseFacePath(ccw);
+  assert.equal(a,b);
+  assert.match(a,/^M 50 0 C /);
+  assert.match(a,/ Z$/);
+  assert.equal(clockwiseFacePath([]),"");
+});
+test("mild camera jitter is smoothed, larger movements reset green progress",()=>{
+  const a=projectFaceGuide([sample()],image,stage).anchor;
+  assert.ok(a);
+  let tracking=advanceStationaryHold(EMPTY_HOLD,null,a,100,true);
+  const mild={...a,cx:a.cx+.01,cy:a.cy+.01};
+  tracking=advanceStationaryHold(tracking.hold,tracking.anchor,mild,900,true);
+  assert.equal(tracking.moved,false);
+  assert.ok(tracking.hold.progress>0);
+  const large={...a,cx:a.cx+.19};
+  tracking=advanceStationaryHold(tracking.hold,tracking.anchor,large,1500,true);
+  assert.equal(tracking.moved,true);
+  assert.equal(tracking.hold.progress,0);
+  assert.equal(tracking.hold.startedAt,1500);
+  const smoothed=smoothFacePoints([{x:0,y:0}],[{x:10,y:20}],.4);
+  assert.deepEqual(smoothed,[{x:4,y:8}]);
+});
+test("three uninterrupted seconds finish the green scan without auto photography",()=>{
   assert.equal(READY_HOLD_MS,3000);
-  let hold=EMPTY_HOLD;
-  for(const now of [100,950,1800,2650,3099]){
-    hold=advanceHold(hold,now,true);
+  const anchor=projectFaceGuide([sample()],image,stage).anchor;
+  let tracking=advanceStationaryHold(EMPTY_HOLD,null,anchor,100,true);
+  for(const time of [800,1500,2200,3099]) {
+    tracking=advanceStationaryHold(tracking.hold,tracking.anchor,anchor,time,true);
   }
-  assert.equal(hold.complete,false);
-  hold=advanceHold(hold,3100,true);
-  assert.equal(hold.complete,true);
-  assert.equal(hold.progress,1);
-  hold=advanceHold(hold,3110,false);
-  assert.equal(hold.complete,false);
-  assert.equal(hold.startedAt,null);
+  assert.equal(tracking.hold.complete,false);
+  tracking=advanceStationaryHold(tracking.hold,tracking.anchor,anchor,3100,true);
+  assert.equal(tracking.hold.progress,1);
+  assert.equal(tracking.hold.complete,true);
+  tracking=advanceStationaryHold(tracking.hold,tracking.anchor,null,3150,false);
+  assert.deepEqual(tracking.hold,EMPTY_HOLD);
 });
-test("lost detection, long sampling gaps and time reversal reset the three-second hold",()=>{
-  let hold=advanceHold(EMPTY_HOLD,100,true);
-  hold=advanceHold(hold,500,true);
-  hold=advanceHold(hold,1800,true);
-  assert.equal(hold.progress,0);
-  hold=advanceHold(hold,2100,true);
-  assert.ok(hold.progress>0);
-  hold=advanceHold(hold,2000,true);
-  assert.equal(hold.progress,0);
-  hold=advanceHold(hold,2600,false);
-  assert.deepEqual(hold,EMPTY_HOLD);
+test("long model pauses and new valid face restart the three-second scan",()=>{
+  const anchor=projectFaceGuide([sample()],image,stage).anchor;
+  let t=advanceStationaryHold(EMPTY_HOLD,null,anchor,0,true);
+  t=advanceStationaryHold(t.hold,t.anchor,anchor,400,true);
+  t=advanceStationaryHold(t.hold,t.anchor,anchor,1600,true);
+  assert.equal(t.hold.progress,0);
+  assert.equal(t.hold.startedAt,1600);
+  assert.equal(advanceHold(t.hold,500,false).complete,false);
 });
