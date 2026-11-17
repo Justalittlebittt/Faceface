@@ -79,7 +79,7 @@ try {
         // Move the virtual camera closer to the public demo face. The
         // original fixture is correctly classified TOO SMALL by the live
         // guide; a real person would step toward their webcam instead.
-        const zoom = 2.10;
+        const zoom = 1.95;
         const srcWidth = image.naturalWidth / zoom;
         const srcHeight = image.naturalHeight / zoom;
         const paint = () => context.drawImage(image,
