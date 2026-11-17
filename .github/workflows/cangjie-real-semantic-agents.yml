@@ -1,4 +1,4 @@
-name: M16.8 REAL pinned Cangjie Adler pilot + five independent AI extractors
+name: M16.8 REAL 4B Cangjie semantic quality gate on original OCR
 
 on:
   pull_request:
@@ -62,21 +62,15 @@ jobs:
             "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
             -o "$RUNNER_TEMP/originals/part2.pdf"
 
-      - name: ACTUAL PP-OCRv5 on source pages p027 p087 and second-scan p040
+      - name: ACTUAL PP-OCRv5 on original source-checked p027
         shell: bash
         run: |
           python -m scripts.cangjie_paddleocr_candidates \
             --scan-dir "$RUNNER_TEMP/originals" \
             --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44091 \
             --start 27 --end 27
-          python -m scripts.cangjie_paddleocr_candidates \
-            --scan-dir "$RUNNER_TEMP/originals" \
-            --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44091 \
-            --start 87 --end 87
-          python -m scripts.cangjie_paddleocr_candidates \
-            --scan-dir "$RUNNER_TEMP/originals" \
-            --out-dir "$RUNNER_TEMP/ocr-private" --source nlc-44092 \
-            --start 40 --end 40
+          # Pilot narrowed to one real original page after 30 valid 1.5B
+          # role calls produced zero source-grounded candidate units.
 
       - name: Pin and verify REAL official upstream Cangjie prompts + chunker
         shell: bash
@@ -94,7 +88,7 @@ jobs:
             --out-dir "$RUNNER_TEMP/cangjie-private" \
             --cangjie-root "$RUNNER_TEMP/cangjie"
 
-      - name: Install and START ACTUAL local Qwen2.5 1.5B instruct text model
+      - name: Install and START ACTUAL local Qwen3 4B INSTRUCT text model
         shell: bash
         run: |
           curl --fail --silent --show-error --location \
@@ -107,12 +101,12 @@ jobs:
             curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
             sleep 2
           done
-          ollama pull qwen2.5:1.5b-instruct
+          ollama pull qwen3:4b-instruct
           python - <<'PY'
           import json
           from urllib.request import urlopen
           models=json.load(urlopen("http://127.0.0.1:11434/api/tags"))["models"]
-          actual=[m for m in models if m["name"]=="qwen2.5:1.5b-instruct"]
+          actual=[m for m in models if m["name"]=="qwen3:4b-instruct"]
           assert len(actual)==1
           print("REAL MODEL DIGEST:",actual[0]["digest"])
           PY
@@ -126,9 +120,9 @@ jobs:
             --reviewed-dir "$RUNNER_TEMP/reviewed-private" \
             --upstream-root "$RUNNER_TEMP/cangjie" \
             --out-dir "$RUNNER_TEMP/cangjie-agents-private" \
-            --model qwen2.5:1.5b-instruct --timeout 240 \
-            --max-output-tokens 520 --max-candidates-per-role 2 \
-            --pages nlc-44091:p027,nlc-44091:p087,nlc-44092:p040
+            --model qwen3:4b-instruct --timeout 360 \
+            --max-output-tokens 650 --max-candidates-per-role 1 \
+            --pages nlc-44091:p027
 
       - name: Audit REAL Stage-0 and five independent-role LLM execution
         shell: bash
@@ -140,10 +134,14 @@ jobs:
           f=temp/"cangjie-agents-private"/"m16-8-extraction-run-report.json"
           r=json.loads(f.read_text(encoding="utf-8"))
           assert r["original_scanned_book_pages"]==268
-          assert r["source_OCR_pages_in_this_execution"]==3
+          assert r["source_OCR_pages_in_this_execution"]==1
           assert len(r["independent_extractor_roles_invoked"])==5
-          assert r["actual_extractor_calls_successful"]>=8, \
-            "Less than 8/15 REAL independent Cangjie role calls completed"
+          assert r["actual_extractor_calls_successful"]>=4, \
+            "Less than 4/5 independent Cangjie real-model calls completed"
+          assert sum(r["OCR_quote_match_candidates"].values())>=1, \
+            "Real model returned zero original-OCR-anchored knowledge candidates"
+          assert r["actual_Adler_model_completed"], \
+            "Real model did not complete structured Stage-0 sample Adler"
           assert r["new_live_faceface_rules"]==0
           assert r["human_reviewed_pages_added"]==0
           assert r["source_quote_verified_against_original_PDF_image"] is False
@@ -153,6 +151,7 @@ jobs:
           }
           public["failed_call_count"]=r["actual_extractor_calls_failed"]
           public["extraction_is_pilot_not_full_book"]=True
+          public["prior_1_5B_trial"]= "30/30 role calls valid, 0 matched candidates, Adler JSON invalid"
           public["all_source_quotes_original_image_verified"]=False
           public["no_OCR_original_text_published"]=True
           Path("m16-8-real-five-roles-statistics-only.json").write_text(
