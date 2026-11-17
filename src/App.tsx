@@ -585,6 +585,29 @@ export default function App() {
                     </div>
                     <p className="report-intro">{reading.overview}</p>
                     <p className="report-intro">{reading.patternSummary}</p>
+                    {reading.threeSections && (
+                      <section className="three-sections-reading" aria-label={reading.threeSections.title}>
+                        <h4>{reading.threeSections.title}</h4>
+                        <p>{reading.threeSections.summary}</p>
+                        <div className="three-sections-bar" role="img"
+                          aria-label={reading.threeSections.summary}>
+                          {reading.threeSections.parts.map(part => (
+                            <div key={part.id} className={"three-sections-part three-sections-part--" + part.id}
+                              style={{ width: (part.percent || .1) + "%" }} />
+                          ))}
+                        </div>
+                        <div className="three-sections-labels">
+                          {reading.threeSections.parts.map(part => (
+                            <span key={part.id}>{part.label} · {part.percent}%</span>
+                          ))}
+                        </div>
+                        <small>{reading.threeSections.caveat}</small>
+                        <a href={reading.threeSections.source.source_url} target="_blank" rel="noopener noreferrer">
+                          {t(language, "originalScan")}: {reading.threeSections.source.volume}《{reading.threeSections.source.section}》
+                          ({t(language, "pageIndex")} {reading.threeSections.source.pdf_page_zero_based})
+                        </a>
+                      </section>
+                    )}
                     <div className="reading-insights" aria-label={language === "en" ? "Cultural reading" : "本次文化解读"}>
                       {reading.briefInsights.map((paragraph, index) => (
                         <p key={index}>{paragraph}</p>
