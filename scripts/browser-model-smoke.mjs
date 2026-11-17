@@ -76,7 +76,16 @@ try {
         canvas.height = image.naturalHeight;
         const context = canvas.getContext("2d");
         if (!context) throw new Error("Camera fixture canvas unavailable");
-        const paint = () => context.drawImage(image, 0, 0);
+        // Move the virtual camera closer to the public demo face. The
+        // original fixture is correctly classified TOO SMALL by the live
+        // guide; a real person would step toward their webcam instead.
+        const zoom = 1.35;
+        const srcWidth = image.naturalWidth / zoom;
+        const srcHeight = image.naturalHeight / zoom;
+        const paint = () => context.drawImage(image,
+          (image.naturalWidth - srcWidth) / 2,
+          (image.naturalHeight - srcHeight) / 2,
+          srcWidth, srcHeight, 0, 0, canvas.width, canvas.height);
         paint();
         const stream = canvas.captureStream(15);
         // Keep frame delivery alive while video waits to start.
