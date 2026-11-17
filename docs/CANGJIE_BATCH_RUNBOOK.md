@@ -178,9 +178,14 @@ python -m scripts.cangjie_vision_agent_batch --mode run --source all --keep-goin
 
 # 打开本机人工校勘台，直接载入模型草稿，并逐页与真实扫描原图核对
 python -m scripts.cangjie_page_review --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --port 8765
+
+# 不修改原典，按“未辨认文字/图谱/空白/破损/来源失效”生成本机复核任务表
+python -m scripts.cangjie_vision_draft_audit --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --model qwen3-vl:4b --out C:/faceface-corpus/agent-drafts/review-priority.json
 ~~~
 
 用浏览器打开 `http://127.0.0.1:8765`。原PDF、OCR候选与模型草稿均在你的本机工作区，不被推送到GitHub。低质量Tesseract OCR**不强制作为模型输入**：可先留空`ocr/`目录，只用图像出草稿；如用OCR作为辅助，必须依M16.2写出来源哈希一致的文件。
+
+**复核优先级输出：** [`cangjie_vision_draft_audit.py`](../scripts/cangjie_vision_draft_audit.py) 会按每页未确定字、图谱/非正文分类、OCR来源问题及模型草稿失效进行排序，并只在模型草稿与已核对V5来源页匹配时计算**原文短句诊断召回**；这些指标不证明OCR全文正确，也不会主动签署任何页面。
 
 **本轮真实CI覆盖口径：** GitHub Actions实际下载原版两份PDF、核实源文件并生成268个任务，从两份原PDF渲染图片，另用**本机模拟的Ollama HTTP服务**测试图像base64、JSON Schema、续跑、失效与不晋升。**CI并未下载运行Qwen3-VL或执行268页AI转录，也未取得任何真人完整页校勘（0/268）**。只有本地用户启用实际模型运行后才会产生真实Agent草稿；必须提供运行报告而非口头宣称。
 
