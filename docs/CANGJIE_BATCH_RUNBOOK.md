@@ -36,6 +36,26 @@
 - 不新增声称已使用仓颉、已完成蒸馏或已归档全部五卷的文案，除非实际运行产物可追溯。
 - 在用户本地 Windows + Codex 环境工作时，优先项目级 `.agents/skills/` 规范安装并本地处理底本，保护语料；公开 Faceface 仓库只接收可公开的schema、工具、统计及已核对的短篇来源条目。
 
+## M16.1 已实现的底本清点与官方仓颉工具接入
+
+此前仅设计了流程；本版新增 [实际执行工作流](../.github/workflows/cangjie-corpus.yml) 与 [原典分块准备程序](../scripts/cangjie_corpus_stage.py)，运行结果以Actions日志为准。
+
+- 固定底本扫描源：Wikimedia Commons [NLC 44091上册](https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf)，153页；[NLC 44092下册](https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44092_麻衣相法_第2卷.pdf)，115页。**两份数字文件合计268扫描页，作品正文五卷；文件名的“第1卷/第2卷”不能当作正文卷次。** 具体卷章到PDF页的映射仍待逐页核对。
+- 工作流真实下载两份扫描文件，核对PDF格式、页数、SHA256，并对每页生成唯一页ID和 transcription 状态；扫描已取得不等于文本已取得。
+- 仅当某页文本文件及人工复核记录中的复核人员、扫描PDF的SHA256、零起页码、文本SHA256全部相符，才纳入可供下游阅读的 reviewed-transcription。
+- 通过GitHub Actions从官方仓库检出固定commit a28de55ba881b9928956a55048f743f7a9e3b23e，执行原版 Cangjie doctor 和 build_chunks。为避免假装已读整书，首次测试文本只有既有V5知识库中**10条历史短引文和3条背景短引文**，明确标记 pilot-only。
+- GitHub Actions 只保存**页状态、来源hash、任务交接、doctor输出**，不上传整本PDF、未核对OCR或人像材料。官方CLI只负责确定性预处理，Adler整书理解与五类候选提取必须由Agent实际完成，不能把环境检查说成蒸馏成功。
+
+Windows与Codex复现：安装 Python3.10+、PyYAML，以及提供 pdfinfo.exe 的Poppler。将两份PDF分别保存为本地 scans/part1.pdf、scans/part2.pdf，执行：
+
+~~~powershell
+python scripts/cangjie_corpus_stage.py --scan-dir C:/faceface-corpus/scans --transcripts-dir C:/faceface-corpus/transcripts --checked-cards src/knowledge/maiyi-source-checked-v5.json --out-dir C:/faceface-corpus/audit
+python C:/cangjie-skill/scripts/cangjie.py doctor
+python C:/cangjie-skill/scripts/build_chunks.py C:/faceface-corpus/audit/prechecked-excerpts-pilot.md --sidecar C:/faceface-corpus/cangjie-sidecar --source-id faceface-v5-checked-excerpts-PILOT --max-chars 1200
+~~~
+
+现阶段**不得声称**268页已转录或校勘、仓颉五提取器已运行、候选库已蒸馏完成。下一完整输入Gate是从原书每页取得可复核的竖排古籍文本并录入 reviewed 页面，再由Agent全书提取。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
