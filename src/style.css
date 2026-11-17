@@ -255,3 +255,24 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
 @media (prefers-reduced-motion: reduce) {
   .live-face-progress, .live-face-progress-glow { transition: none; }
 }
+
+/* M12: compact, explicitly approximate Three Sections photo observation.
+   This is not an ancient three-section classifier or an identity attribute. */
+.three-sections-reading { margin: 15px 0 22px; border: 1px solid #526e5a;
+  background: #1d2c24; padding: 17px; border-radius: 12px; }
+.three-sections-reading h4 { margin: 0 0 9px; font-size: 16px; color: #e9f0e6; }
+.three-sections-reading p { margin: 0 0 12px; font-size: 13px;
+  color: #c8d9ce; line-height: 1.75; }
+.three-sections-bar { width: 100%; height: 12px; display: flex;
+  border-radius: 10px; gap: 2px; overflow: hidden; background: #33483a; }
+.three-sections-part { min-width: 1px; height: 100%; }
+.three-sections-part--upper { background: #72b4a1; }
+.three-sections-part--middle { background: #a9c39b; }
+.three-sections-part--lower { background: #d8bd8c; }
+.three-sections-labels { display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin: 9px 0 12px; font-size: 11px; color: #d5e2d5;
+  font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.three-sections-reading small { display: block; font-size: 11px; color: #b5c8b8;
+  line-height: 1.7; margin: 8px 0; }
+.three-sections-reading a { display: inline-block; font-size: 12px;
+  color: #c4e8d0; text-decoration: underline; overflow-wrap: anywhere; }
