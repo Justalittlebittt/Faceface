@@ -121,9 +121,21 @@ try {
         await page.locator(".guide-oval").count() !== 0) {
       throw new Error("M10 anatomical guide SVG has not replaced CSS ellipse");
     }
-    await page.waitForFunction(() =>
-      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
-      null, { timeout: 40000 });
+    try {
+      await page.waitForFunction(() =>
+        document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+        null, { timeout: 14000 });
+    } catch (cause) {
+      const diagnostic = await page.evaluate(() => ({
+        guide: document.querySelector(".guide-status")?.getAttribute("data-guide-status"),
+        hint: document.querySelector(".guide-status")?.textContent,
+        error: document.querySelector(".error-message")?.textContent,
+        videoSize: (() => { const v=document.querySelector("video");return v ? [v.videoWidth,v.videoHeight,v.readyState,v.currentTime] : null; })(),
+        stage: (()=>{const r=document.querySelector(".camera-stage")?.getBoundingClientRect();return r?[r.width,r.height]:null;})(),
+        svg: (()=>{const r=document.querySelector(".face-guide-svg")?.getBoundingClientRect();return r?[r.width,r.height]:null;})()
+      }));
+      throw new Error("M10 alignment not ready: " + JSON.stringify(diagnostic) + " " + String(cause));
+    }
     if (await page.locator(".face-guide-svg--ready").count() !== 1 ||
         !(await shutter.isEnabled())) {
       throw new Error("M10 manual shutter did not unlock after green face outline");
