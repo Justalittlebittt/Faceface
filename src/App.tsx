@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { describeLandmarks, type Analysis } from "./descriptors";
 import { comparePhotoAnalyses } from "./consistency";
+import { FaceGuideOverlay } from "./FaceGuideOverlay";
+import { advanceHold, checkFrontGuide, EMPTY_HOLD, READY_HOLD_MS, type GuideMode, type GuideState } from "./faceGuide";
 import { makeReading, readingAsText } from "./reading";
 import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from "./i18n";
 
@@ -27,6 +29,12 @@ const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmark
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const guideSvgRef = useRef<SVGSVGElement>(null);
+  const guideFrameRef = useRef<number | null>(null);
+  const guideHoldRef = useRef(EMPTY_HOLD);
+  const guideReadyRef = useRef(false);
+  const guideModeRef = useRef<GuideMode>("front");
   const streamRef = useRef<MediaStream | null>(null);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const loadingRef = useRef<Promise<FaceLandmarker> | null>(null);
@@ -41,6 +49,10 @@ export default function App() {
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
+  const [guideMode, setGuideMode] = useState<GuideMode>("front");
+  const [guideStatus, setGuideStatus] = useState<GuideState>("loading");
+  const [guideProgress, setGuideProgress] = useState(0);
+  const [guideReady, setGuideReady] = useState(false);
   const [photoSource, setPhotoSource] = useState<"camera" | "file" | null>(null);
   const [timing, setTiming] = useState<{ modelMs: number; inferenceMs: number } | null>(null);
   const reading = analysis ? makeReading(analysis, language) : null;
@@ -54,6 +66,10 @@ export default function App() {
   }, [language]);
 
   const stopCamera = useCallback(() => {
+    if (guideFrameRef.current !== null) cancelAnimationFrame(guideFrameRef.current);
+    guideFrameRef.current = null;
+    guideHoldRef.current = EMPTY_HOLD;
+    guideReadyRef.current = false;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -70,6 +86,11 @@ export default function App() {
     setTiming(null);
     setCameraAspect(null);
     setPhotoSource(null);
+    setGuideStatus("loading");
+    setGuideProgress(0);
+    setGuideReady(false);
+    guideModeRef.current = "front";
+    setGuideMode("front");
     const canvas = canvasRef.current;
     if (canvas) {
       // Resetting the backing size releases pixel data, not just the visible drawing.
@@ -106,6 +127,11 @@ export default function App() {
       setTiming(null);
       setCameraAspect(null);
       setPhotoSource(null);
+      setGuideStatus("loading");
+      setGuideProgress(0);
+      setGuideReady(false);
+      guideModeRef.current = "front";
+      setGuideMode("front");
       setError("");
     };
     const onVisibility = () => {
@@ -128,6 +154,12 @@ export default function App() {
     setTiming(null);
     setCameraAspect(null);
     setPhotoSource(null);
+    setGuideStatus("loading");
+    setGuideProgress(0);
+    setGuideReady(false);
+    guideHoldRef.current = EMPTY_HOLD;
+    guideModeRef.current = "front";
+    setGuideMode("front");
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError(t(language, "unsupported"));
       return;
@@ -150,6 +182,8 @@ export default function App() {
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (request !== requestRef.current) return;
       await video.play();
+      if (request !== requestRef.current) return;
+      await startTracking(request);
     } catch (cause) {
       if (request !== requestRef.current) return;
       stopCamera();
@@ -185,6 +219,73 @@ export default function App() {
     return loadingRef.current;
   };
 
+  // Low-frequency, on-device VIDEO tracking informs manual capture readiness.
+  // It never calls capture(), downloads images or sends facial geometry anywhere.
+  const changeGuideMode = (mode: GuideMode) => {
+    guideModeRef.current = mode;
+    setGuideMode(mode);
+    guideHoldRef.current = EMPTY_HOLD;
+    guideReadyRef.current = false;
+    setGuideReady(false);
+    setGuideProgress(0);
+    setGuideStatus(mode === "side" ? "side-preview" : "loading");
+    setError("");
+  };
+
+  const startTracking = async (request: number): Promise<void> => {
+    const model = await loadLandmarker();
+    if (request !== requestRef.current) return;
+    await model.setOptions({ runningMode: "VIDEO" });
+    if (request !== requestRef.current) return;
+    let lastRun = 0;
+    const sample = (now: number) => {
+      if (request !== requestRef.current || !streamRef.current) return;
+      const video = videoRef.current;
+      const stage = stageRef.current;
+      const svg = guideSvgRef.current;
+      if (guideModeRef.current === "side") {
+        if (guideReadyRef.current) {
+          guideReadyRef.current = false;
+          setGuideReady(false);
+        }
+        guideHoldRef.current = EMPTY_HOLD;
+      } else if (video && stage && svg && video.readyState >= 2 &&
+                 video.videoWidth && video.videoHeight && now - lastRun >= 250) {
+        lastRun = now;
+        try {
+          const detected = model.detectForVideo(video, now);
+          const box = (element: Element) => {
+            const r = element.getBoundingClientRect();
+            return { x: r.x, y: r.y, width: r.width, height: r.height };
+          };
+          const result = checkFrontGuide(
+            detected.faceLandmarks, { width: video.videoWidth, height: video.videoHeight },
+            box(stage), box(svg), true
+          );
+          const hold = advanceHold(guideHoldRef.current, now, result.state === "aligned");
+          guideHoldRef.current = hold;
+          guideReadyRef.current = hold.complete;
+          setGuideStatus(result.state);
+          setGuideProgress(hold.progress);
+          setGuideReady(hold.complete);
+        } catch (cause) {
+          // A model failure cannot silently make the frame appear ready.
+          guideHoldRef.current = EMPTY_HOLD;
+          guideReadyRef.current = false;
+          setGuideProgress(0);
+          setGuideReady(false);
+          setGuideStatus("loading");
+          setError(cause instanceof Error
+            ? t(language, "modelFailure") + ": " + cause.message
+            : t(language, "modelUnknown"));
+          return;
+        }
+      }
+      guideFrameRef.current = requestAnimationFrame(sample);
+    };
+    guideFrameRef.current = requestAnimationFrame(sample);
+  };
+
   // Both the camera frame and the optional local-file fallback use exactly the
   // same browser-only landmark inference and descriptive report path.
   const analyzeCanvas = async (canvas: HTMLCanvasElement) => {
@@ -198,6 +299,10 @@ export default function App() {
       const modelMs = performance.now() - modelStart;
       if (request !== requestRef.current) return;
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      if (request !== requestRef.current) return;
+      // Preview inference runs in VIDEO mode; still-image analysis must
+      // explicitly return the shared model to IMAGE mode after capture.
+      await model.setOptions({ runningMode: "IMAGE" });
       if (request !== requestRef.current) return;
       const inferenceStart = performance.now();
       const result = model.detect(canvas);
@@ -214,7 +319,13 @@ export default function App() {
   };
 
   const capture = async () => {
-    if (phase !== "camera") return;
+    if (phase !== "camera" || guideModeRef.current !== "front" ||
+        !guideReadyRef.current ||
+        guideHoldRef.current.lastSeenAt === null ||
+        performance.now() - guideHoldRef.current.lastSeenAt > 700) {
+      setError(t(language, "guideOutside"));
+      return;
+    }
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) {
@@ -229,6 +340,11 @@ export default function App() {
       setError(t(language, "canvasFailure"));
       return;
     }
+    // Manual shutter only: the countdown unlocks this action, it never fires it.
+    if (guideFrameRef.current !== null) cancelAnimationFrame(guideFrameRef.current);
+    guideFrameRef.current = null;
+    guideReadyRef.current = false;
+    setGuideReady(false);
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     setPhotoSource("camera");
     await analyzeCanvas(canvas);
@@ -316,6 +432,7 @@ export default function App() {
             <span className="privacy-mark">{t(language, "privateLabel")}</span>
           </div>
           <div
+            ref={stageRef}
             className="camera-stage"
             style={cameraAspect !== null && phase !== "idle" ? { aspectRatio: cameraAspect } : undefined}
           >
@@ -341,7 +458,30 @@ export default function App() {
             />
             {phase === "idle" && <div className="camera-placeholder"><span className="placeholder-icon">◎</span><p>{t(language, "cameraIdle")}</p><small>{t(language, "cameraHint")}</small></div>}
             {phase === "analyzing" && <div className="processing-layer" role="status">{t(language, "analyzing")}<small>{t(language, "analyzingHint")}</small></div>}
-            {phase === "camera" && <div className="guide-oval" aria-hidden="true" />}
+            {phase === "camera" && (
+              <div className="face-guide-layer">
+                <FaceGuideOverlay ref={guideSvgRef} mode={guideMode}
+                  ready={guideMode === "front" && guideReady} progress={guideProgress} />
+                <div className={"guide-status" + (guideReady ? " guide-status--ready" : "")}
+                     role="status" aria-live="polite" data-guide-status={guideReady ? "ready" : guideStatus}>
+                  {guideMode === "side" ? t(language, "guideSideNotice") :
+                    guideReady ? t(language, "guideReady") :
+                    guideStatus === "aligned" ?
+                      t(language, "guideHolding").replace("{seconds}",
+                        Math.max(1, Math.ceil((READY_HOLD_MS * (1 - guideProgress)) / 1000)).toString()) :
+                    t(language, ({
+                      loading: "guideLoading",
+                      "no-face": "guideNoFace",
+                      multiple: "guideMultiple",
+                      pose: "guidePose",
+                      "too-small": "guideTooSmall",
+                      "too-large": "guideTooLarge",
+                      outside: "guideOutside",
+                      "side-preview": "guideSideNotice"
+                    } as const)[guideStatus])}
+                </div>
+              </div>
+            )}
           </div>
           {error && <p className="error-message" role="alert">{error}</p>}
           <div className="actions">
@@ -362,10 +502,25 @@ export default function App() {
                 />
               </label>
             </>}
-            {phase === "camera" && <><button className="primary" onClick={() => void capture()}>{t(language, "takePhoto")}</button><button className="secondary" onClick={reset}>{t(language, "closeCamera")}</button></>}
+            {phase === "camera" && <>
+              <button className="primary" disabled={!guideReady || guideMode !== "front"}
+                onClick={() => void capture()}>{t(language, "takePhoto")}</button>
+              <button className="secondary" onClick={reset}>{t(language, "closeCamera")}</button>
+            </>}
             {phase === "analyzing" && <button className="secondary" onClick={reset}>{t(language, "cancelAnalysis")}</button>}
             {phase === "result" && <button className="secondary" onClick={reset}>{t(language, "retake")}</button>}
           </div>
+          {phase === "camera" && (
+            <>
+              <div className="guide-mode-switch" role="group" aria-label="Face guide mode">
+                <button type="button" aria-pressed={guideMode === "front"}
+                  onClick={() => changeGuideMode("front")}>{t(language, "guideFront")}</button>
+                <button type="button" aria-pressed={guideMode === "side"}
+                  onClick={() => changeGuideMode("side")}>{t(language, "guideSide")}</button>
+              </div>
+              <p className="camera-capture-help">{t(language, "guideReadyHint")}</p>
+            </>
+          )}
           <p className="privacy-detail">{t(language, "privacyDetail")}</p>
         </section>
 

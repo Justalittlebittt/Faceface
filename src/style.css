@@ -61,10 +61,32 @@ button:focus-visible { outline: 3px solid #a9d4bf; outline-offset: 3px; }
 .camera-placeholder p { font-weight: 600; font-size: 18px; margin: 12px 0 5px; }
 .camera-placeholder small { font-size: 12px; color: #83978e; }
 .placeholder-icon { display: block; font-size: 76px; font-weight: 200; color: #668276; }
-.guide-oval {
-  position: absolute; pointer-events: none; border: 2px dashed #bee3c2a8;
-  border-radius: 50%; width: 35%; height: 77%; top: 11%; left: 32.5%;
-}
+/* Camera guide is a true face silhouette, not a CSS ellipse.
+   Its native SVG aspect ratio is retained at both PC and phone sizes. */
+.face-guide-layer { position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; pointer-events: none; z-index: 1; }
+.face-guide-svg { display: block; height: 85%; width: auto; max-width: 84%;
+  overflow: visible; color: #fa696b; transition: color .18s ease; }
+.face-guide-svg--ready { color: #67e69b; }
+.face-guide-outline { fill: none; stroke: currentColor; stroke-width: 4.5;
+  stroke-linejoin: round; stroke-linecap: round; }
+.face-guide-glow { stroke-width: 10; opacity: .47; filter: url(#face-guide-glow); }
+.face-guide-helper { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .3;
+  stroke-dasharray: 6 9; }
+.face-guide-progress { fill: none; stroke: #fa696b; stroke-width: 7;
+  stroke-linecap: round; }
+.guide-status { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2;
+  border-radius: 12px; background: rgba(12,21,18,.82); text-align: center;
+  font-size: 13px; line-height: 1.5; padding: 11px 14px; font-weight: 600;
+  color: #ffbabb; pointer-events: none; }
+.guide-status--ready { color: #9bf5bb; }
+.guide-mode-switch { display: flex; gap: 8px; margin: 14px 0 0; flex-wrap: wrap; }
+.guide-mode-switch button { background: #26382e; color: #d7eadb; padding: 9px 14px;
+  min-height: 44px; border: 1px solid #53735f; border-radius: 9px; }
+.guide-mode-switch button[aria-pressed="true"] { background: #3b6350; border-color: #95d5aa; }
+.camera-capture-help { color: #b9d3c2; font-size: 13px; line-height: 1.6;
+  margin: 10px 0 0; }
+.actions button:disabled { opacity: .48; cursor: not-allowed; }
 .processing-layer {
   position: absolute; inset: 0; background: #07100dc7; display: flex;
   flex-direction: column; align-items: center; justify-content: center;
@@ -115,7 +137,8 @@ footer {
   .stage-header h2 { font-size: 18px; }
   .privacy-mark { font-size: 10px; padding: 7px 8px; }
   .camera-stage { max-width: 100%; aspect-ratio: 3 / 4; }
-  .guide-oval { width: 58%; height: 71%; left: 21%; top: 14.5%; }
+  .face-guide-svg { height: 86%; max-width: 82%; }
+  .guide-status { bottom: 8px; font-size: 12px; }
   .actions { flex-direction: column; }
   /* Keep capture/retake buttons reachable when a portrait camera fills the screen. */
   .workbench .actions {

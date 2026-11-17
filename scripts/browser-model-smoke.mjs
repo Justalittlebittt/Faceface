@@ -76,7 +76,23 @@ try {
         canvas.height = image.naturalHeight;
         const context = canvas.getContext("2d");
         if (!context) throw new Error("Camera fixture canvas unavailable");
-        const paint = () => context.drawImage(image, 0, 0);
+        // Move the virtual camera closer to the public demo face. The
+        // original fixture is correctly classified TOO SMALL by the live
+        // guide; a real person would step toward their webcam instead.
+        const zoom = 1.95;
+        const srcWidth = image.naturalWidth / zoom;
+        const srcHeight = image.naturalHeight / zoom;
+        const paint = () => {
+          context.fillStyle = "#202b29";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          // Deliberate temporary absence of a face tests green -> red reset.
+          if (!window.__facefaceTestBlank) {
+            context.drawImage(image,
+              (image.naturalWidth - srcWidth) / 2,
+              0, // face is high in the original public full-body portrait
+              srcWidth, srcHeight, 0, 0, canvas.width, canvas.height);
+          }
+        };
         paint();
         const stream = canvas.captureStream(15);
         // Keep frame delivery alive while video waits to start.
@@ -110,7 +126,67 @@ try {
       const video = document.querySelector("video");
       return video instanceof HTMLVideoElement && video.readyState >= 2 && video.videoWidth > 0;
     }, { timeout: 15000 });
-    await page.getByRole("button", { name: "拍摄并本地分析" }).click();
+    // M10: the shutter is intentionally manual. A red outline must NOT
+    // permit capture. After 3 continuous seconds of real model alignment,
+    // the SVG turns green, but the page must not capture by itself.
+    const shutter=page.getByRole("button", { name: "拍摄并本地分析" });
+    if (await shutter.isEnabled()) {
+      throw new Error("M10 shutter should not be available before 3s positioning");
+    }
+    if (await page.locator(".face-guide-svg").count() !== 1 ||
+        await page.locator(".guide-oval").count() !== 0) {
+      throw new Error("M10 anatomical guide SVG has not replaced CSS ellipse");
+    }
+    try {
+      await page.waitForFunction(() =>
+        document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+        null, { timeout: 14000 });
+    } catch (cause) {
+      const diagnostic = await page.evaluate(() => ({
+        guide: document.querySelector(".guide-status")?.getAttribute("data-guide-status"),
+        reason: document.querySelector(".guide-status")?.getAttribute("data-guide-reason"),
+        hint: document.querySelector(".guide-status")?.textContent,
+        error: document.querySelector(".error-message")?.textContent,
+        videoSize: (() => { const v=document.querySelector("video");return v ? [v.videoWidth,v.videoHeight,v.readyState,v.currentTime] : null; })(),
+        stage: (()=>{const r=document.querySelector(".camera-stage")?.getBoundingClientRect();return r?[r.width,r.height]:null;})(),
+        svg: (()=>{const r=document.querySelector(".face-guide-svg")?.getBoundingClientRect();return r?[r.width,r.height]:null;})()
+      }));
+      throw new Error("M10 alignment not ready: " + JSON.stringify(diagnostic) + " " + String(cause));
+    }
+    if (await page.locator(".face-guide-svg--ready").count() !== 1 ||
+        !(await shutter.isEnabled())) {
+      throw new Error("M10 manual shutter did not unlock after green face outline");
+    }
+    if (await page.locator(".report").count()) {
+      throw new Error("M10 triggered an automatic photo without explicit consent");
+    }
+    // Side SVG is a deliberate preview, not a supported face-reading mode.
+    await page.getByRole("button", { name: "侧脸轮廓（预览）" }).click();
+    if (await shutter.isEnabled() ||
+        await page.locator('.face-guide-svg[data-guide-mode="side"]').count() !== 1) {
+      throw new Error("M10 side-profile preview incorrectly enabled front-face capture");
+    }
+    await page.getByRole("button", { name: "正脸" }).click();
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+      null, { timeout: 14000 });
+    // Losing the face must return the guide to red and lock the manual shutter.
+    await page.evaluate(() => { window.__facefaceTestBlank = true; });
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "no-face",
+      null, { timeout: 8000 });
+    if (await shutter.isEnabled() ||
+        await page.locator(".face-guide-svg--ready").count() !== 0) {
+      throw new Error("M10 face loss did not immediately revoke green capture readiness");
+    }
+    await page.evaluate(() => { window.__facefaceTestBlank = false; });
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+      null, { timeout: 14000 });
+    if (await page.locator(".report").count()) {
+      throw new Error("M10 auto-captured instead of waiting for manual shutter");
+    }
+    await shutter.click();
   }
 
   await page.waitForFunction(() => {
@@ -237,10 +313,20 @@ try {
   }
   // M9: a willing participant can re-analyze another local photo and inspect
   // changes without sending either photo or landmark coordinates to a server.
-  // This uses the SAME public sample twice, testing the actual private UI
-  // workflow, not multi-person validity or identity matching.
+  // The emulated camera now *reframes* the public portrait to align its face.
+  // For an exact same-image comparison we must upload that CAPTURED frame,
+  // not the different, uncropped original file. WebKit already used the
+  // original photo both times. No CI image is persisted after the test.
+  const secondPhoto = engine === "chromium"
+    ? {
+        name: "same-captured-frame.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(await page.locator("canvas.photo-canvas").evaluate(el =>
+          el.toDataURL("image/png").split(",")[1]), "base64")
+      }
+    : "dist/ci-portrait.jpg";
   await page.locator('input[aria-label="Choose a second photo of the same person"]')
-    .setInputFiles("dist/ci-portrait.jpg");
+    .setInputFiles(secondPhoto);
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
   if (comparisonStats.join("|") !== "0 / 10|0 / 9") {
