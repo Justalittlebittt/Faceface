@@ -20,7 +20,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from cangjie_corpus_stage import SCANS, pdf_pages
+try:
+    from scripts.cangjie_corpus_stage import SCANS, pdf_pages
+except ModuleNotFoundError:  # direct execution: python scripts/cangjie_ocr_candidates.py
+    from cangjie_corpus_stage import SCANS, pdf_pages
 
 HAN_RE = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")
 VERSION = "m16.2-ocr-v1"
