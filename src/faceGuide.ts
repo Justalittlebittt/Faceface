@@ -112,7 +112,12 @@ export function checkFrontGuide(
   // >=85% of the perimeter fits the actual silhouette; geometric center
   // must also be near the guide middle. No false confidence for a tiny face.
   if (coverage < 0.85 || Math.abs(centerX - 150) > 32 ||
-      Math.abs(centerY - 207) > 46) return { state: "outside", coverage };
+      Math.abs(centerY - 207) > 46) return {
+        state: "outside", coverage,
+        reason: "coverage " + Math.round(coverage * 100) +
+          "%, center " + Math.round(centerX) + "/" + Math.round(centerY) +
+          ", " + debugSize
+      };
   return { state: "aligned", coverage };
 }
 
