@@ -82,10 +82,17 @@ try {
         const zoom = 1.95;
         const srcWidth = image.naturalWidth / zoom;
         const srcHeight = image.naturalHeight / zoom;
-        const paint = () => context.drawImage(image,
-          (image.naturalWidth - srcWidth) / 2,
-          0, // public fixture's face is high in the original full-body photo
-          srcWidth, srcHeight, 0, 0, canvas.width, canvas.height);
+        const paint = () => {
+          context.fillStyle = "#202b29";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          // Deliberate temporary absence of a face tests green -> red reset.
+          if (!window.__facefaceTestBlank) {
+            context.drawImage(image,
+              (image.naturalWidth - srcWidth) / 2,
+              0, // face is high in the original public full-body portrait
+              srcWidth, srcHeight, 0, 0, canvas.width, canvas.height);
+          }
+        };
         paint();
         const stream = canvas.captureStream(15);
         // Keep frame delivery alive while video waits to start.
@@ -152,6 +159,32 @@ try {
     }
     if (await page.locator(".report").count()) {
       throw new Error("M10 triggered an automatic photo without explicit consent");
+    }
+    // Side SVG is a deliberate preview, not a supported face-reading mode.
+    await page.getByRole("button", { name: "侧脸轮廓（预览）" }).click();
+    if (await shutter.isEnabled() ||
+        await page.locator('.face-guide-svg[data-guide-mode="side"]').count() !== 1) {
+      throw new Error("M10 side-profile preview incorrectly enabled front-face capture");
+    }
+    await page.getByRole("button", { name: "正脸" }).click();
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+      null, { timeout: 14000 });
+    // Losing the face must return the guide to red and lock the manual shutter.
+    await page.evaluate(() => { window.__facefaceTestBlank = true; });
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "no-face",
+      null, { timeout: 8000 });
+    if (await shutter.isEnabled() ||
+        await page.locator(".face-guide-svg--ready").count() !== 0) {
+      throw new Error("M10 face loss did not immediately revoke green capture readiness");
+    }
+    await page.evaluate(() => { window.__facefaceTestBlank = false; });
+    await page.waitForFunction(() =>
+      document.querySelector(".guide-status")?.getAttribute("data-guide-status") === "ready",
+      null, { timeout: 14000 });
+    if (await page.locator(".report").count()) {
+      throw new Error("M10 auto-captured instead of waiting for manual shutter");
     }
     await shutter.click();
   }
