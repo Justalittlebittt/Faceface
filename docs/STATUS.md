@@ -1,5 +1,16 @@
 # Faceface｜项目进度总览（2026-11-17）
 
+## 2026-11-17 M16.7：268页全部真实运行PP-OCRv5；小型视觉模型质量否决；私有仓颉工作语料接通
+
+- [x] **[PR #29](https://github.com/Justalittlebittt/Faceface/pull/29)** 已合并（`17255a18a80595ff11c4374120b70ec06f4ecbb8`）：真正使用 **PaddleOCR PP-OCRv5** 在1925年《麻衣相法》两份原PDF全部153+115＝**268页**进行OCR；不是PDF页码清点，也不是3/13页抽样，全部6片实测通过。
+- [x] **[268页完整OCR CI #44058499243](https://github.com/Justalittlebittt/Faceface/actions/runs/44058499243)**：**268/268页确实运行推理；268页有非空候选，OCR产出53,977个未经校勘候选汉字**；原PDF两份SHA256校验一致，268个页ID独立且无遗漏、重页；没有1页被伪装为人工已审核。**53,977大于此前Tesseract的51,101只表明产字量更多，不说明准确率更高**。特别是Tesseract曾有1页无字而Paddle该页非空，须以原扫描图核对是否是真文字。
+- [x] **真正运行的Qwen3-VL反面/修正试验：** [全页图像转录真实CI #44054742425](https://github.com/Justalittlebittt/Faceface/actions/runs/44054742425) 中，免费CPU的 `qwen3-vl:2b-instruct` **4页仅1页有效草稿，3页JSON不完整**；成功页的已核验短句是2/2（不代表整页正确率）；减小图像和输出后仍有JSON截断失败。改为只输出简短图文版面字段的 [真实CI #44058070763](https://github.com/Justalittlebittt/Faceface/actions/runs/44058070763) **3/3页成功返回合法JSON，但3页均判为`uncertain`**，未能产生有价值的确定版式分类。因此暂**否决把2B-VLM作为整书正文主OCR**，转由更稳定且已覆盖全书的PaddleOCR负责候选正文。
+- [x] **私有仓颉工作语料**：`scripts/cangjie_working_corpus.py` 将两PDF逐页来源SHA、PDF零起页、有效OCR候选及人工校勘状态打包为 **`working-corpus-OCR-UNVERIFIED.md`**（明确每页是否`ocr_unreviewed`），并可调用固定commit `a28de55...` 的真实官方Cangjie `scripts/build_chunks.py` 分块。**[工作语料及官方分块CI #44059580189](https://github.com/Justalittlebittt/Faceface/actions/runs/44059580189)**：3项工作语料单测通过、官方原版工具真正处理**2个未经校勘的试验chunk**。这不是“仓颉全书五Agent蒸馏已运行”，也不是全268页完成官方分块。
+- [ ] **必须明确的真实缺口：** GitHub Actions真实生成的53,977候选汉字因安全与全文复制控制仅留在临时Runner，**没有把这份原文全文上传公开GitHub，也不是长期私有语料已持久落库**。要给仓颉进行可续跑的整书Agent提取，下一阶段应由Windows/Codex使用已提交的PP-OCRv5程序保存两份全部页面OCR于`C:/faceface-corpus`私有目录，或启用经用户许可的受控存储。真正人工完整页校勘仍**0/268页**，官方仓颉Adler整书理解与五类提取器真实AI抽取仍**未执行**；不把这些环节包装成完成。
+- [ ] **下一阶段M16.8核心目标**：在**明确标记source_unverified**的268页OCR工作语料上真正批量启动Cangjie Adler+五路Agent候选挖掘，建立候选原文页、传统形态词、图谱/异体字、是否可从照片判断及干扰因素台账；再对拟上线条目进行原图定位和证据校勘，未核准者不得改变在线报告。**不要求268页全部人工校勘完才准开始候选挖掘。** 前台M11手动拍照、已验收绿线交互和既有10张文化卡保持不变。
+
+
+
 ## 2026-11-17 M16.6：整书268页私有视觉Agent草稿队列与校勘UI整合（真实底本验收已通过）
 
 - [x] **[PR #28](https://github.com/Justalittlebittt/Faceface/pull/28)** 新增 `scripts/cangjie_vision_agent_batch.py`：提供真实可运行的 Windows 本地 `plan/run`，以固定1925原版两个PDF、两份文件SHA256、逐页零起索引为准。批量构建 153+115＝**268**个互不重叠的视觉任务，支持指定原PDF范围、少量先测、断点跳过旧的有效Agent草稿及已签名人工页面、提示词/模型/输入OCR哈希失效时自动重做。**不是每轮一个古籍条目。**
@@ -81,7 +92,7 @@
 - [ ] **M13只增强复核能力，不是准确率验证：** iOS Safari/Android Chrome物理相机、授权不同人像样本、第三方SDK与设备级隐私审计依然未完成；古籍三停仍是照片近似示意而非发际线定义的经典分段。
 
 
-> 状态：**M16.6已为1925原书268页全部生成可验证的真实来源任务队列，完成本机Ollama视觉模型运行器与古籍校勘UI对接，原PDF和模拟模型协议CI通过。真正的Qwen3-VL模型推理未在当前CI执行，原书完整页人工校勘仍0/268，官方仓颉五类Agent整书提取尚未完成；现有Faceface线上相机/报告不变。**
+> 状态：**M16.7已真实运行PP-OCRv5覆盖两份原PDF全部268/268页，268页均有非空候选、共53,977个未经校勘汉字，完整来源审计通过并合并PR #29。Qwen3-VL小模型全页转录仅1/4结构成功，短版式分类3/3均uncertain，已否决作为整书主OCR。仓颉真实官方chunker仅在未审核试验段执行，原书全文私有持久化、Adler/五路Agent整书蒸馏与人工完整页校勘仍未完成（0/268）。下一阶段推进未校勘候选的批量仓颉提取，发布规则继续逐条来源核验。**
 
 ## 2026-11-17 M12：古籍匹配临界一致性＋《三停》来源化近似观察（已合并）
 
