@@ -1,4 +1,4 @@
-import catalog from "./knowledge/maiyi-source-checked-v3.json" with { type: "json" };
+import catalog from "./knowledge/maiyi-source-checked-v4.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 
@@ -55,6 +55,14 @@ export type HistoricalFramework = {
   source: SourceCard["source"];
 };
 
+export type ThreeSectionsReading = {
+  title: string;
+  summary: string;
+  caveat: string;
+  parts: { id: "upper" | "middle" | "lower"; label: string; percent: number }[];
+  source: SourceCard["source"];
+};
+
 export type FaceReading = {
   heading: string;
   overview: string;
@@ -64,6 +72,7 @@ export type FaceReading = {
   featuredLinks: CulturalLink[];
   briefInsights: string[];
   frameworkNotes: HistoricalFramework[];
+  threeSections: ThreeSectionsReading | null;
   reflection: string;
   evidenceNotice: string;
 };
@@ -127,7 +136,9 @@ function observedConditions(
   return card.mode === "geometry_only" && card.conditions.length > 0 &&
     card.conditions.every(rule => {
       const d = byId.get(rule.metric);
-      return !!d && d.usable !== false && Number.isFinite(d.ratio) &&
+      return !!d && d.usable !== false &&
+        d.certainty !== "borderline" && d.certainty !== "unavailable" &&
+        Number.isFinite(d.ratio) &&
         (rule.operator === "gt" ? d.ratio > rule.value : d.ratio < rule.value);
     });
 }
@@ -138,6 +149,11 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
   const byId = new Map(analysis.descriptors.map(d => [d.id, d]));
   const sourceLinks: CulturalLink[] = cards.map(card => {
     const related = observedConditions(card, byId);
+    const metricUncertain = card.conditions.some(rule => {
+      const d = byId.get(rule.metric);
+      return !!d && (d.certainty === "borderline" ||
+        d.certainty === "unavailable" || d.usable === false);
+    });
     const metrics = [...new Set(card.conditions.map(rule => rule.metric))];
     const observed = metrics.map(metric => byId.get(metric)).filter((d): d is Descriptor => !!d);
     // All tested conditions are listed, including uncertainty when the mouth
@@ -159,9 +175,13 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
         ? (english
           ? "One or more photo measurements show a limited resemblance to the historic description. The complete classical type and its exceptions have NOT been established."
           : "本次照片中一项或多项形态方向与古籍词语局部相似；仍不足以认定完整古籍相型，也不代表古籍存在这些现代数值标准。")
-        : (english
-          ? "The current measurement does not support even a limited directional resemblance, or the historical condition is not measurable here. No classical type is assigned."
-          : "当前比例未能支持该古籍用语的局部形态方向，或者原文所需形态未测量；不据此作出相型判断。"),
+        : metricUncertain
+          ? (english
+            ? "At least one measurement lies near a provisional boundary or is unusable. No historical shape link is assigned."
+            : "至少一项照片指标接近实验分类边界或不可用；不触发古籍关联，也不据此认定相型。")
+          : (english
+            ? "The current measurement does not support even a limited directional resemblance, or the historical condition is not measurable here. No classical type is assigned."
+            : "当前比例未能支持该古籍用语的局部形态方向，或者原文所需形态未测量；不据此作出相型判断。"),
       caveat: english ? gloss.caveat : card.caveat,
       historicalView: english ? card.historical_view_en : card.historical_view_zh,
       source: card.source
@@ -197,6 +217,43 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "The checked historical descriptions have no sufficiently supported shape overlap in this photograph. You can still review the source notes in the detailed report; no traditional type is assigned."
       : "本次照片没有足够明确的形态线索与已核对的古籍用语建立局部关联。详细版仍保留原文与条件说明，不勉强套用传统相型。"];
 
+  // Ancient 三停 refers to upper/middle/lower face, with true boundaries
+  // such as hairline and brows. Modern 2D FaceMesh cannot capture those
+  // exact boundaries; this is a PHOTO-ONLY spatial illustration with explicit
+  // source attribution, never an ancient classification or prognosis.
+  const historicThree = catalog.framework_notes.find(note =>
+    note.id === "MY25-FRAME-THREE-01");
+  const spans = analysis.threeSections;
+  const validSpans = spans && [spans.upper, spans.middle, spans.lower].every(v =>
+    Number.isFinite(v) && v > 0 && v < 1);
+  const threeSections: ThreeSectionsReading | null = historicThree && validSpans ? (() => {
+    const values = [spans.upper, spans.middle, spans.lower];
+    const labels = language === "en" ? ["Upper", "Middle", "Lower"] : ["上段", "中段", "下段"];
+    const ids = ["upper", "middle", "lower"] as const;
+    const parts = values.map((v, i) => ({ id: ids[i], label: labels[i],
+      percent: Math.round(v * 100) }));
+    const largest = Math.max(...values), smallest = Math.min(...values);
+    const index = values.indexOf(largest);
+    const direction = largest - smallest < .08
+      ? (language === "en" ? "The three plotted portions appear fairly close in size."
+        : "本次照片的三个近似区段在画面中长度较接近。")
+      : (language === "en"
+        ? "The " + labels[index].toLowerCase() + " portion looks relatively longer in this photograph."
+        : "本次照片中" + labels[index] + "的近似纵向跨度相对更长。");
+    const valuesText = parts.map(part =>
+      part.label + " " + part.percent + "%").join(language === "en" ? " · " : "、");
+    return {
+      title: language === "en" ? "Three face sections (approximate photo study)" : "面部三段比例（照片近似观察）",
+      summary: (language === "en"
+        ? "Approximate on-photo zones: " : "本次照片的三段近似比例：") +
+        valuesText + (language === "en" ? ". " : "。") + direction,
+      caveat: language === "en"
+        ? "Uses upper-forehead, nose-root, nose-tip and chin landmarks. The first is not the real hairline. These are not the classic's precise Three Sections, nor a judgment of fortune."
+        : "分段使用额上方、鼻根、鼻尖、颏底的模型点，其中额上方模型点不是真正发际线；不等于古籍完整三停，也不判断吉凶。",
+      parts, source: historicThree.source
+    };
+  })() : null;
+
   const frameworkNotes: HistoricalFramework[] = catalog.framework_notes.map(note => ({
     id: note.id,
     title: language === "en" ? note.title_en : note.title_zh,
@@ -229,12 +286,13 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     featuredLinks,
     briefInsights,
     frameworkNotes,
+    threeSections,
     reflection: language === "en"
       ? "These historical terms show how one tradition described appearance; they do not establish real personality or future events. Use observable evidence, not facial appearance, for important decisions."
       : "这些历史用语可以帮助理解传统相术如何描述外观，但不应被当作现实人格或未来事件的证据。需要做重要决定时，应优先依据真实行为与客观信息。",
     evidenceNotice: language === "en"
-      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); and 'Three Talents and Three Sections' (三才三停) on page 34 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
-      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
+      ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); and 'Three Talents and Three Sections' (三才三停) on page 34 and the 'Three Sections' passage on page 35 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
+      : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）及《三停》（页35）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
 }
 
@@ -247,6 +305,15 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "SHORT REPORT",
       reading.overview,
       reading.patternSummary,
+      ...(reading.threeSections ? [
+        reading.threeSections.title,
+        reading.threeSections.summary,
+        reading.threeSections.caveat,
+        "Original Three Sections source (not an accurate classical classification): " +
+          reading.threeSections.source.volume + " / " + reading.threeSections.source.section +
+          ", PDF zero-based page " + reading.threeSections.source.pdf_page_zero_based,
+        "Original scan: " + reading.threeSections.source.source_url
+      ] : []),
       ...reading.briefInsights,
       "",
       "DETAILED OBSERVATIONS (PROVISIONAL)",
@@ -291,6 +358,14 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "【简洁报告】",
     reading.overview,
     reading.patternSummary,
+    ...(reading.threeSections ? [
+      reading.threeSections.title,
+      reading.threeSections.summary,
+      reading.threeSections.caveat,
+      "原书位置：" + reading.threeSections.source.volume + "《" + reading.threeSections.source.section +
+        "》，PDF零起页" + reading.threeSections.source.pdf_page_zero_based,
+      "扫描原件：" + reading.threeSections.source.source_url
+    ] : []),
     ...reading.briefInsights,
     "",
     "【详细版：全部面部形态观察（实验项）】",
