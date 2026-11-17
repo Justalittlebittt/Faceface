@@ -31,8 +31,8 @@ test("shifting the face outside the outline immediately rejects alignment",()=>{
   assert.notEqual(checkFrontGuide([shifted],image,stage,svg).state,"aligned");
 });
 test("video letterboxing and mirroring change where the oval appears on the stage",()=>{
-  const result=checkFrontGuide([sample()],image,{x:10,y:30,width:400,height:420},
-    {x:60,y:30,width:300,height:420},true);
+  const result=checkFrontGuide([sample()],image,{x:10,y:30,width:360,height:420},
+    {x:40,y:30,width:300,height:420},true);
   assert.equal(result.state,"aligned");
 });
 test("three continuous seconds unlock readiness, never trigger a shutter",()=>{
