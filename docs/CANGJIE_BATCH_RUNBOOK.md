@@ -112,6 +112,39 @@ M16.2的268页OCR共267页非空、约51,101个候选汉字，**223页**的词�
 
 **下一质量门：** 使用原页影像核对且有卷章/文字顺序的**整页正确转录**，至少覆盖正文、图谱、诗诀等不同排版类型，再计算真正逐字CER、错序及缺页，确定哪种OCR可用于自动辅助校勘。未经逐页检查的识别文本保持`unreviewed`，不进入已审核的仓颉五类内容提取器。底本共268页的完整扫描覆盖已完成，**正式全文校勘仍0/268**，没有声明新知识规则上线。
 
+## M16.5｜原PDF逐页校勘台与真实整页CER质量门（现已开发并测试，真实校勘仍为0页）
+
+这一步不再把20段历史短句当作“整页识别率”。原典全文的真正难点是保证每个古籍竖排列顺序、正文及配图均经原图核对后再进入仓颉。M16.5提供**可操作、可签发复核记录、可计算真实整页字符编辑距离**的本机工具：
+
+- [本机侧栏原图+OCR编辑校勘台](../scripts/cangjie_page_review.py) + [HTML界面](../scripts/cangjie_review_ui.html)，由**127.0.0.1**提供，不能在远端打开或访问用户本地文件，不使用浏览器外部CDN、在线OCR、埋点、照片接口；POST校勘记录必须通过会话Token和同源检查。
+- [审核与原页指纹内核](../scripts/cangjie_review_core.py)固定M16.2实测的两份1925扫描PDF SHA256（第一份`466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649`、第二份`ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7`），如用其他扫描版本会**拒绝误归档**。零起页码、OCR候选文字SHA256及原PDF来源必须一致才能把候选放入编辑区。
+- **区别候选与审核：** 在左侧本机扫描原图核对全文后，右侧修改OCR结果，再填写实际复核人、必要的印刷卷章及图谱备注，并勾选“已经核对整页”。审核后的文本写入完全**不同的私有目录** `reviewed/<source-id>/<page>.txt`，同时记录 `.review.json` 的PDF哈希、完整文本哈希、来源页、复核人和时间；不修改OCR候选、原书图像或网站运行知识库。这是人工确认声明，**不能证明这个人真正正确地核对了全部文字**，仍需要独立抽检。
+- [整页质量程序](../scripts/cangjie_review_quality.py)在有校勘参考与同一原PDF OCR候选时才计算**逐汉字、严格保留字序的 Levenshtein CER**，另外给出**不计顺序**的汉字多重集召回（仅用于诊断顺序错误）。不对未复核页计算准确率，原有历史短句和OCR置信度不能冒充整页金标准。
+- 既有 [Cangjie入库门](../scripts/cangjie_corpus_stage.py) **同时核查**OCR候选与审核后正文；最新要求有明确“完整原页、全文、人工签字”字段，不允许只凭任意名字、PDF哈希和几字短文自动升格；如果撤销全部有效复核，也删除旧的 `reviewed-transcription.md` 防止残留错误知识。
+- [M16.5 CI](../.github/workflows/cangjie-page-review.yml)用模拟文字测试签名与CER及CSRF拒绝，并真实下载固定版本两份PDF，**从实际PDF第27个零起页渲染扫描图**，通过本机HTTP服务请求并校验图片及原文状态。真实源页验证覆盖268页；**CI没有也不能代表人类核对了正文（0/268），真正CER分母仍为0**。
+
+### 用户 Windows / Codex 本地运行一次整条工作流
+
+**本地路径不随GitHub公开仓库一起提交。** 在Faceface仓库根目录运行，先将两份固定PDF保存在 `C:/faceface-corpus/scans/part1.pdf` 与 `part2.pdf`；下载来源在M16.1一节。电脑需安装Python3.10+、Poppler（`pdfinfo.exe`、`pdftoppm.exe`），如本地尚无候选OCR文字，另需Tesseract竖排模型 `chi_tra_vert`（或预先用更优模型自行生成**带来源哈希的**OCR文本）。
+
+~~~powershell
+# 从原PDF生成可供校勘的候选文字（不自动批准）
+python -m scripts.cangjie_ocr_candidates --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/ocr --source nlc-44091
+python -m scripts.cangjie_ocr_candidates --scan-dir C:/faceface-corpus/scans --out-dir C:/faceface-corpus/ocr --source nlc-44092
+
+# 启动仅本机可访问的图文并排校勘台
+python -m scripts.cangjie_page_review --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --port 8765
+~~~
+
+在浏览器打开 `http://127.0.0.1:8765`，选择源PDF和零起页，校订原文并签名保存，之后**停止或另外打开命令行终端**再运行：
+
+~~~powershell
+python -m scripts.cangjie_review_quality --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --out C:/faceface-corpus/quality.json
+python -m scripts.cangjie_corpus_stage --scan-dir C:/faceface-corpus/scans --transcripts-dir C:/faceface-corpus/reviewed --checked-cards src/knowledge/maiyi-source-checked-v5.json --out-dir C:/faceface-corpus/audit
+~~~
+
+仅当有真正签署的有效完整原页文字时，`C:/faceface-corpus/audit/reviewed-transcription.md` 才会生成，才可以将这个受控文本交给仓颉的 `build_chunks` 和后续五类Agent。**仍存在单独待实现的难点：纯图谱、确认空白、损坏页面需要可审计的非文本归档状态；不能填虚构正文以凑268/268。** 此阶段暂只签署有可转录文本的页面，图片或空白页继续标注待分类，永远不把“缺文本”自动算完成。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
