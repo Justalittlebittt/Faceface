@@ -17,18 +17,18 @@ test("no readings generated for absent, multiple, or low-quality faces", () => {
   }
 });
 
-test("preserves six earlier cards and adds three checked non-eye-mouth sources", () => {
+test("preserves nine earlier verified cards and adds one source-checked mouth illustration", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.cardId),
-    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01", "MY25-FACE-ROUND-01", "MY25-NOSE-LONG-01", "MY25-CHIN-WIDE-01"]);
-  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86,66,87,52,77,34]);
+    ["MY25-EYE-01", "MY25-MOUTH-01", "MY25-NOSE-01", "MY25-MOUTH-ARC-01", "MY25-EYE-OX-01", "MY25-MOUTH-OX-01", "MY25-FACE-ROUND-01", "MY25-NOSE-LONG-01", "MY25-CHIN-WIDE-01", "MY25-MOUTH-CATFISH-01"]);
+  assert.deepEqual(reading.sourceLinks.map(x=>x.source.pdf_page_zero_based), [27,27,27,86,66,87,52,77,34,89]);
   assert.ok(reading.sourceLinks.every(x => x.source.source_url.includes("commons.wikimedia.org")));
 });
 
 test("an incomplete metric never becomes a historical face-type verdict", () => {
   const reading = makeReading(ok);
   assert.deepEqual(reading.sourceLinks.map(x => x.status),
-    ["related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
+    ["related-observation", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient", "insufficient"]);
   assert.ok(reading.sourceLinks.every(x => x.status !== "confirmed"));
   assert.match(reading.overview, /不足以判定完整的传统相型/);
 });
@@ -156,7 +156,7 @@ test("missing or unusable metrics never trigger composite historical labels", ()
 
 test("historic interpretation remains attributed culture rather than predicting user wealth", () => {
   const src=makeReading(ok);
-  assert.equal(src.sourceLinks.length,9);
+  assert.equal(src.sourceLinks.length,10);
   const en=readingAsText(makeReading(ok,"en"),"en");
   assert.match(en,/What the historic text says/);
   assert.match(en,/Original wording: 牛口/);
@@ -193,7 +193,7 @@ test("no-match report stays useful without manufacturing ancient classifications
   assert.equal(reading.featuredLinks.length,0);
   assert.equal(reading.briefInsights.length,1);
   assert.match(reading.briefInsights[0],/不勉强套用传统相型/);
-  assert.equal(reading.sourceLinks.length,9);
+  assert.equal(reading.sourceLinks.length,10);
   const asText=readingAsText(reading);
   assert.match(asText,/详细版：全部面部形态观察/);
   assert.match(asText,/条件不足/);
@@ -385,4 +385,50 @@ test("M14: borderline and unavailable metrics never enter the across-face summar
   assert.equal(reading.crossRegionStudy,null);
   const allUnusable={...input,descriptors:input.descriptors.map(d=>({...d,certainty:"unavailable",usable:false}))};
   assert.match(makeReading(allUnusable).patternSummary,/缺少足够可用/);
+});
+
+
+test("M15: archived catfish-mouth phrase requires BOTH clear broad width AND lowered mouth-corner directions", () => {
+  const mouth=(width,corner,widthCertainty="clear",cornerCertainty="clear",usable=true)=>({
+    ...ok,descriptors:[
+      ...descriptors.map(d => d.id==="mouth.width"
+        ? {...d,ratio:width,certainty:widthCertainty,text:"口部横向比例相对偏大",usable}
+        : d),
+      {id:"mouth.corner",region:"口角走势",measurement:"photo corner ratio",ratio:corner,
+        certainty:cornerCertainty,usable:true,caveat:"本次照片",text:"本次照片中双侧口角相对向下"}
+    ]
+  });
+  const get=(a,lang="zh")=>makeReading(a,lang).sourceLinks.find(x=>x.cardId==="MY25-MOUTH-CATFISH-01");
+  const hit=get(mouth(.54,.41));
+  assert.equal(hit.status,"related-observation");
+  assert.equal(hit.conditionCount,2);
+  assert.equal(hit.source.pdf_page_zero_based,89);
+  assert.equal(hit.source.volume,"卷二");
+  assert.equal(hit.historicalTerm,"鮎魚口闊角低尖");
+  assert.match(hit.observation,/口部横向比例/);
+  assert.match(hit.observation,/口角/);
+  assert.match(hit.caveat,/不能证明全部条件/);
+  assert.match(hit.historicalView,/旧式贬抑说法/);
+  assert.equal(get(mouth(.46,.41)).status,"insufficient");
+  assert.equal(get(mouth(.54,.50)).status,"insufficient");
+  assert.equal(get(mouth(.54,.41,"borderline")).status,"insufficient");
+  assert.equal(get(mouth(.54,.41,"clear","borderline")).status,"insufficient");
+  assert.equal(get(mouth(.54,.41,"clear","clear",false)).status,"insufficient");
+  const en=get(mouth(.54,.41),"en");
+  assert.equal(en.status,"related-observation");
+  assert.match(en.historicalGloss,/broad opening and lowered corners/);
+  assert.match(en.historicalView,/not a judgment about the person/);
+  assert.match(readingAsText(makeReading(mouth(.54,.41)),"zh"),/扫描 PDF 零起页89/);
+  assert.match(readingAsText(makeReading(mouth(.54,.41),"en"),"en"),/PDF zero-based page 89/);
+});
+
+test("M15: new mouth-source must not be inferred from upturned corners or treated as confirmed",()=>{
+  const adjusted={...ok,descriptors:[...descriptors.map(d=>d.id==="mouth.width"
+    ? {...d,ratio:.54,text:"口部横向比例相对偏大",certainty:"clear"}:d),
+    {id:"mouth.corner",region:"口角",measurement:"corner",ratio:.62,
+      text:"本次照片中双侧口角相对上扬",certainty:"clear",caveat:"expression"}]};
+  const report=makeReading(adjusted);
+  assert.equal(report.sourceLinks.find(x=>x.cardId==="MY25-MOUTH-CATFISH-01").status,"insufficient");
+  assert.equal(report.sourceLinks.find(x=>x.cardId==="MY25-MOUTH-ARC-01").status,"related-observation");
+  assert.ok(report.sourceLinks.every(link=>link.status!=="confirmed"));
 });
