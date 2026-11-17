@@ -369,7 +369,7 @@ try {
     .setInputFiles(secondPhoto);
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
-  if (comparisonStats.join("|") !== "0 / 10|0 / 9") {
+  if (comparisonStats.join("|") !== "0 / 10|0 / 10") {
     throw new Error("M9 identical-picture local comparison drifted: " + comparisonStats.join("|"));
   }
   await page.locator(".consistency-details summary").click();
