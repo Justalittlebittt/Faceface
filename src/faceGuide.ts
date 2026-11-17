@@ -18,7 +18,7 @@ export type GuideState =
   "too-large" | "outside" | "aligned" | "side-preview";
 
 export type Rect = { x: number; y: number; width: number; height: number };
-export type GuideCheck = { state: GuideState; coverage: number };
+export type GuideCheck = { state: GuideState; coverage: number; reason?: string };
 export type Hold = { startedAt: number | null; lastSeenAt: number | null; progress: number; complete: boolean };
 
 export const EMPTY_HOLD: Hold = { startedAt: null, lastSeenAt: null, progress: 0, complete: false };
@@ -69,8 +69,9 @@ export function checkFrontGuide(
       guide.width <= 0 || guide.height <= 0) return { state: "outside", coverage: 0 };
   // The analysis classifier already rejects heavily rolled/yawed, clipped,
   // multi-person or incomplete front-facing landmarks.
-  if (describeLandmarks(faces, image).status !== "ok") {
-    return { state: "pose", coverage: 0 };
+  const validity = describeLandmarks(faces, image);
+  if (validity.status !== "ok") {
+    return { state: "pose", coverage: 0, reason: validity.message };
   }
   const face = faces[0];
   if (FACE_OVAL_INDICES.some(index => !face[index] ||
