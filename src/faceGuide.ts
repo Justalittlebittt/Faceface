@@ -27,10 +27,10 @@ export const EMPTY_HOLD: Hold = { startedAt: null, lastSeenAt: null, progress: 0
 // crown -> temples -> cheeks -> jaw -> chin path as the rendered outline.
 // Ears are intentionally not part of the required facial perimeter.
 const leftContour: readonly [number, number][] = [
-  [150, 46], [124, 47], [105, 54], [87, 69], [74, 91],
-  [67, 116], [65, 146], [67, 177], [69, 207],
-  [76, 236], [84, 267], [96, 298], [113, 325],
-  [132, 350], [150, 363]
+  [150, 46], [120, 47], [95, 55], [75, 70], [60, 95],
+  [50, 120], [47, 146], [45, 177], [48, 207],
+  [56, 236], [70, 267], [87, 298], [105, 325],
+  [128, 350], [150, 363]
 ];
 const silhouette: readonly [number, number][] = [
   ...leftContour,
