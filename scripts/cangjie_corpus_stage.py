@@ -51,8 +51,15 @@ def verify_page_review(text_path: Path, pdf_hash: str, page: int) -> bool:
     if not review_path.exists():
         return False
     review = json.loads(review_path.read_text(encoding="utf-8"))
-    if review.get("reviewed_by") in (None, "", "auto", "ocr"):
-        raise ValueError(f"Review requires a named reviewer: {review_path}")
+    reviewer = review.get("reviewed_by")
+    if (not isinstance(reviewer, str) or not reviewer.strip()
+            or reviewer.strip().lower() in ("auto", "ocr", "agent", "bot", "model", "anonymous")):
+        raise ValueError(f"Review requires a real identified reviewer: {review_path}")
+    if (review.get("confirmed_against_full_original_image") is not True
+            or review.get("contains_complete_page_transcription_attested_by_reviewer") is not True):
+        raise ValueError(f"Review needs explicit complete-page original-image attestation: {review_path}")
+    if review.get("source_id") != text_path.parent.name:
+        raise ValueError(f"Review source ID mismatch: {review_path}")
     if (review.get("source_pdf_sha256") != pdf_hash
             or review.get("pdf_page_zero_based") != page
             or review.get("text_sha256") != sha256(text_path.read_bytes())):
@@ -80,6 +87,8 @@ def index_scans(scan_dir: Path, transcripts_dir: Path) -> tuple[list[dict], list
             key = f"{page:03d}"
             text_file = transcripts_dir / scan["id"] / (key + ".txt")
             state = "not_transcribed"
+            printed_volume = None
+            section = None
             if text_file.exists():
                 content = text_file.read_text(encoding="utf-8").strip()
                 if not content:
@@ -87,6 +96,9 @@ def index_scans(scan_dir: Path, transcripts_dir: Path) -> tuple[list[dict], list
                 is_reviewed = verify_page_review(text_file, pdf_hash, page)
                 state = "reviewed" if is_reviewed else "unreviewed"
                 if is_reviewed:
+                    metadata = json.loads(text_file.with_suffix(".review.json").read_text(encoding="utf-8"))
+                    printed_volume = metadata.get("printed_volume") or None
+                    section = metadata.get("section") or None
                     checked_text.append(
                         f"## {scan['id']} / PDF zero-based page {page}\n\n"
                         f"Original scan: {scan['url']}\n\n{content}\n"
@@ -94,7 +106,7 @@ def index_scans(scan_dir: Path, transcripts_dir: Path) -> tuple[list[dict], list
             pages.append({
                 "source_id": scan["id"], "pdf_page_zero_based": page,
                 "page_id": f"{scan['id']}:p{key}", "scan_present": True,
-                "text_status": state, "printed_volume": None, "section": None,
+                "text_status": state, "printed_volume": printed_volume, "section": section,
             })
     return sources, pages, checked_text
 
@@ -192,6 +204,9 @@ def stage(scan_dir: Path, transcripts_dir: Path, catalog: Path, out_dir: Path) -
         (out_dir / "reviewed-transcription.md").write_text(
             "# Reviewed 1925 scan transcription (page-bound excerpts)\n\n"
             + "\n".join(reviewed_text), encoding="utf-8")
+    else:
+        # Never retain a stale verified corpus when all page reviews were revoked.
+        (out_dir / "reviewed-transcription.md").unlink(missing_ok=True)
     print(json.dumps({"pages": len(pages), "statuses": counts,
                       "prechecked_short_excerpts": pilot_count,
                       "full_book_agent_extraction": False}, ensure_ascii=False))
