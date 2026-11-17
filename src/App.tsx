@@ -698,7 +698,7 @@ export default function App() {
                           <h4>{t(language, "compareThreeSections")}</h4>
                           <p className="privacy-detail">{t(language, "compareSectionLimits")}</p>
                           {comparison.threeSections.map(part => (
-                            <p className="consistency-source-change" key={part.id}>
+                            <p className="consistency-zone-row" key={part.id}>
                               <strong>{t(language, part.id === "upper" ? "compareUpperZone" : part.id === "middle" ? "compareMiddleZone" : "compareLowerZone")}</strong>:{" "}
                               {part.firstPercent === null ? t(language, "compareMissing") : part.firstPercent.toFixed(1) + "%"} →{" "}
                               {part.secondPercent === null ? t(language, "compareMissing") : part.secondPercent.toFixed(1) + "%"}
