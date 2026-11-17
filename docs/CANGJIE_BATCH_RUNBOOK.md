@@ -145,6 +145,50 @@ python -m scripts.cangjie_corpus_stage --scan-dir C:/faceface-corpus/scans --tra
 
 仅当有真正签署的有效完整原页文字时，`C:/faceface-corpus/audit/reviewed-transcription.md` 才会生成，才可以将这个受控文本交给仓颉的 `build_chunks` 和后续五类Agent。**仍存在单独待实现的难点：纯图谱、确认空白、损坏页面需要可审计的非文本归档状态；不能填虚构正文以凑268/268。** 此阶段暂只签署有可转录文本的页面，图片或空白页继续标注待分类，永远不把“缺文本”自动算完成。
 
+## M16.6｜268页本地视觉Agent自动草稿队列（真实可运行接口；不冒充真实Agent已执行）
+
+**代码和验收：** [批量调度与模型API](../scripts/cangjie_vision_agent_batch.py)、[原图并排校勘台](../scripts/cangjie_page_review.py)、[268页原PDF任务队列CI](../.github/workflows/cangjie-vision-agent.yml)（[PR #28](https://github.com/Justalittlebittt/Faceface/pull/28)）。
+
+目标是避免让人从空白文本框手打268页：使用固定原图、页码及可选OCR候选，由Windows本机运行的**实际视觉模型**逐页输出明确标为`agent_draft`的繁体竖排校订初稿，重复执行可以跳过已完成草稿；已有真人签署的原文永不被自动修改。
+
+- `--mode plan --source all` 逐份核对**两份1925年原PDF及SHA256**，直接产生 **268个唯一`nlc-44091:p000` / `nlc-44092:p114`任务**；优先跳过已有人工完整页复核，识别与源PDF/OCR哈希/模型版本及Prompt版本匹配的可复用AI草稿。此动作不需要模型，不读取外部私人网络，也不产生虚构原文。
+- `--mode run` 通过官方 Ollama `POST /api/chat` JSON Schema结构化输出及base64原页图像字段调用用户**自己启动**的本机 `qwen3-vl:4b` 视觉模型；**URL强制限制为localhost或127.0.0.1的HTTP端口**，不接受远程第三方API地址，代码不会发送真人脸图。模型必须事先真实安装并通过 `/api/tags` 检查；如果没有，程序直接报错，不会假装已完成。
+- 逐页保留`page_type`（text / title_or_verse / text_and_figures / blank / figure_only / damaged）、**从右到左的候选原文列序**、未辨识字及异体疑点、图谱备注、卷章猜测、模型及来源SHA256、未校勘状态。OCR候选如存在，必须与原PDF页码及其文本哈希匹配，否则不提供给Agent；原始扫描优先于OCR。模型回复必须符合JSON结构，异常不能自动变成审核通过。
+- AI草稿仅保存在私有 `agent-drafts/<source-id>/<page>.draft.json` 和 `.draft.txt`。**不会进入`reviewed/`、`reviewed-transcription.md`、浏览器线上规则库或仓颉已审阅正文**；当OCR候选被改写或换原PDF时，旧草稿哈希自动失效，必须重新生成。校勘界面的新按钮可以复制已匹配来源的草稿及不确定字/图谱说明，但人工确认勾选始终清空，仍需比对原图再签署。
+- 整书完整质量门仍要求对原图的真实复核、词句错序及古籍图谱核查。**`blank/figure_only`是Agent暂时分类，不是事实或人工非文本页已归档。** 对于没有可信整页转录的页，不能计算已通过的整书CER，也不能凭AI输出直接视为仓颉来源充分。
+
+### 在Windows本地使用（Faceface仓库根目录）
+
+准备两份**固定1925扫描PDF**：`C:/faceface-corpus/scans/part1.pdf`、`part2.pdf`（从M16.1两个Commons原件取得，未复制其它版本）。本地需Python3.10+、Poppler的`pdfinfo.exe/pdftoppm.exe`；安装 Ollama Windows客户端并通过其官网下载免费开源视觉模型（磁盘/RAM占用取决于选择的模型，**不需要租用云服务器**；实际推理性能仍取决于你本机硬件）：
+
+~~~powershell
+# 下载视觉模型（一次性，需网络；下载后默认本机推理）
+ollama pull qwen3-vl:4b
+ollama list
+# 如Ollama未作为Windows应用在后台启动，另开终端运行：ollama serve
+
+# 先为全部268页建立真正的来源索引（不需视觉模型、不产生AI文字）
+python -m scripts.cangjie_vision_agent_batch --mode plan --source all --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts
+
+# 从带有已有原文出处的页面做3页真实质量试验（需本机视觉模型，草稿未审核）
+python -m scripts.cangjie_vision_agent_batch --mode run --source nlc-44091 --start 27 --end 35 --max-pages 3 --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --model qwen3-vl:4b
+
+# 质量合适后同一命令改为处理全书；已经存在且有效的草稿会自动跳过
+python -m scripts.cangjie_vision_agent_batch --mode run --source all --keep-going --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --model qwen3-vl:4b
+
+# 打开本机人工校勘台，直接载入模型草稿，并逐页与真实扫描原图核对
+python -m scripts.cangjie_page_review --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --port 8765
+
+# 不修改原典，按“未辨认文字/图谱/空白/破损/来源失效”生成本机复核任务表
+python -m scripts.cangjie_vision_draft_audit --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/ocr --reviewed-dir C:/faceface-corpus/reviewed --draft-dir C:/faceface-corpus/agent-drafts --model qwen3-vl:4b --out C:/faceface-corpus/agent-drafts/review-priority.json
+~~~
+
+用浏览器打开 `http://127.0.0.1:8765`。原PDF、OCR候选与模型草稿均在你的本机工作区，不被推送到GitHub。低质量Tesseract OCR**不强制作为模型输入**：可先留空`ocr/`目录，只用图像出草稿；如用OCR作为辅助，必须依M16.2写出来源哈希一致的文件。
+
+**复核优先级输出：** [`cangjie_vision_draft_audit.py`](../scripts/cangjie_vision_draft_audit.py) 会按每页未确定字、图谱/非正文分类、OCR来源问题及模型草稿失效进行排序，并只在模型草稿与已核对V5来源页匹配时计算**原文短句诊断召回**；这些指标不证明OCR全文正确，也不会主动签署任何页面。
+
+**本轮真实CI覆盖口径：** GitHub Actions实际下载原版两份PDF、核实源文件并生成268个任务，从两份原PDF渲染图片，另用**本机模拟的Ollama HTTP服务**测试图像base64、JSON Schema、续跑、失效与不晋升。**CI并未下载运行Qwen3-VL或执行268页AI转录，也未取得任何真人完整页校勘（0/268）**。只有本地用户启用实际模型运行后才会产生真实Agent草稿；必须提供运行报告而非口头宣称。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。

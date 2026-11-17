@@ -1,0 +1,112 @@
+name: M16.6 Vision-agent draft queue and original-PDF provenance
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-vision-agent.yml"
+      - "scripts/cangjie_vision_agent_batch.py"
+      - "scripts/cangjie_vision_draft_audit.py"
+      - "scripts/cangjie_review_core.py"
+      - "scripts/cangjie_review_ui.html"
+      - "tests/test_cangjie_vision_agent_batch.py"
+      - "tests/test_cangjie_vision_draft_audit.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vision-agent-protocol-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate all-source 268-page plan, mock localhost image API, resume and review isolation
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_vision_*.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_page_review.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_corpus.py' -v
+
+  real-1925-source-queue-smoke:
+    needs: vision-agent-protocol-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install local original-PDF image renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
+      - name: Get exact two public 1925 scan PDFs (runner private storage)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-originals/part2.pdf"
+
+      - name: ACTUALLY produce 268 original-PDF page tasks and render real pages
+        shell: bash
+        run: |
+          python -m scripts.cangjie_vision_agent_batch \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --ocr-dir "$RUNNER_TEMP/private-ocr" \
+            --reviewed-dir "$RUNNER_TEMP/private-reviewed" \
+            --draft-dir "$RUNNER_TEMP/private-agent-drafts" \
+            --mode plan --source all
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.cangjie_review_core import ReviewWorkspace
+          from scripts.cangjie_vision_agent_batch import prepare_plan,selected_pages
+          temp=Path(os.environ["RUNNER_TEMP"])
+          w=ReviewWorkspace(
+              temp/"faceface-originals",temp/"private-ocr",
+              temp/"private-reviewed",draft_dir=temp/"private-agent-drafts"
+          )
+          p=json.loads((temp/"private-agent-drafts"/"m16.6-queue.json").read_text("utf-8"))
+          assert len(p["jobs"])==268 and len({x["page_id"] for x in p["jobs"]})==268
+          assert p["needs_agent_draft"]==268 and p["already_human_reviewed"]==0
+          assert p["existing_valid_agent_drafts"]==0
+          assert p["cangjie_agents_executed"] is False and p["auto_approved_source_pages"]==0
+          assert p["jobs"][0]["source_id"]=="nlc-44091"
+          assert p["jobs"][-1]["page_id"]=="nlc-44092:p114"
+          for src,index in (("nlc-44091",27),("nlc-44092",40)):
+              img=w.image_path(src,index,dpi=120)
+              assert img.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+              assert img.stat().st_size > 10000
+          assert w.summary()["full_page_reviewed"]==0
+          public={
+              "original_scans":2,"original_page_tasks_created":len(p["jobs"]),
+              "source_pdf_sha256":{src:d["pdf_sha256"] for src,d in w.sources.items()},
+              "real_page_images_rendered":2,
+              "actual_vision_model_called":False,
+              "mock_local_model_protocol_unit_tests_passed":True,
+              "actual_agent_drafts_generated":0,
+              "human_reviewed_original_pages":0,
+              "cangjie_agent_distillation_performed":False,
+              "note":"REAL 1925 original PDF queue and images were checked; no VLM runtime in GitHub CI"
+          }
+          Path("m16.6-source-queue-metadata.json").write_text(json.dumps(public,indent=2))
+          print("M16.6 REAL-SOURCE QUEUE PASS: 268/268 original-page tasks, 2 original-PDF PNGs")
+          print("IMPORTANT: 0 real vision Agent predictions, 0 original-page human reviews; mock protocol unit tests only")
+          PY
+
+      # Never upload raw 1925 PDF, rendered page image, OCR or generated text.
+      - name: Archive metadata-only original-source queue evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-6-268-original-page-vision-draft-queue-metadata-only
+          path: m16.6-source-queue-metadata.json
+          if-no-files-found: error
+          retention-days: 14

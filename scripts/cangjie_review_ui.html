@@ -103,7 +103,9 @@
         <div class="editor">
           <div class="nav">
             <button type="button" id="copy-ocr">将此页OCR候选复制到编辑区</button>
+            <button type="button" id="copy-agent">采用此页视觉Agent草稿（须对图复核）</button>
             <span class="hint" id="ocr-state"></span>
+            <span class="hint" id="agent-state"></span>
           </div>
           <textarea id="transcription" spellcheck="false" aria-label="校订后的古籍整页文字" placeholder="请根据左侧原图完成整页文字转录；没有OCR候选时可手动输入。保留原来的繁体和旧字形。"></textarea>
           <p class="hint">保留右起竖列的阅读顺序与必要段落换行。旧字形、图谱标签、正文卷章需对照原图；不确定的文字写入下方校勘备注，不得编造成确定原文。</p>
@@ -147,7 +149,7 @@
 "use strict";
 const TOKEN = __LOCAL_REVIEW_TOKEN_JSON__;
 const $ = id => document.getElementById(id);
-let currentSource = "nlc-44091", currentIndex = 27, candidate = "", loading = false;
+let currentSource = "nlc-44091", currentIndex = 27, candidate = "", agentDraft = "", agentDiagnostic = {}, loading = false;
 const counts = { "nlc-44091":153, "nlc-44092":115 };
 const enc = encodeURIComponent;
 
@@ -182,7 +184,8 @@ async function loadStatus() {
   $("review-count").textContent = s.full_page_reviewed + " / " + s.total_original_scan_pages;
   $("candidate-count").textContent =
     "已找到OCR候选：" + s.ocr_candidate_available + "页；"
-    + "符合原PDF哈希的候选：" + s.ocr_provenance_ok + "页。";
+    + "符合原PDF哈希的候选：" + s.ocr_provenance_ok + "页；"
+    + "有效视觉Agent草稿：" + s.agent_draft_provenance_ok + "页（均未自动审核）。";
 }
 async function loadPage() {
   if (loading) return;
@@ -193,6 +196,12 @@ async function loadPage() {
     const response = await request("/api/page?" + locationQuery());
     $("page-label").textContent = "数字PDF第 " + (currentIndex+1) + " / " + response.page_count + " 页 · 零起 " + currentIndex;
     candidate = response.ocr_candidate;
+    agentDraft = response.agent_draft_provenance_ok ? response.agent_draft : "";
+    agentDiagnostic = response.agent_draft_provenance_ok ? response.agent_diagnostic : {};
+    $("agent-state").textContent = response.agent_draft_available
+      ? (response.agent_draft_provenance_ok ? "视觉Agent草稿已准备 · 未审核" : "Agent草稿哈希失效，已阻止引用")
+      : "此页暂无Agent草稿";
+    $("copy-agent").disabled = !response.agent_draft_provenance_ok;
     $("ocr-state").textContent = response.ocr_candidate_available
       ? (response.ocr_candidate_provenance_ok ? "候选来源校验通过（尚未审核）" : "OCR来源哈希不匹配，已阻止引用")
       : "此页尚无OCR候选";
@@ -232,6 +241,33 @@ $("copy-ocr").addEventListener("click",()=>{
   $("confirmed").checked = false;
   updateCounter();
   message("已复制OCR候选。必须核对全部原图后才可标记为校勘完成。");
+});
+$("copy-agent").addEventListener("click",()=>{
+  if (!$("copy-agent").disabled) {
+    if (agentDraft.trim()) $("transcription").value = agentDraft;
+    $("confirmed").checked = false;
+    // Source-page guesses cannot override existing manually reviewed metadata.
+    if (!$("volume").value && agentDiagnostic.printed_volume_guess) {
+      $("volume").value = agentDiagnostic.printed_volume_guess;
+    }
+    if (!$("section").value && agentDiagnostic.section_guess) {
+      $("section").value = agentDiagnostic.section_guess;
+    }
+    const notes = [
+      "AI初稿（非已校勘）：须核对繁体字、从右到左列序和图谱。",
+      agentDiagnostic.page_type ? "页面暂分类："+agentDiagnostic.page_type : "",
+      ...(agentDiagnostic.uncertain_spans || []).map(x=>"未确定："+x),
+      ...(agentDiagnostic.figure_notes || []).map(x=>"图谱说明："+x),
+      agentDiagnostic.reading_order_notes ? "列序疑问："+agentDiagnostic.reading_order_notes : ""
+    ].filter(Boolean).join("\n");
+    if (notes) $("notes").value = [$("notes").value,notes].filter(Boolean).join("\n").slice(0,2000);
+    updateCounter();
+    message(agentDraft.trim()
+      ? "AI草稿已放入编辑区，不构成校勘。请逐字对照原图后签署。"
+      : "Agent暂判本页无可转录正文；图谱/空白仅为草稿分类，已附备注，必须对照原图确认。");
+  } else {
+    message("没有通过来源核验的视觉Agent草稿。");
+  }
 });
 $("save").addEventListener("click",async()=>{
   $("save").disabled = true;

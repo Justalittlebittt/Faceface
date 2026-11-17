@@ -58,11 +58,13 @@ def atomic_write(path: Path, content: bytes) -> None:
 class ReviewWorkspace:
     def __init__(
         self, scan_dir: Path, ocr_dir: Path, reviewed_dir: Path,
-        expected_hashes: dict[str, str] | None = None
+        expected_hashes: dict[str, str] | None = None,
+        draft_dir: Path | None = None
     ) -> None:
         self.scan_dir, self.ocr_dir, self.reviewed_dir = (
             Path(scan_dir), Path(ocr_dir), Path(reviewed_dir)
         )
+        self.draft_dir = Path(draft_dir) if draft_dir is not None else self.reviewed_dir.parent / "agent-drafts"
         expected_hashes = KNOWN_SCAN_SHA256 if expected_hashes is None else expected_hashes
         self.sources: dict[str, dict] = {}
         for scan in SCANS:
@@ -90,6 +92,8 @@ class ReviewWorkspace:
             "candidate_meta": self.ocr_dir / "transcripts" / source / f"{base}.ocr.json",
             "reviewed": self.reviewed_dir / source / f"{base}.txt",
             "review_meta": self.reviewed_dir / source / f"{base}.review.json",
+            "agent_draft": self.draft_dir / source / f"{base}.draft.txt",
+            "agent_draft_meta": self.draft_dir / source / f"{base}.draft.json",
         }
 
     def _unchanged_source(self, source: str) -> None:
@@ -110,6 +114,26 @@ class ReviewWorkspace:
             and ocr_meta.get("candidate_text_sha256") == file_sha256(p["candidate"])
             and ocr_meta.get("eligible_for_cangjie_verified_corpus") is False
         )
+        agent_meta = {}
+        agent_text = ""
+        draft_available = p["agent_draft"].is_file() and p["agent_draft_meta"].is_file()
+        agent_provenance_ok = False
+        if draft_available:
+            agent_meta = json.loads(p["agent_draft_meta"].read_text(encoding="utf-8"))
+            candidate_hash = ocr_meta.get("candidate_text_sha256") if candidate_provenance_ok else None
+            agent_provenance_ok = bool(
+                agent_meta.get("pipeline") == "m16.6-vision-agent-draft"
+                and agent_meta.get("prompt_version") == "m16.6-source-page-vertical-columns-v1"
+                and agent_meta.get("source_id") == source
+                and agent_meta.get("pdf_page_zero_based") == index
+                and agent_meta.get("source_pdf_sha256") == original["pdf_sha256"]
+                and agent_meta.get("ocr_candidate_sha256") == candidate_hash
+                and agent_meta.get("draft_text_sha256") == file_sha256(p["agent_draft"])
+                and agent_meta.get("eligible_for_cangjie_verified_corpus") is False
+                and agent_meta.get("human_reviewed") is False
+            )
+            if agent_provenance_ok:
+                agent_text = p["agent_draft"].read_text(encoding="utf-8")
         existing_text = ""
         review = {}
         if p["reviewed"].is_file():
@@ -128,6 +152,18 @@ class ReviewWorkspace:
                 "engine": ocr_meta.get("engine"), "han_char_count": ocr_meta.get("han_char_count"),
                 "mean_word_confidence": ocr_meta.get("mean_word_confidence"),
                 "text_sha256": ocr_meta.get("candidate_text_sha256") if candidate_provenance_ok else None
+            },
+            "agent_draft": agent_text,
+            "agent_draft_available": draft_available,
+            "agent_draft_provenance_ok": agent_provenance_ok,
+            "agent_diagnostic": {
+                "model": agent_meta.get("model") if agent_provenance_ok else None,
+                "page_type": agent_meta.get("page_type") if agent_provenance_ok else None,
+                "uncertain_spans": agent_meta.get("uncertain_spans", []) if agent_provenance_ok else [],
+                "figure_notes": agent_meta.get("figure_notes", []) if agent_provenance_ok else [],
+                "reading_order_notes": agent_meta.get("reading_order_notes", "") if agent_provenance_ok else "",
+                "printed_volume_guess": agent_meta.get("printed_volume_guess", "") if agent_provenance_ok else "",
+                "section_guess": agent_meta.get("section_guess", "") if agent_provenance_ok else ""
             },
             "reviewed_text": existing_text,
             "is_reviewed_full_page": bool(existing_text),
@@ -209,7 +245,8 @@ class ReviewWorkspace:
 
     def summary(self) -> dict:
         counts = {"full_page_reviewed": 0, "ocr_candidate_available": 0,
-                  "ocr_provenance_ok": 0, "unreviewed_or_missing": 0}
+                  "ocr_provenance_ok": 0, "unreviewed_or_missing": 0,
+                  "agent_draft_available": 0, "agent_draft_provenance_ok": 0}
         for source, info in self.sources.items():
             for index in range(info["page_count"]):
                 p = self.page_paths(source, index)
@@ -222,6 +259,10 @@ class ReviewWorkspace:
                             and m.get("pdf_page_zero_based") == index
                             and m.get("candidate_text_sha256") == file_sha256(p["candidate"])):
                             counts["ocr_provenance_ok"] += 1
+                if p["agent_draft"].is_file() and p["agent_draft_meta"].is_file():
+                    counts["agent_draft_available"] += 1
+                    if self.page_info(source, index)["agent_draft_provenance_ok"]:
+                        counts["agent_draft_provenance_ok"] += 1
                 if p["reviewed"].is_file() and verify_page_review(
                     p["reviewed"], info["pdf_sha256"], index
                 ):
