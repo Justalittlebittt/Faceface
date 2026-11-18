@@ -1,0 +1,157 @@
+name: M16.9 REAL 268-page original-source morphology phrase discovery
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-morphology-mine.yml"
+      - "scripts/cangjie_morphology_mine.py"
+      - "scripts/cangjie_morphology_audit.py"
+      - "tests/test_cangjie_morphology_mine.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lexical-mining-source-gate-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify original PDF/OCR source hashes, exact 268-page index, no single-character generic false positives
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_morphology_mine.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_paddleocr_candidates.py' -v
+
+  real-ppocr-morphology-source-shards:
+    needs: lexical-mining-source-gate-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - { source: nlc-44091, pdf: part1.pdf, start: 0, end: 50 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 51, end: 101 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 102, end: 152 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 0, end: 38 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 39, end: 77 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 78, end: 114 }
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install actual PaddleOCR CPU and original-PDF image renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+
+      - name: Fetch original 1925 source PDF into private ephemeral runner
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-originals"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/faceface-originals/${{ matrix.pdf }}"
+
+      - name: REAL PP-OCRv5 inference on every original page of this shard
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --out-dir "$RUNNER_TEMP/private-ocr" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} \
+            --end ${{ matrix.end }} --dpi 170
+
+      - name: Actually mine short OCR facial morphology fragments with original SHA256/page lineage
+        shell: bash
+        run: |
+          python -m scripts.cangjie_morphology_mine \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --ocr-dir "$RUNNER_TEMP/private-ocr" \
+            --out-dir "$RUNNER_TEMP/private-phrase-mining" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} \
+            --end ${{ matrix.end }}
+
+      - name: Stage METADATA only; do not upload OCR, scan images or short source excerpts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p public-index-metadata
+          find "$RUNNER_TEMP/private-phrase-mining/metadata" -maxdepth 1 -name '*.json' \
+            -exec cp {} public-index-metadata/ \; 2>/dev/null || true
+          echo "PUBLIC ARTIFACT POLICY: only page-level labels/counts and source SHA256"
+          echo "Private original OCR snippets are excluded from upload."
+
+      - name: Upload source-bound candidate METADATA ONLY
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-9-original-OCR-lexical-metadata-${{ matrix.source }}-${{ matrix.start }}-${{ matrix.end }}
+          path: public-index-metadata/
+          retention-days: 14
+          if-no-files-found: warn
+
+  all-268-original-page-lexical-coverage:
+    needs: real-ppocr-morphology-source-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: m16-9-original-OCR-lexical-metadata-*
+          path: real-shard-metadata
+          merge-multiple: true
+
+      - name: Audit exact 268 original pages, zero missing/duplicate pages and faceregion coverage
+        run: |
+          python -m scripts.cangjie_morphology_audit \
+            real-shard-metadata/*.json --out m16-9-268-page-lexical-statistics.json
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-9-268-page-lexical-statistics.json",encoding="utf-8"))
+          assert r["actual_1925_original_pages_processed"]==268
+          assert r["metadata_only_shard_count"]==6
+          assert r["per_scan"]["nlc-44091"]["pages"]==153
+          assert r["per_scan"]["nlc-44092"]["pages"]==115
+          assert r["OCR_han_chars_total"]>10000
+          assert r["short_fragment_lexical_hits_total"]>=1
+          assert r["human_verified_original_page_transcriptions_added"]==0
+          assert r["new_live_faceface_rules"]==0
+          assert r["original_OCR_text_or_quotes_in_metadata"] is False
+          print("M16.9: ALL 268 ORIGINAL SCAN OCR PAGES MINED, no duplicate pages.")
+          print("Real morphology lexical hit pages:",r["pages_with_any_lexical_morphology_cue"])
+          print("Real fragment-search hits:",r["short_fragment_lexical_hits_total"])
+          print("Distinct page counts by facial region:",r["distinct_pages_by_facial_region"])
+          print("Keyword matches are NOT historically verified face-reading rules.")
+          PY
+
+      - name: Archive AGGREGATE evidence only (no OCR source fragments)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-9-real-268-original-pages-morphology-discovery-metadata-only
+          path: m16-9-268-page-lexical-statistics.json
+          retention-days: 14

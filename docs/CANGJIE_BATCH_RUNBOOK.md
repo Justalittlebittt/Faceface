@@ -228,6 +228,32 @@ python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --o
 
 **私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
 
+## M16.9｜已实现：六区域原典短词句预筛，不再重复空转仓颉小模型
+
+**程序**：[原文词句预筛](../scripts/cangjie_morphology_mine.py) · [268页来源审计](../scripts/cangjie_morphology_audit.py) · [六片真实OCR+挖掘CI](../.github/workflows/cangjie-morphology-mine.yml) · [PR #31](https://github.com/Justalittlebittt/Faceface/pull/31)。
+
+M16.8真实实验已经表明：35次按仓颉五类角色运行的语言模型提取请求（Qwen2.5 1.5B两种方式合计30次、Qwen3 4B一次5次），全部**0条通过指定OCR页的来源短句验证**；不能把模型调用成功当成“整书提取成功”。因此先复用M16.7真正成功的两份1925版PDF共268页的PP-OCRv5候选文字，在**不调用任何语言模型**情况下，形成6个面部区域的可查原页短句线索。
+
+- **眼、鼻、口、耳、眉、面部结构**六类区域，优先通过“鼻梁、眼尾、口形、耳轮、眉尾、印堂、天庭、地阁、颧骨”等可描述部位的**多字词**查找；单字“眼/鼻/口/耳/眉/面”仅在邻近“长、短、方、圆、厚、薄、上翘、细、宽”等形态描述词时列入候选，尽量避开“人口、门口、项目、目的、前面”等非面部用法。不会凭单字匹配硬凑一条古籍规则。
+- 候选条目保存在私有`private/<source>/p000-152.jsonl`等文件：包含**短段OCR文本（仅供校对）**、所属面部区域、匹配来源词、原PDF SHA256、PDF零起页码、原OCR候选SHA256、OCR行号和行内容哈希、候选编号、列序与图示风险；全部标记**`OCR_UNREVIEWED`、`is_a_substantial_book_rule=false`、`original_image_reviewed=false`**。它只是定位古籍描述的**搜索索引**，不证明文字正确，更不证明相术断语科学有效。
+- 每个CI分片只上传**`metadata/`**，不上传含原书文字的`private/`、原始PDF或图片。跨六片审计必须覆盖全部268页、绝不允许漏页/重复页，且只有来源哈希、类别和数量成为公开统计。M16.7时临时执行的OCR没有持久保留在私有目录，因此要在本地长期使用时须在**Windows/Codex本地**执行下面的OCR和预筛命令，不能误称GitHub Action产生了永久保存的内容索引。
+- **排序思路**：先检查具有多区域词句的原图页，区分正面/侧面能观察到的轮廓描述与图谱、毛发修整、化妆、表情和拍摄角度等不稳定因素；眉部保留较低投入，不作为内容覆盖的核心。真正准备接入网站的单条语义规则再核原图与条件。**不应把“命中多少个OCR短句”说成已经提取了多少条传统面相规则。**
+
+在Windows/Codex保持上一节的实际原PDF与已生成的`C:/faceface-corpus/paddle-ocr/transcripts/`后：
+
+~~~powershell
+# 对第一份原PDF的153页生成短句索引（需本机已有有效OCR及来源哈希）
+python -m scripts.cangjie_morphology_mine --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/paddle-ocr --out-dir C:/faceface-corpus/morphology-index --source nlc-44091 --start 0 --end 152
+
+# 对第二份原PDF的115页生成短句索引
+python -m scripts.cangjie_morphology_mine --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/paddle-ocr --out-dir C:/faceface-corpus/morphology-index --source nlc-44092 --start 0 --end 114
+
+# 通过已核实的原页编号定位原书图像，对候选做人工抽检，不要自动上线
+python -m scripts.cangjie_page_review --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/paddle-ocr --reviewed-dir C:/faceface-corpus/reviewed --port 8765
+~~~
+
+下一步在这份**source_unverified原始短片段池**上做多卷/多区域原图抽查：首先排除OCR错字、跨列错序和无意义命中；然后对通过原图核查的有效片段，结合仓颉原版Extractor进行**语义归类、条件和例外蒸馏**。不能把“借助仓颉的方法论”冒称“已经完成仓颉整本五路Agent语义提取”。面向国际用户的Faceface拍摄与历史文化解释界面保持不变。
+
 ## 首个实施批次（执行而非长期只出计划）
 
 **一次走通“扫描底本来源映射 → 原页文本/图谱归档 → 官方仓颉5类提取 → 来源/覆盖审计 → 统一JSON候选 → 批量导入dry-run”完整链条**。同一链条跑通后，按剩余章节自动批处理，不能回到单条人工增量。先由实际可用扫描文件确定任务分片范围，不凭空编造底本页数或条目总数。
