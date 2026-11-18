@@ -66,9 +66,10 @@ class HeldoutSourceTests(unittest.TestCase):
 
     def test_catalog_changes_cannot_silently_broaden_holdout(self):
         modified=json.loads(json.dumps(self.catalog))
-        first=next(x for x in modified["cards"]
+        first=next(x for x in modified["cards"]+modified.get("framework_notes",[])
                    if x["source"]["pdf_page_zero_based"]==28)
-        first["source_phrase"]="完全改变的测试词汇"
+        key="source_phrase" if "source_phrase" in first else "quote"
+        first[key]=first[key]+"；額角比較"
         with self.assertRaisesRegex(ValueError,"original-reference anchor"):
             holdout_pages(modified,self.pilot)
 
