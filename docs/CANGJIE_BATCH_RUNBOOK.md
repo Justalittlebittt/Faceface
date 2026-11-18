@@ -228,6 +228,23 @@ python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --o
 
 **私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
 
+## M16.10｜真实原PDF目视短句对照与照片可观察条件分离
+
+**已执行的真实源页质量门**：[M16.10专项Action](https://github.com/Justalittlebittt/Faceface/actions/runs/44243091232) · [直接原图短句初读数据](../research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json) · [真实逐句检出统计](../research/M16_10_REAL_ORIGINAL_PHRASE_PROBE_RESULTS.json) · [11页原图主题直读](../research/M16_10_ORIGINAL_PAGE_SPOTCHECK_LEDGER.json)。
+
+- 第一份1925 PDF的数字零起页27、36、86、87与第二份PDF的76、96，已**直接查看原始PDF图像**，从图中初读13个传统形态短句：例如口部轮廓、口角方向、唇厚、鼻梁直线形态、眼部描述、面部额头和眉额、颜面色泽。这是AI图像初读短片段，不是有人签署的全页校勘。本文本也不是新的可上线面相规则。
+- 对两份来源SHA256做一致性核对，真实在六张PDF原图上重跑**PP-OCRv5 170dpi**；将13个初读的原书短句逐字汉字规范化、逐页/逐OCR行对照。**同页完整检出6/13，同一OCR行完整检出仍6/13**，另7/13未完整检出。特别是**「口須方大」和「兩頭略仰不垂低」**在原图上可辨，但没有以完整字符串从本轮OCR检出；有用候选漏检或错字不可忽视。**6/13不是整书字符准确率；本任务没有计算OCR的CER，也未抽样检验全部922次词汇命中的实际精准率。**
+- 13条短句已明确照片条件：**4条与现有口宽/口角方向/唇部厚度存在局部观测方向，1条仅弱对应眼部开合，8条目前无法由人脸关键点推出**。OCR完整检出的6条里，**只有2条能与当前唇厚照片测量存在局部对应**。不根据「鼻梁端直」偷换成鼻宽、不根据颜色/光泽推人格健康/寿夭、不根据漫画式口型图谱确诊完整古代象形相型。
+- **研究输出只存布尔检出、来源页码及SHA**，不公开当前运行时的OCR全文、PDF大图或私有候选短句。对有图示的原始页面，原文的图谱标签与民俗人生判词要单独分类，不可从两个几何比率随意推出全相型。
+
+Windows／Codex可在已部署PaddleOCR+Poppler的本地工作目录复现实测（输出与临时OCR候选仅写到用户私有目录，文件可保留供后续做源页校勘）：
+
+~~~powershell
+python -m scripts.cangjie_original_phrase_probe --scan-dir C:/faceface-corpus/scans --ocr-dir C:/faceface-corpus/m16-10-real-ocr --source-anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json --out C:/faceface-corpus/m16-10-anchor-quality.json
+~~~
+
+**后续M16.11不能再次盲目让小模型做35次空提取。** 先从上面的7条未检出原图短句中优先攻克与照片特征接近的口宽/口角与眼部文字，研究**右向左竖排列序、局部图像裁切、灰度/阈值、OCR对原始小区域**的影响；用同一批原图13条作为前后固定的检出质量门。对真正进入报告的条目再按原图+条件核验，并区分图谱符号、表情和妆容；绝不直接用文字出现在OCR中来声称古籍断言科学正确。
+
 ## M16.9｜已实现：六区域原典短词句预筛，不再重复空转仓颉小模型
 
 **程序**：[原文词句预筛](../scripts/cangjie_morphology_mine.py) · [268页来源审计](../scripts/cangjie_morphology_audit.py) · [六片真实OCR+挖掘CI](../.github/workflows/cangjie-morphology-mine.yml) · [PR #31](https://github.com/Justalittlebittt/Faceface/pull/31)。
