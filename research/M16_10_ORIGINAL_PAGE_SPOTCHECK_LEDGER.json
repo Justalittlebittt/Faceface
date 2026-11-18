@@ -1,0 +1,147 @@
+{
+  "kind": "M16.10_DIRECT_ORIGINAL_IMAGE_TOPICAL_SPOTCHECK",
+  "method": "AI assistant visual inspection of PDF page screenshots, not an independent human proofread",
+  "date": "2026-11-18",
+  "source_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "inspected_page_count": 11,
+  "complete_page_transcription_count": 0,
+  "exact_M16_9_OCR_candidate_fragment_precision_measured": false,
+  "photo_auto_rule_added": false,
+  "notes": [
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 27,
+      "page_id": "nlc-44091:p027",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "facial features, ear color/position, nose bridge, mouth width",
+      "page_type": "multi-region text",
+      "photo_observability": "photo_partial",
+      "why_not_automatic_rule": "Some text is observable morphology, other content includes lifespan/fortune assertions",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 28,
+      "page_id": "nlc-44091:p028",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "four facial waterways, facial regions, nose and mouth",
+      "page_type": "classical framework",
+      "photo_observability": "mixed",
+      "why_not_automatic_rule": "Traditional organ correspondences are not modern measurable standards",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 35,
+      "page_id": "nlc-44091:p035",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "four schools and eight schools",
+      "page_type": "teaching framework",
+      "photo_observability": "mostly_not_measured",
+      "why_not_automatic_rule": "Historical names and traditional schema are not geometry definitions",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 36,
+      "page_id": "nlc-44091:p036",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "five-element body/face types, cheeks/forehead",
+      "page_type": "face structure and five elements",
+      "photo_observability": "photo_partial",
+      "why_not_automatic_rule": "Metaphors and physical volume not all captured by landmarks",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 86,
+      "page_id": "nlc-44091:p086",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "four traditional mouth diagrams with verse",
+      "page_type": "mouth diagram",
+      "photo_observability": "photo_partial",
+      "why_not_automatic_rule": "Illustration morphology and paired fortune verses must be separated",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 87,
+      "page_id": "nlc-44091:p087",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "ox, dragon, tiger and sheep mouth diagrams",
+      "page_type": "mouth diagram",
+      "photo_observability": "photo_partial",
+      "why_not_automatic_rule": "Literal lip thickness is measurable; named whole type is not",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 136,
+      "page_id": "nlc-44091:p136",
+      "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+      "visible_topic_description": "eye, nose, facial colour, social predictions",
+      "page_type": "narrative and face advice",
+      "photo_observability": "mostly_not_measured",
+      "why_not_automatic_rule": "Includes confounded facial-color and fate/marriage claims",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44092",
+      "pdf_page_zero_based": 40,
+      "page_id": "nlc-44092:p040",
+      "pdf_sha256": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7",
+      "visible_topic_description": "front/back body-shape interpretations",
+      "page_type": "body/face shape and traditional prognoses",
+      "photo_observability": "not_from_single_face_photo",
+      "why_not_automatic_rule": "Back and body are outside captured face frames",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44092",
+      "pdf_page_zero_based": 72,
+      "page_id": "nlc-44092:p072",
+      "pdf_sha256": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7",
+      "visible_topic_description": "traditional essay and judgment anecdotes",
+      "page_type": "anecdote/narrative",
+      "photo_observability": "not_from_single_face_photo",
+      "why_not_automatic_rule": "Story text should not be counted as morphology rule",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44092",
+      "pdf_page_zero_based": 76,
+      "page_id": "nlc-44092:p076",
+      "pdf_sha256": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7",
+      "visible_topic_description": "brow corners, head and face shape",
+      "page_type": "mixed shape/prognosis text",
+      "photo_observability": "mixed",
+      "why_not_automatic_rule": "Extensive life predictions interleaved with observability",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    },
+    {
+      "source_id": "nlc-44092",
+      "pdf_page_zero_based": 96,
+      "page_id": "nlc-44092:p096",
+      "pdf_sha256": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7",
+      "visible_topic_description": "facial colour and eye/lip references",
+      "page_type": "mixed complexion/prognosis text",
+      "photo_observability": "mostly_not_measured",
+      "why_not_automatic_rule": "Colour and predicted life events are not trustworthy photo interpretations",
+      "visual_inspection_status": "preliminary_AI_image_read",
+      "full_page_approved_by_human": false
+    }
+  ]
+}
