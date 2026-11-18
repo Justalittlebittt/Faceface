@@ -87,7 +87,7 @@ def candidates_for_line(line: str, line_index: int,
                         source_id: str, index: int, pdf_hash: str,
                         ocr_hash: str) -> list[dict]:
     normalized = han_only(line)
-    if len(normalized)<4:
+    if len(normalized)<3:
         return []
     tokens_by_region={}
     occurrence_positions=[]
@@ -117,7 +117,7 @@ def candidates_for_line(line: str, line_index: int,
     snippet=normalized[low:high]
     if len(snippet)>44:
         snippet=snippet[:44]
-    if len(snippet)<4:
+    if len(snippet)<3:
         return []
     raw_line_sha=hashlib.sha256(line.encode("utf-8")).hexdigest()
     quote_sha=hashlib.sha256(snippet.encode("utf-8")).hexdigest()
