@@ -1,0 +1,118 @@
+{
+  "original_scanned_page_ids": [
+    "nlc-44091:p027",
+    "nlc-44091:p036",
+    "nlc-44091:p086",
+    "nlc-44091:p087",
+    "nlc-44092:p076",
+    "nlc-44092:p096"
+  ],
+  "original_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "m16_9_full_index": "https://github.com/Justalittlebittt/Faceface/actions/runs/44239588048",
+  "m16_10_actual_probe": "https://github.com/Justalittlebittt/Faceface/actions/runs/44243091232",
+  "tests": 13,
+  "exact_same_page_OCR_hits": 6,
+  "exact_same_OCR_line_hits": 6,
+  "source_image_visual_read_method": "AI visually read short passages from public 1925 original PDF screenshots; independent human page proofreading is NOT complete",
+  "probe_coverage": "6 of 268 pages; source phrase retrieval only, not character error rate or the precision of all 922 morphology lexical hits",
+  "real_pp_ocr_cpu_executed": true,
+  "sample_photo_overlap_counts": {
+    "partial_photo_overlap": 4,
+    "weak_photo_overlap": 1,
+    "not_measured": 8
+  },
+  "matched_photo_overlap_counts": {
+    "partial_photo_overlap": 2,
+    "weak_photo_overlap": 0,
+    "not_measured": 4
+  },
+  "source_phrase_region_recall": {
+    "brow": {
+      "tested": 1,
+      "found": 1
+    },
+    "ear": {
+      "tested": 1,
+      "found": 0
+    },
+    "eye": {
+      "tested": 1,
+      "found": 0
+    },
+    "face_structure": {
+      "tested": 3,
+      "found": 1
+    },
+    "mouth": {
+      "tested": 6,
+      "found": 3
+    },
+    "nose": {
+      "tested": 1,
+      "found": 1
+    }
+  },
+  "original_image_visual_spotchecks_distinct_pages": 11,
+  "actual_OCR_anchor_statuses": [
+    {
+      "anchor_id": "M1610-A01",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A02",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A03",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A04",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A05",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A06",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A07",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A08",
+      "exact_same_OCR_line": false
+    },
+    {
+      "anchor_id": "M1610-A09",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A10",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A11",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A12",
+      "exact_same_OCR_line": true
+    },
+    {
+      "anchor_id": "M1610-A13",
+      "exact_same_OCR_line": false
+    }
+  ],
+  "full_page_human_verified_pages": 0,
+  "approved_cangjie_semantic_rules": 0,
+  "new_live_rules": 0,
+  "not_for_website_auto_activation": true,
+  "focus_next": "Target OCR reading order and local crop for the missing but directly visible mouth-width and corner-angle original phrases; independently check source image excerpts before converting to report cards."
+}
