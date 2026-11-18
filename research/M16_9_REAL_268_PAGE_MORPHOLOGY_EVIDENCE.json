@@ -1,0 +1,108 @@
+{
+  "milestone": "M16.9",
+  "evidence_kind": "REAL_1925_PDF_PP_OCRv5_LEXICAL_SHORTLIST_METADATA_ONLY",
+  "source_run": "https://github.com/Justalittlebittt/Faceface/actions/runs/44239588048",
+  "original_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "total_original_scanned_pages": 268,
+  "actual_ocr_pages_processed": 268,
+  "actual_pp_ocr_v5_han_candidates_unreviewed": 53977,
+  "metadata_only_shards": 6,
+  "pages_with_morphology_lexical_cues": 205,
+  "pages_without_morphology_lexical_cues": 63,
+  "morphology_lexical_fragment_hits": 922,
+  "region_occurrence_counts_not_distinct_rules": {
+    "eye": 219,
+    "nose": 244,
+    "mouth": 152,
+    "ear": 88,
+    "brow": 144,
+    "face_structure": 297
+  },
+  "distinct_original_pages_by_region": {
+    "eye": 112,
+    "nose": 103,
+    "mouth": 72,
+    "ear": 53,
+    "brow": 77,
+    "face_structure": 125
+  },
+  "per_scan": {
+    "nlc-44091": {
+      "pages": 153,
+      "matched_pages": 103,
+      "lexical_fragment_hits": 466,
+      "unreviewed_OCR_han": 30512
+    },
+    "nlc-44092": {
+      "pages": 115,
+      "matched_pages": 102,
+      "lexical_fragment_hits": 456,
+      "unreviewed_OCR_han": 23465
+    }
+  },
+  "top_ranked_review_pages": [
+    {
+      "id": "nlc-44092:p096",
+      "fragments": 10,
+      "region_count": 6
+    },
+    {
+      "id": "nlc-44091:p136",
+      "fragments": 9,
+      "region_count": 6
+    },
+    {
+      "id": "nlc-44091:p027",
+      "fragments": 6,
+      "region_count": 6
+    },
+    {
+      "id": "nlc-44092:p076",
+      "fragments": 6,
+      "region_count": 6
+    },
+    {
+      "id": "nlc-44092:p072",
+      "fragments": 5,
+      "region_count": 6
+    },
+    {
+      "id": "nlc-44091:p036",
+      "fragments": 12,
+      "region_count": 5
+    }
+  ],
+  "human_original_scan_topic_spotchecks": [
+    {
+      "id": "nlc-44091:p035",
+      "visible_topic_headings": [
+        "四學堂",
+        "八學堂"
+      ],
+      "meaning": "topic found on original image, not an OCR line verification"
+    },
+    {
+      "id": "nlc-44091:p036",
+      "visible_topic_headings": [
+        "人面總論",
+        "五行形"
+      ],
+      "meaning": "topic found on original image, not an OCR line verification"
+    },
+    {
+      "id": "nlc-44092:p096",
+      "visible_topic_headings": [
+        "面部/目/印堂等傳統描述"
+      ],
+      "meaning": "mixed morphology and historical assertions; original OCR candidate still unverified"
+    }
+  ],
+  "unreviewed_ocr_excerpt_text_committed": false,
+  "full_page_original_text_reviews_from_this_run": 0,
+  "actual_cangjie_adler_and_five_agent_distillation_from_this_run": false,
+  "live_Faceface_morphology_rules_activated": 0,
+  "caveat": "922 indicates lexical matches on 205 pages, NOT 922 usable rules; categories overlap. Short quoted OCR spans stay private/ephemeral until run locally."
+}
