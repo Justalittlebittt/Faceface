@@ -1,0 +1,102 @@
+name: M16.11 INDEPENDENT original 1925 OCR 220dpi heldout test
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-original-ocr-recovery-holdout.yml"
+      - "scripts/cangjie_ocr_recovery_holdout.py"
+      - "tests/test_cangjie_ocr_recovery_holdout.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seven-page-holdout-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Assert no development leakage and exact pre-existing V5 heldout sample
+        run: python -m unittest discover -s tests -p 'test_cangjie_ocr_recovery_holdout.py' -v
+
+  actually-compare-170-vs-220-on-independent-original-pages:
+    needs: seven-page-holdout-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      DISABLE_MODEL_SOURCE_CHECK: "True"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install actual fixed PP-OCRv5 CPU + original PDF rendering dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+
+      - name: Download original first and second 1925 PDFs for source SHA checks
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/maiyi-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part2.pdf"
+
+      - name: ACTUAL 7 original pages x 2 image resolutions = 14 independent model OCR inferences
+        run: |
+          python -m scripts.cangjie_ocr_recovery_holdout \
+            --scan-dir "$RUNNER_TEMP/maiyi-originals" \
+            --private-dir "$RUNNER_TEMP/maiyi-holdout-private-OCR" \
+            --catalog src/knowledge/maiyi-source-checked-v5.json \
+            --dev-anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json \
+            --out m16-11-independent-holdout-statistics-only.json
+
+      - name: Assert actual independent original source pages, no OCR text leak or knowledge promotion
+        run: |
+          python - <<'PY'
+          import json
+          report=json.load(open("m16-11-independent-holdout-statistics-only.json",encoding="utf-8"))
+          assert report["heldout_original_pdf_page_zero_based"]==[28,34,35,52,66,77,89]
+          assert report["heldout_original_pages_tested"]==7
+          assert report["heldout_historical_short_reference_anchors"]==12
+          assert len(report["per_heldout_source_phrase_metadata"])==12
+          assert report["results"]["baseline_original_170"]["source_checked_short_anchors"]==12
+          assert report["results"]["enhanced_full_original_220"]["source_checked_short_anchors"]==12
+          assert report["source_quoted_original_text_uploaded"] is False
+          assert report["validates_original_OCR_full_page_character_error_rate"] is False
+          assert report["production_OCR_default_modified"] is False
+          assert report["human_full_page_transcriptions_added"]==0
+          assert report["new_live_Faceface_historical_rules"]==0
+          print("INDEPENDENT HELDOUT REAL PP-OCR SOURCE RUN: PASSED")
+          print("170 DPI exact same-line heldout short phrases:",
+                report["baseline_170dpi_same_line_hits"],"/12")
+          print("220 DPI exact same-line heldout short phrases:",
+                report["enhanced_220dpi_same_line_hits"],"/12")
+          print("Heldout net retrieval difference:",
+                report["net_220dpi_improvement_in_exact_phrase_hits"])
+          print("Still NOT overall OCR CER, all book accuracy, nor live rule approval.")
+          PY
+
+      - name: Upload only preexisting reference hashes and binary retrieval outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-11-independent-heldout-7-original-scan-pages-12-source-fragments
+          path: m16-11-independent-holdout-statistics-only.json
+          retention-days: 14
+          if-no-files-found: warn
