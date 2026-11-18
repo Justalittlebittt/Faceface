@@ -1,0 +1,202 @@
+{
+  "milestone": "M16.11",
+  "research_status": "ACTUAL_PP_OCR5_FIXED_13_REFERENCE_COMPARISON_AND_INDEPENDENT_12_REFERENCE_HOLDOUT",
+  "source_original_1925_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "actual_development_CI": "https://github.com/Justalittlebittt/Faceface/actions/runs/44246356697",
+  "actual_independent_holdout_CI": "https://github.com/Justalittlebittt/Faceface/actions/runs/44247442594",
+  "original_image_preliminary_AI_visually_read_short_reference_set": "research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json",
+  "dev_original_scanned_pages_tested": 6,
+  "dev_short_original_reference_count": 13,
+  "development_variant_exact_same_OCR_line_results": {
+    "baseline_original_170": {
+      "hits": 6,
+      "total": 13,
+      "actual_PP_OCR_inferences": 6
+    },
+    "full_220_original": {
+      "hits": 9,
+      "total": 13,
+      "actual_PP_OCR_inferences": 6
+    },
+    "full_220_autocontrast": {
+      "hits": 9,
+      "total": 13,
+      "actual_PP_OCR_inferences": 6
+    },
+    "vertical_strips_220_overlap": {
+      "hits": 6,
+      "total": 13,
+      "actual_PP_OCR_inferences": 30
+    }
+  },
+  "development_220_new_recovered_anchor_ids": [
+    "M1610-A01",
+    "M1610-A04",
+    "M1610-A13"
+  ],
+  "development_high_value_observable_mouth_width_recovered": true,
+  "development_high_value_observable_mouth_corner_still_missing": true,
+  "development_per_anchor_results": [
+    {
+      "id": "M1610-A01",
+      "page_id": "nlc-44091:p027",
+      "region": "mouth",
+      "existing_photo_metric": "mouth.width",
+      "baseline170": false,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A02",
+      "page_id": "nlc-44091:p027",
+      "region": "nose",
+      "existing_photo_metric": null,
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A03",
+      "page_id": "nlc-44091:p027",
+      "region": "eye",
+      "existing_photo_metric": "eyes.openness",
+      "baseline170": false,
+      "full220": false,
+      "autocontrast220": false,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A04",
+      "page_id": "nlc-44091:p027",
+      "region": "ear",
+      "existing_photo_metric": null,
+      "baseline170": false,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A05",
+      "page_id": "nlc-44091:p036",
+      "region": "face_structure",
+      "existing_photo_metric": null,
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A06",
+      "page_id": "nlc-44091:p036",
+      "region": "face_structure",
+      "existing_photo_metric": null,
+      "baseline170": false,
+      "full220": false,
+      "autocontrast220": false,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A07",
+      "page_id": "nlc-44091:p086",
+      "region": "mouth",
+      "existing_photo_metric": null,
+      "baseline170": false,
+      "full220": false,
+      "autocontrast220": false,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A08",
+      "page_id": "nlc-44091:p086",
+      "region": "mouth",
+      "existing_photo_metric": "mouth.corner",
+      "baseline170": false,
+      "full220": false,
+      "autocontrast220": false,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A09",
+      "page_id": "nlc-44091:p087",
+      "region": "mouth",
+      "existing_photo_metric": "mouth.lip",
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A10",
+      "page_id": "nlc-44091:p087",
+      "region": "mouth",
+      "existing_photo_metric": "mouth.lip",
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": false
+    },
+    {
+      "id": "M1610-A11",
+      "page_id": "nlc-44091:p087",
+      "region": "mouth",
+      "existing_photo_metric": null,
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A12",
+      "page_id": "nlc-44092:p076",
+      "region": "brow",
+      "existing_photo_metric": null,
+      "baseline170": true,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": true
+    },
+    {
+      "id": "M1610-A13",
+      "page_id": "nlc-44092:p096",
+      "region": "face_structure",
+      "existing_photo_metric": null,
+      "baseline170": false,
+      "full220": true,
+      "autocontrast220": true,
+      "vertical_strips220": false
+    }
+  ],
+  "heldout_reference_source": "src/knowledge/maiyi-source-checked-v5.json",
+  "heldout_original_scanned_pages_first_pdf_zero_based": [
+    28,
+    34,
+    35,
+    52,
+    66,
+    77,
+    89
+  ],
+  "heldout_reference_short_fragments": 12,
+  "heldout_baseline170_exact_same_OCR_line": 1,
+  "heldout_full220_exact_same_OCR_line": 0,
+  "heldout_baseline170_exact_whole_page": 2,
+  "heldout_full220_exact_whole_page": 1,
+  "heldout_net_change": -1,
+  "heldout_new_recoveries": 0,
+  "heldout_one_lost_reference_page": "nlc-44091:p035",
+  "decision": "DO_NOT_PROMOTE_220_DPI_AS_GLOBAL_DEFAULT",
+  "why": "Improvement from 6/13 to 9/13 was limited to the development set; independent prior checked V5 short fragments regressed 1/12 to 0/12. Overlapping vertical strips show no global benefit and are compute expensive.",
+  "next": "Obtain original-page aligned high-quality text / localized subcolumn review for priority mouth corner and eye references. Need better recognition/reading-order geometry and true line-level review before full-book Cangjie extraction; do not keep blind OCR setting sweeps.",
+  "clinical_or_predictive_inference_from_face_allowed": false,
+  "OCR_full_page_character_accuracy_measured": false,
+  "original_source_full_page_human_reviewed_added": 0,
+  "M16_9_922_lexical_candidate_precision_measured": false,
+  "official_Cangjie_full_book_five_extractor_model_run": false,
+  "live_Faceface_historical_rules_activated": 0,
+  "original_scan_images_or_OCR_text_uploaded": false
+}
