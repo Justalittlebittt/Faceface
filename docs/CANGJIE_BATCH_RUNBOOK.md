@@ -228,6 +228,33 @@ python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --o
 
 **私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
 
+## M16.11｜原书竖排识别：为什么不能直接把220dpi上线
+
+**真实两次Action：** [6页13短句4配置开发试验](https://github.com/Justalittlebittt/Faceface/actions/runs/44246356697) · [另外7页12短句的独立留出原图试验](https://github.com/Justalittlebittt/Faceface/actions/runs/44247442594) · [总证据文件](../research/M16_11_REAL_OCR_PREPROCESSING_AND_HOLDOUT_EVIDENCE.json) · [PR #33](https://github.com/Justalittlebittt/Faceface/pull/33)。
+
+两份1925年原PDF在本阶段的完整SHA256和PDF索引均严格与上一阶段一致，绝不依赖模型生成原文。固定原图预读13条来源短句，在相同六张原图对照，单独计算各图片/各OCR行的真实文字检出：
+
+| 不改变原书内容的图片处理 | 原图6页／13条短句逐字检出 |
+| --- | ---: |
+| PP-OCRv5 原始170dpi整页 | 6/13 |
+| PP-OCRv5 原始220dpi整页 | **9/13** |
+| PP-OCRv5 220dpi整页+自动对比度 | 9/13 |
+| PP-OCRv5 220dpi全高重叠竖条 | 6/13 |
+
+220dpi把原图初读的`口須方大`重新完整检出，但当前网站`mouth.width`也只能做“照片口部宽度”局部关联，古籍不规定这种现代数值阈值；仍然没有重新读出口角方向`兩頭略仰不垂低`。对比度增强未增加命中；竖条处理必须进行更多实际PP-OCR推理，且可能丢失已经能读出的字句。
+
+**关键否决证据是独立留出集：** 事先从M16.4/M15就存在的原版V5引用片段中，明确避开上述6张开发页，选PDF1零起页`28/34/35/52/66/77/89`的**12条原文短句**。实际PP-OCRv5再次识别：**170dpi同一OCR行检出1/12，220dpi检出0/12；整页文本检出2/12降为1/12**。因此开发集`6→9`的提升**不具备独立跨页验证**，绝不以其为依据全书替换220dpi默认。6/13、9/13、1/12、0/12都是短句完全相同检出比例，不是字符错误率、不代表所有原书页的识别准确率。
+
+**Windows/Codex本地复现**：确认从M16.7一直使用的两份原版`part1.pdf/part2.pdf`已在`C:/faceface-corpus/scans/`，依赖`paddlepaddle==3.2.0`、`paddleocr==3.3.2`、`Pillow`、Poppler。以下目录必须在仓库**外部**，不要提交OCR全文或扫描图到公开仓库：
+
+~~~powershell
+python -m scripts.cangjie_ocr_recovery_11 --scan-dir C:/faceface-corpus/scans --anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json --private-dir C:/faceface-corpus/m16-11-private-crops --out C:/faceface-corpus/m16-11-four-variant-metadata.json
+
+python -m scripts.cangjie_ocr_recovery_holdout --scan-dir C:/faceface-corpus/scans --private-dir C:/faceface-corpus/m16-11-heldout-private --catalog src/knowledge/maiyi-source-checked-v5.json --dev-anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json --out C:/faceface-corpus/m16-11-heldout-metadata.json
+~~~
+
+**阶段决策：** 不将220dpi自动应用于全书，不增加“完整古籍相型”或“人生预测”规则，不把所有922个OCR词汇命中直接扔入五个LLM Agent。下一次应通过**原图单列/图文区域定位、逐句对图核校、古籍形态词消歧与面部照片观测对应表**，先建立少量可追溯高质量语料，再让官方仓颉精炼条件、例外和术语。既不能因原图是一份历史典籍就断言它的预测科学有效，也不能因一张照片宽度落入某个实验比例就称古籍断言得到证实。
+
 ## M16.10｜真实原PDF目视短句对照与照片可观察条件分离
 
 **已执行的真实源页质量门**：[M16.10专项Action](https://github.com/Justalittlebittt/Faceface/actions/runs/44243091232) · [直接原图短句初读数据](../research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json) · [真实逐句检出统计](../research/M16_10_REAL_ORIGINAL_PHRASE_PROBE_RESULTS.json) · [11页原图主题直读](../research/M16_10_ORIGINAL_PAGE_SPOTCHECK_LEDGER.json)。
