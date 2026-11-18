@@ -1,0 +1,98 @@
+name: M16.10 REAL original-image short phrase vs PaddleOCR pilot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-original-phrase-probe.yml"
+      - "scripts/cangjie_original_phrase_probe.py"
+      - "research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json"
+      - "tests/test_cangjie_original_phrase_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-image-phrase-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Prove image reading is not human review, not 922-hit precision, not unmeasured geometry
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_original_phrase_probe.py' -v
+
+  real-original-PDF-image-OCR-phrase-test:
+    needs: source-image-phrase-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install REAL PP-OCRv5 and source-PDF raster engine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+
+      - name: Download exact original 1925 source PDFs into private temporary storage
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/maiyi-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part2.pdf"
+          test -s "$RUNNER_TEMP/maiyi-originals/part1.pdf"
+          test -s "$RUNNER_TEMP/maiyi-originals/part2.pdf"
+
+      - name: Actually OCR six original PDF scan pages and compare thirteen visually read short phrases
+        shell: bash
+        run: |
+          python -m scripts.cangjie_original_phrase_probe \
+            --scan-dir "$RUNNER_TEMP/maiyi-originals" \
+            --ocr-dir "$RUNNER_TEMP/private-original-phrase-OCR" \
+            --source-anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json \
+            --out m16-10-original-phrase-probe-aggregate-only.json
+
+      - name: Quality and provenance assertions - no unverified rule promotion
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-10-original-phrase-probe-aggregate-only.json",encoding="utf-8"))
+          assert r["original_scanned_pages_tested"]==6
+          assert r["preliminarily_visual_read_short_anchors_compared"]==13
+          assert set(x["page_id"] for x in r["short_anchor_diagnostic_rows"]) == set(r["original_scan_page_ids"])
+          assert r["full_page_original_human_transcriptions_approved"]==0
+          assert r["new_live_faceface_rules"]==0
+          assert r["actual_Cangjie_five_agent_semantic_extraction"] is False
+          assert r["OCR_Han_character_error_rate_measured"] is False
+          assert r["precision_of_all_922_M16_9_lexical_hits_measured"] is False
+          assert r["original_PDF_images_OR_source_text_uploaded"] is False
+          print("ACTUAL ORIGINAL PDF IMAGE + OCR DIAGNOSTIC: PASS")
+          print("OCR exact phrase hits on page:",r["exact_original_short_phrases_retrieved_in_page_OCR"])
+          print("OCR exact phrase hits on same OCR line:",r["exact_original_short_phrases_retrieved_in_single_OCR_line"])
+          print("Not a full-page CER / 922-hit precision / historical rule approval.")
+          PY
+
+      - name: Upload page IDs, SHA256 and bool retrieval indicators ONLY
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m16-10-original-image-phrase-recall-metadata-only
+          path: m16-10-original-phrase-probe-aggregate-only.json
+          retention-days: 14
+          if-no-files-found: warn
