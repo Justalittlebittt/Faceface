@@ -1,0 +1,110 @@
+name: M16.11 REAL source-image vertical OCR recovery against fixed 13 historical phrases
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-original-ocr-recovery.yml"
+      - "scripts/cangjie_ocr_recovery_11.py"
+      - "tests/test_cangjie_ocr_recovery_11.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install only Pillow for deterministic source-crop tests
+        run: python -m pip install --quiet Pillow
+      - name: Reject cross-tile false phrase retrieval, non-source pages, and live knowledge promotion
+        run: |
+          python -m unittest discover -s tests -p 'test_cangjie_ocr_recovery_11.py' -v
+          python -m unittest discover -s tests -p 'test_cangjie_original_phrase_probe.py' -v
+
+  actual-1925-source-image-ocr-comparison:
+    needs: recovery-source-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      DISABLE_MODEL_SOURCE_CHECK: "True"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Poppler, pinned ACTUAL CPU PP-OCRv5 models
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+
+      - name: Download exact two original 1925 PDF scans to ephemeral private storage
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/maiyi-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/maiyi-originals/part2.pdf"
+          test -s "$RUNNER_TEMP/maiyi-originals/part1.pdf"
+          test -s "$RUNNER_TEMP/maiyi-originals/part2.pdf"
+
+      - name: ACTUAL 170dpi baseline vs 220dpi, contrast and full-height overlapping vertical source strips
+        shell: bash
+        run: |
+          python -m scripts.cangjie_ocr_recovery_11 \
+            --scan-dir "$RUNNER_TEMP/maiyi-originals" \
+            --anchors research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json \
+            --private-dir "$RUNNER_TEMP/private-original-scan-strips-and-ocr" \
+            --out m16-11-original-ocr-recovery-metadata-only.json
+
+      - name: Audit exact same reference sample, real model inferences, no unreviewed source promotion
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-11-original-ocr-recovery-metadata-only.json",encoding="utf-8"))
+          assert r["original_scan_pages"]==6
+          assert r["same_thirteen_AI_visually_read_preliminary_original_short_anchors"]==13
+          assert len(r["all_13_short_phrase_statuses"])==13
+          assert len(r["variant_results"])==4
+          assert r["variant_results"]["baseline_170_original"]["actual_source_pages_inferred"]==6
+          assert r["variant_results"]["vertical_strips_220_overlap"]["actual_PaddleOCR_image_inferences"]>=24
+          assert all(x["short_original_anchors_compared"]==13 for x in r["variant_results"].values())
+          assert r["new_live_faceface_rules"]==0
+          assert r["independent_human_page_reviews_added"]==0
+          assert r["only_short_phrase_exact_retrieval_measured_NOT_full_page_CER"] is True
+          assert r["not_a_measure_of_precision_for_all_922_M16_9_lexical_hits"] is True
+          assert r["enhanced_variant_should_replace_current_original_book_OCR"] is False
+          assert r["no_original_OCR_text_in_public_metadata"] is True
+          print("ACTUAL M16.11 ORIGINAL-SCAN FOUR-VARIANT COMPARISON:",json.dumps(
+              r["variant_results"],ensure_ascii=False))
+          print("BASELINE:",r["baseline_170dpi_exact_short_phrase_hits"],"/13")
+          print("BEST SINGLE ENHANCED:",r["best_single_predeclared_enhanced_variant"],
+                r["best_single_enhanced_exact_short_phrase_hits"],"/13")
+          print("NEW SHORT PHRASES RECOVERED IN ANY ENHANCED MODE:",
+                r["additional_phrases_detected_in_any_enhanced_configuration"])
+          print("NO automatically published historical rules or human-approved original pages.")
+          PY
+
+      - name: Upload metadata-only aggregate, never original PDF image or OCR source fragments
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-11-real-ancient-ocr-vertical-recovery-13-short-anchors-metadata-only
+          path: m16-11-original-ocr-recovery-metadata-only.json
+          retention-days: 14
+          if-no-files-found: warn
