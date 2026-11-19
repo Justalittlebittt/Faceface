@@ -1,0 +1,138 @@
+name: M16.21 REAL 268-page traditional outcome OCR audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-outcome-268-audit.yml"
+      - "scripts/cangjie_outcome_ocr_audit.py"
+      - "scripts/cangjie_outcome_ocr_aggregate.py"
+      - "tests/test_cangjie_outcome_ocr_audit.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  outcome-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit test lexical historical categories, OCR origin and 268-page coverage gate
+        run: python -m unittest -v tests.test_cangjie_outcome_ocr_audit
+
+  real-outcome-ocr-shards:
+    needs: outcome-source-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - { source: nlc-44091, pdf: part1.pdf, start: 0, end: 50 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 51, end: 101 }
+          - { source: nlc-44091, pdf: part1.pdf, start: 102, end: 152 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 0, end: 38 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 39, end: 77 }
+          - { source: nlc-44092, pdf: part2.pdf, start: 78, end: 114 }
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install actual original-source PP-OCRv5 CPU engine and PDF renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2
+
+      - name: Fetch original scan to private runner
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-originals"
+          if test "${{ matrix.source }}" = "nlc-44091"; then
+            URL="https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf"
+          else
+            URL="https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf"
+          fi
+          curl --fail --location --retry 3 --max-time 120 "$URL" \
+            -o "$RUNNER_TEMP/faceface-originals/${{ matrix.pdf }}"
+
+      - name: REAL original scan PP-OCRv5 extraction for this shard
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --out-dir "$RUNNER_TEMP/private-ocr" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} --end ${{ matrix.end }} --dpi 170
+
+      - name: Scan REAL OCR page candidates for traditional life outcome keywords and photo-shape co-occurrence
+        shell: bash
+        run: |
+          python -m scripts.cangjie_outcome_ocr_audit \
+            --scan-dir "$RUNNER_TEMP/faceface-originals" \
+            --ocr-dir "$RUNNER_TEMP/private-ocr" \
+            --private-dir "$RUNNER_TEMP/private-historical-outcome-cues" \
+            --metadata-dir "$RUNNER_TEMP/public-aggregate-source-page-metadata" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} --end ${{ matrix.end }}
+
+      - name: Upload shard metadata ONLY, never OCR text or excerpts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-21-ocr-outcomes-${{ matrix.source }}-${{ matrix.start }}-${{ matrix.end }}
+          path: ${{ runner.temp }}/public-aggregate-source-page-metadata/
+          retention-days: 14
+          if-no-files-found: warn
+
+  audit-exact-268-pages:
+    needs: real-outcome-ocr-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: m16-21-ocr-outcomes-*
+          path: all-original-page-metadata
+          merge-multiple: true
+      - name: Audit exact 268 original page IDs, sha pins and historical outcome domain counts
+        shell: bash
+        run: |
+          python -m scripts.cangjie_outcome_ocr_aggregate \
+            all-original-page-metadata/*.json \
+            --out m16-21-real-268-pages-traditional-outcomes-metadata-only.json
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-21-real-268-pages-traditional-outcomes-metadata-only.json",encoding="utf-8"))
+          assert r["actual_source_pages_processed"]==268
+          assert r["shards_checked"]==6
+          assert r["new_human_verified_original_pages"]==0
+          assert r["historically_valid_morphology_outcome_relations"]==0
+          assert r["new_live_Faceface_rules"]==0
+          assert r["unreviewed_original_text_or_short_quotes_in_public_report"] is False
+          print("ACTUAL BOOKWIDE HISTORICAL OUTCOME LEXICAL AUDIT COMPLETED:",r["actual_source_pages_processed"])
+          print("LEXICAL PAGE COVERAGE BY DOMAIN:",r["pages_by_domain"])
+          print("SAME OCR LINE PROXIMITY COUNTS (NOT REAL CLAIMS):",r["same_OCR_line_morphology_proximity_by_domain"])
+          PY
+      - name: Upload only aggregate outcome counts and page IDs
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-21-actual-268-page-traditional-outcome-aggregate
+          path: m16-21-real-268-pages-traditional-outcomes-metadata-only.json
+          retention-days: 21
