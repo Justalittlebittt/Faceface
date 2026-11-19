@@ -1,5 +1,15 @@
 # Faceface｜项目进度总览（2026-11-19）
 
+## 2026-11-19 M16.13｜固定版仓颉首次从短而相对干净的原典输入取得来源匹配语义候选（严格五角色门仍需复验）
+
+- [x] **[PR #35](https://github.com/Justalittlebittt/Faceface/pull/35)** 使用M15之前已建立的**十张历史文化来源卡与三条原书框架引文**，共13条带原版1925 PDF来源和零起页码的历史短句。它们原先经过**AI辅助目视原书检查**，不是本轮新的真人具名校勘。**这组干净输入并不等同于整本268页文本**，且不声称原典断语具有科学解释力。
+- [x] 新增`scripts/cangjie_clean_source_agents.py`：真实下载/核验两份原书SHA256，固定官方`kangarooking/cangjie-skill@a28de55ba881b9928956a55048f743f7a9e3b23e`，读取官方`SKILL.md`、Adler及五个独立Extractor角色提示文件（实际进入4B上下文的是这些源文件的**有限原文节选，不是假定完整上下文**）。本地Ollama 4B实际请求，一条候选只能选择这13条原文的编号，历史原文由程序按编号还原，绝不由模型自己生成“古籍引文”；解释只能作为待审研究草稿。
+- [x] **[首次真正干净短句仓颉AI运行 #44461626484](https://github.com/Justalittlebittt/Faceface/actions/runs/44461626484)**：Adler**13条样本结构JSON成功**；五个角色均真实请求，3/5返回有效结构，其中仅glossary抽到**2条经过历史短句编号绑定的语义候选**（对应既有`MY25-EYE-01`、`MY25-FRAME-MOUNTAINS-01`，**不是新古籍条目或已审核规则**）。framework/principle各有2条字段校验退回；case/counter_example响应`JSONDecodeError`，因此**严格5/5质量门失败**。保存失败证据于[本轮源数据JSON](../research/M16_13_FIRST_REAL_CLEAN_CANGJIE_MODEL_EVIDENCE.json)。此前M16.8的35次噪声OCR语义角色调用没有有效候选，本轮首次获得2条原文ID匹配，暗示输入质量比反复换OCR参数更关键。
+- [ ] 对`case/counter_example`的无效JSON，新一版代码只允许保持**同13条源文件/同官方角色**的一个简短提示词进行一次**真实额外推理**，不允许模拟成功、不放松必须完成五类角色及至少1条来源候选的硬验收。其他格式失真原因、模型准确性和实际原图语义还需人工核读；**不能因为2条原文ID匹配就把推理结果自动插入线上报告**。所有任务仍不把OCR做成已审核原典，完整真人整页校勘0/268，正式全书五类Extractor未完成。
+- [ ] 下一步：若完成五角色质量门，研究工具与[实际模型消耗证据](https://github.com/Justalittlebittt/Faceface/pull/35)合并为**研究试点，不是新生产规则**；然后对新增经过本机真人对图确认的`short_ROI`古籍语料做同样编号的批量分类。现有摄影人脸轮廓和手动快门交互冻结不变。
+
+
+
 ## 2026-11-19 M16.12｜从盲目OCR调参转为原典局部列核读：真实模型结果0/3，并接通私有短句校勘门禁
 
 - [x] **[PR #34](https://github.com/Justalittlebittt/Faceface/pull/34)** 新增`scripts/cangjie_original_column_roi.py`、`research/M16_12_SOURCE_COLUMN_LOCATORS.json`，在前述两份固定1925原版PDF、已读过的p027/p086原图上建立**具体列坐标**。其中p086图文混排的口角诗句「兩頭略仰不垂低」位于两根相邻的右起竖列中，不等于本页OCR只识别出一个单行；p027另有眼部和口宽两段参考。三条原图句子仅为AI视觉初读，列ROI坐标也只是对公开原页截图的初步定位，**不得标记为人工签名校勘**。
