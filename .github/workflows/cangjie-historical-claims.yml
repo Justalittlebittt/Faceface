@@ -1,0 +1,23 @@
+name: M16.16 historical claim archive contract
+
+on:
+  pull_request:
+    paths:
+      - "scripts/cangjie_historical_claim_ledger.py"
+      - "tests/test_cangjie_historical_claim_ledger.py"
+      - ".github/workflows/cangjie-historical-claims.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archival-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test historical outcome archival contract (synthetic only)
+        run: python -m unittest tests.test_cangjie_historical_claim_ledger
