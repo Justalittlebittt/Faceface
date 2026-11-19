@@ -1,0 +1,23 @@
+name: M16.14 source-scoped chunks tests
+
+on:
+  pull_request:
+    paths:
+      - "scripts/cangjie_source_scoped_chunks.py"
+      - "tests/test_cangjie_source_scoped_chunks.py"
+      - ".github/workflows/cangjie-source-scoped-chunks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-scoped:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test source-scoped research chunks (synthetic only)
+        run: python -m unittest tests.test_cangjie_source_scoped_chunks tests.test_cangjie_signed_roi_input
