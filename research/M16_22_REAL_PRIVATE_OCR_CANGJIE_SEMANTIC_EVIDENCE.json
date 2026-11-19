@@ -1,0 +1,32 @@
+{
+  "milestone": "M16.22",
+  "kind": "REAL_PRIVATE_OCR_PINNED_CANGJIE_QWEN3_EXTRACTOR_PILOT",
+  "run_id": 44493006476,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44493006476",
+  "source_original_pdf_sha_verified": true,
+  "pinned_official_cangjie_prompt_loaded": true,
+  "real_model": "qwen3:4b-instruct",
+  "model_digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+  "source_original_pdf_index_range": "nlc-44091:p077-p083",
+  "available_private_ocr_cues": 30,
+  "excluded_single_character_cues": 1,
+  "selected_private_ocr_cues": 8,
+  "actual_model_requests_attempted": 8,
+  "source_literal_ocr_draft_relations": 12,
+  "domains": {
+    "wealth": 8,
+    "longevity": 1,
+    "none": 3
+  },
+  "rejected_model_outputs_by_reason": {
+    "no_evidence_spans": 1,
+    "outcome_domain_conflicts_with_claim": 1,
+    "claim_domain_not_supported_by_literal_span": 2
+  },
+  "new_independent_human_original_page_reviews": 0,
+  "verified_classical_morphology_to_outcome_relations": 0,
+  "production_face_reading_rules_activated": 0,
+  "complete_268_page_semantic_extraction": false,
+  "executed_full_five_extractor_roles": false,
+  "scope": "SOURCE_UNVERIFIED OCR fragment private research; matching OCR characters is not evidence of original scanned text correctness; domain matching is not semantic review. No original OCR or model text in this record."
+}
