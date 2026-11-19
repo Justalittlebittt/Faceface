@@ -1,0 +1,127 @@
+name: M16.22 REAL private OCR to pinned Cangjie semantic batch
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-private-ocr-semantic-batch.yml"
+      - "scripts/cangjie_private_ocr_semantic_batch.py"
+      - "tests/test_cangjie_private_ocr_semantic_batch.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-source-provenance-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify private original OCR candidate lineage and rule embargo
+        run: |
+          python -m unittest -v tests.test_cangjie_private_ocr_semantic_batch tests.test_cangjie_outcome_ocr_audit tests.test_cangjie_real_historical_relations
+
+  ACTUAL-private-original-OCR-plus-pinned-Cangjie-Qwen:
+    needs: private-source-provenance-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OLLAMA_HOST: "127.0.0.1:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Poppler and REAL PaddleOCR CPU
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2 PyYAML
+
+      - name: Download both original 1925 PDFs privately; verify actual original hashes
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/originals/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/originals/part2.pdf" | sha256sum -c -
+
+      - name: Actually extract PP-OCRv5 from original book page sample 77-83
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/originals" --out-dir "$RUNNER_TEMP/private-ocr" \
+            --source nlc-44091 --start 77 --end 83 --dpi 170
+          python -m scripts.cangjie_outcome_ocr_audit \
+            --scan-dir "$RUNNER_TEMP/originals" --ocr-dir "$RUNNER_TEMP/private-ocr" \
+            --private-dir "$RUNNER_TEMP/private-outcome-cues" \
+            --metadata-dir "$RUNNER_TEMP/private-outcome-audit" \
+            --source nlc-44091 --start 77 --end 83
+
+      - name: Clone ACTUAL pinned official Cangjie checkout and inspect diagnostic
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git "$RUNNER_TEMP/cangjie"
+          git -C "$RUNNER_TEMP/cangjie" checkout --quiet a28de55ba881b9928956a55048f743f7a9e3b23e
+          test "$(git -C "$RUNNER_TEMP/cangjie" rev-parse HEAD)" = "a28de55ba881b9928956a55048f743f7a9e3b23e"
+          python "$RUNNER_TEMP/cangjie/scripts/cangjie.py" doctor
+
+      - name: Install actual local Ollama and Qwen3 4B Instruct
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://ollama.com/install.sh -o "$RUNNER_TEMP/install-ollama.sh"
+          sh "$RUNNER_TEMP/install-ollama.sh"
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 50); do
+            curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
+            sleep 2
+          done
+          ollama pull qwen3:4b-instruct
+
+      - name: GENUINE real semantic model calls on PRIVATE OCR candidates, not legacy 13 excerpts
+        shell: bash
+        run: |
+          python -m scripts.cangjie_private_ocr_semantic_batch \
+            "$RUNNER_TEMP/private-outcome-cues/nlc-44091-p077-083.jsonl" \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --upstream "$RUNNER_TEMP/cangjie" \
+            --private-out "$RUNNER_TEMP/m16-22-private-ocr-model-candidates.json" \
+            --public-metadata m16-22-real-private-OCR-model-aggregate-only.json \
+            --max-cues 8 --model qwen3:4b-instruct
+          python - <<'PY'
+          import json
+          x=json.load(open("m16-22-real-private-OCR-model-aggregate-only.json",encoding="utf-8"))
+          assert x["available_private_cues"]>=x["selected_private_OCR_cues"]>=1
+          assert x["real_model_requests_attempted"]==x["selected_private_OCR_cues"]
+          assert x["original_page_human_reviewed"]==0
+          assert x["verified_historical_morphology_outcome_relations"]==0
+          assert x["new_live_Faceface_rules"]==0
+          assert x["full_book_semantic_extraction_complete"] is False
+          print("ACTUAL PRIVATE OCR + OFFICIAL-CANGJIE-GUIDED QWEN RESEARCH:",x)
+          PY
+
+      - name: Upload ONLY aggregate per-domain counts without unreviewed text
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-22-real-private-ocr-Cangjie-model-metadata-only
+          path: m16-22-real-private-OCR-model-aggregate-only.json
+          retention-days: 21
+          if-no-files-found: warn
