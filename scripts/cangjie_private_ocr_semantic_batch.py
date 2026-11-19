@@ -28,6 +28,7 @@ def read_private_cues(paths: list[Path], max_cues: int = 0) -> tuple[list[dict],
         raise ValueError("Need private OCR JSONL paths and a nonnegative cap")
     sources, seen = [], set()
     counts = Counter()
+    excluded = Counter()
     for path in paths:
         if not path.is_file():
             raise ValueError(f"Missing private outcome OCR cue file: {path}")
@@ -50,7 +51,7 @@ def read_private_cues(paths: list[Path], max_cues: int = 0) -> tuple[list[dict],
                 or not all(c in "0123456789abcdef" for c in cue_id)
                 or cue_id in seen
                 or not isinstance(excerpt, str)
-                or not 2 <= len(excerpt) <= 80
+                or len(excerpt) > 80
                 or obj.get("source_image_human_verified") is not False
                 or obj.get("historical_relation_established") is not False
                 or obj.get("eligible_for_live_rules") is not False):
@@ -64,6 +65,11 @@ def read_private_cues(paths: list[Path], max_cues: int = 0) -> tuple[list[dict],
                 raise ValueError("Missing independently assessed morphology proximity")
             seen.add(cue_id)
             counts.update(scanned.keys())
+            # A genuine OCR line may contain only one Han glyph (e.g. 壽).
+            # Preserve provenance and audit it, but do not send it to the LLM.
+            if len(excerpt) < 2:
+                excluded["single_character_OCR_line_not_modelable"] += 1
+                continue
             sources.append({
                 "id": "m1622-ocr:" + cue_id,
                 "legacy_entry_kind": "unverified_ocr_page_line",
@@ -85,6 +91,7 @@ def read_private_cues(paths: list[Path], max_cues: int = 0) -> tuple[list[dict],
     return sources, {"available_private_cues": total,
                      "selected_cues": len(sources),
                      "raw_lexical_domain_memberships": dict(counts),
+                     "excluded_private_cues_by_reason": dict(excluded),
                      "source_review_level": "UNREVIEWED_MACHINE_OCR"}
 
 
@@ -129,6 +136,7 @@ def run_private_batch(paths: list[Path], scan_dir: Path, upstream: Path,
         "official_Cangjie_five_roles_run_in_this_batch": False,
         "real_model": model_identity,
         "available_private_cues": selection["available_private_cues"],
+        "excluded_private_cues_by_reason": selection["excluded_private_cues_by_reason"],
         "selected_private_OCR_cues": selection["selected_cues"],
         "real_model_requests_attempted": result["real_requests_attempted"],
         "OCR_literal_draft_relations": checked["relation_count"],
