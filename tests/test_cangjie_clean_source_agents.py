@@ -188,6 +188,42 @@ class CleanShortSourceTests(unittest.TestCase):
                 self.assertIn("口須方大",user)
                 self.assertNotIn("历史上提及口宽",user)
 
+    def test_invalid_JSON_retries_same_role_as_an_actual_second_model_request(self):
+        class OneMalformedResponsePerNonApplicableRole(TestModel):
+            def __init__(self):
+                super().__init__()
+                self.failed=set()
+            def infer(self,system,user,schema):
+                if schema==ROLE_FORMAT:
+                    role=next((r for r in ("case","counter_example")
+                               if "独立"+r+"提取器" in system
+                               or "固定官方角色："+r+"。" in system),None)
+                    if role and role not in self.failed:
+                        self.failed.add(role)
+                        self.requests.append((system,user,schema))
+                        raise json.JSONDecodeError("real test malformed response","bad",0)
+                return super().infer(system,user,schema)
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            model=OneMalformedResponsePerNonApplicableRole()
+            with patch("scripts.cangjie_clean_source_agents.official_role_texts",
+                       return_value=(
+                           {"pinned_original_cangjie_commit":PINNED_CANGJIE_COMMIT,
+                            "official_upstream_files_sha256":{"test":"a"*64}},
+                           {"adler":"official Adler "*120,
+                            **{r:"official "+r*100 for r in ROLE_FILES}}
+                       )):
+                result=run_agents(self.workspace,self.source,root,
+                                  model,root/"private",root/"result.json")
+            self.assertEqual(result["independent_real_extractor_role_calls_completed"],5)
+            self.assertEqual(result["real_model_requests_including_strict_JSON_retries"],7)
+            self.assertEqual(len(model.requests),8) # 1 Adler, 5 original roles + 2 real retries
+            self.assertTrue(all(x["first_response_invalid_JSON"]
+                                for x in result["role_calls"]
+                                if x["role"] in ("case","counter_example")))
+            self.assertEqual(result["new_live_Faceface_rules"],0)
+            self.assertGreaterEqual(result["total_LLM_candidate_concepts_source_quote_id_bound"],1)
+
     def test_local_model_url_gated(self):
         for url in ("https://remote.ai:11434",
                     "http://example.com:11434",
