@@ -159,11 +159,17 @@ def main() -> None:
     p.add_argument("--public-metadata", type=Path, required=True)
     p.add_argument("--catalog", type=Path, default=Path("src/knowledge/maiyi-source-checked-v5.json"))
     p.add_argument("--model", default="qwen3:4b-instruct")
+    p.add_argument("--source-ids", nargs="*", default=None, help="Exact legacy source IDs to include in a genuine small-sample pilot")
     p.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     args = p.parse_args()
     ws = ReviewWorkspace(args.scan_dir, args.private_dir / "no-ocr",
                          args.private_dir / "no-full-page-review")
     sources = source_short_catalog(json.loads(args.catalog.read_text(encoding="utf-8")), ws)
+    if args.source_ids is not None:
+        chosen = set(args.source_ids)
+        if not chosen or len(chosen) != len(args.source_ids) or not chosen.issubset({r["id"] for r in sources}):
+            raise ValueError("Source sample must list distinct known legacy source IDs")
+        sources = [r for r in sources if r["id"] in chosen]
     upstream, official = official_role_texts(args.upstream)
     client = OllamaClient(args.ollama_url, args.model)
     model_identity = client.installed()
