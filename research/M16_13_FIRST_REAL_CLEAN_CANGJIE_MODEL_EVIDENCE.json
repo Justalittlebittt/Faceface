@@ -1,0 +1,58 @@
+{
+  "milestone": "M16.13",
+  "prior_legacy_source_status": "13 V5 AI-original-page-visual-checked short textual references, NOT 13 new independent human-signed source ROIs",
+  "first_original_clean_source_run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44461626484",
+  "upstream_cangjie_pinned_commit": "a28de55ba881b9928956a55048f743f7a9e3b23e",
+  "local_llm": "qwen3:4b-instruct",
+  "actual_ollama_model_digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+  "both_original_1925_PDF_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "input_reference_count": 13,
+  "actual_sample_Adler_completed": true,
+  "original_book_full_Adler_complete": false,
+  "independent_role_requests_attempted": 5,
+  "roles_with_structurally_valid_model_output": 3,
+  "actual_source_quote_ID_bound_semantic_candidate_count": 2,
+  "role_output": {
+    "framework": {
+      "completed": true,
+      "accepted": 0,
+      "rejected": 2,
+      "reason": "rejected candidate fields; detailed reasons not recorded in first version"
+    },
+    "principle": {
+      "completed": true,
+      "accepted": 0,
+      "rejected": 2,
+      "reason": "rejected candidate fields; detailed reasons not recorded in first version"
+    },
+    "case": {
+      "completed": false,
+      "accepted": 0,
+      "error": "JSONDecodeError"
+    },
+    "counter_example": {
+      "completed": false,
+      "accepted": 0,
+      "error": "JSONDecodeError"
+    },
+    "glossary": {
+      "completed": true,
+      "accepted": 2,
+      "source_excerpt_records": [
+        "MY25-EYE-01",
+        "MY25-FRAME-MOUNTAINS-01"
+      ]
+    }
+  },
+  "first_execution_hard_quality_gate": "FAILED because two of five role output JSON responses were invalid, notwithstanding first two source-quote-ID candidates",
+  "direct_comparison_to_M16_8": "M16.8 noisy PP-OCR 35 genuine extractor role calls 0 accepted source-grounded candidate concepts; M16.13 clean 13 V5 excerpts produced 2 source-ID-grounded draft concepts",
+  "bugfix_under_test": "One additional REAL independent same-source, same-official-role retry on JSONDecodeError; no simulated replacement outputs, no relaxed quality gate",
+  "newly_human_original_source_full_page_reviews": 0,
+  "newly_independent_human_signed_source_short_ROIs": 0,
+  "new_production_historical_rules": 0,
+  "five_roles_successfully_completed_in_first_trial": false,
+  "no_original_book_full_text_or_ai_explanations_published": true
+}
