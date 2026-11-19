@@ -1,0 +1,195 @@
+name: M16.23 REAL six-shard original book source-balanced Qwen semantic pilot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-six-shard-semantic-pilot.yml"
+      - "scripts/cangjie_semantic_batch_plan.py"
+      - "scripts/cangjie_semantic_batch_aggregate.py"
+      - "tests/test_cangjie_semantic_batch_plan.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semantics-batch-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m unittest -v tests.test_cangjie_semantic_batch_plan tests.test_cangjie_private_ocr_semantic_batch tests.test_cangjie_outcome_ocr_audit
+
+  actual-six-source-shards:
+    needs: semantics-batch-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - { source: nlc-44091, start: 0, end: 50 }
+          - { source: nlc-44091, start: 51, end: 101 }
+          - { source: nlc-44091, start: 102, end: 152 }
+          - { source: nlc-44092, start: 0, end: 38 }
+          - { source: nlc-44092, start: 39, end: 77 }
+          - { source: nlc-44092, start: 78, end: 114 }
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OLLAMA_HOST: "127.0.0.1:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install original image OCR/Poppler and official Cangjie dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2 PyYAML
+
+      - name: Download both actual 1925 scan PDFs privately and verify hash
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/scans"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/scans/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/scans/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/scans/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/scans/part2.pdf" | sha256sum -c -
+
+      - name: REAL PP-OCRv5 on EVERY original source page in shard
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/scans" --out-dir "$RUNNER_TEMP/private-ocr" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} --end ${{ matrix.end }} --dpi 170
+          python -m scripts.cangjie_outcome_ocr_audit \
+            --scan-dir "$RUNNER_TEMP/scans" --ocr-dir "$RUNNER_TEMP/private-ocr" \
+            --private-dir "$RUNNER_TEMP/private-outcome-cues" \
+            --metadata-dir "$RUNNER_TEMP/private-ocr-audit-metadata" \
+            --source "${{ matrix.source }}" \
+            --start ${{ matrix.start }} --end ${{ matrix.end }}
+
+      - name: Select source/page balanced archival OCR cues across classical outcome domains
+        shell: bash
+        run: |
+          mkdir -p public-safe-evidence
+          STEM="${{ matrix.source }}-p$(printf '%03d' ${{ matrix.start }})-$(printf '%03d' ${{ matrix.end }})"
+          echo "STEM=$STEM" >> "$GITHUB_ENV"
+          python -m scripts.cangjie_semantic_batch_plan \
+            "$RUNNER_TEMP/private-outcome-cues/$STEM.jsonl" \
+            --max-cues 8 \
+            --private-selection "$RUNNER_TEMP/$STEM-model-input-private.jsonl" \
+            --public-selection-metadata "public-safe-evidence/plan-$STEM.json"
+          cp "$RUNNER_TEMP/private-ocr-audit-metadata/$STEM.json" "public-safe-evidence/audit-$STEM.json"
+
+      - name: Check out actual pinned official Cangjie upstream
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git "$RUNNER_TEMP/cangjie"
+          git -C "$RUNNER_TEMP/cangjie" checkout --quiet a28de55ba881b9928956a55048f743f7a9e3b23e
+          test "$(git -C "$RUNNER_TEMP/cangjie" rev-parse HEAD)" = "a28de55ba881b9928956a55048f743f7a9e3b23e"
+          python "$RUNNER_TEMP/cangjie/scripts/cangjie.py" doctor
+
+      - name: Install real local Ollama and Qwen3 Instruct model
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://ollama.com/install.sh -o "$RUNNER_TEMP/install-ollama.sh"
+          sh "$RUNNER_TEMP/install-ollama.sh"
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 50); do
+            curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
+            sleep 2
+          done
+          ollama pull qwen3:4b-instruct
+
+      - name: ACTUAL pinned Cangjie-guided Qwen source-grounded semantic calls on private OCR
+        shell: bash
+        run: |
+          python -m scripts.cangjie_private_ocr_semantic_batch \
+            "$RUNNER_TEMP/$STEM-model-input-private.jsonl" \
+            --scan-dir "$RUNNER_TEMP/scans" \
+            --upstream "$RUNNER_TEMP/cangjie" \
+            --private-out "$RUNNER_TEMP/$STEM-semantic-private.json" \
+            --public-metadata "public-safe-evidence/model-$STEM.json" \
+            --max-cues 0 --model qwen3:4b-instruct
+          python - <<'PY'
+          import json,os
+          name=os.environ["STEM"]
+          m=json.load(open(f"public-safe-evidence/model-{name}.json"))
+          s=json.load(open(f"public-safe-evidence/plan-{name}.json"))
+          assert m["real_model_requests_attempted"]==s["private_cues_selected_for_model"]>0
+          assert m["verified_historical_morphology_outcome_relations"]==0
+          assert m["new_live_Faceface_rules"]==0
+          assert m["full_book_semantic_extraction_complete"] is False
+          print("GENUINE PRIVATE QWEN SOURCE SHARD",name,
+                "actual requests",m["real_model_requests_attempted"],
+                "OCR literal research drafts",m["OCR_literal_draft_relations"])
+          PY
+
+      - name: Upload ONLY aggregated page/domain counts, never private OCR or ancient text
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-23-source-balanced-semantic-${{ matrix.source }}-${{ matrix.start }}-${{ matrix.end }}
+          path: public-safe-evidence/
+          retention-days: 21
+          if-no-files-found: warn
+
+  audit-all-shards-and-semantic-requests:
+    needs: actual-six-source-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: m16-23-source-balanced-semantic-*
+          path: public-safe-evidence
+          merge-multiple: true
+      - name: Distinguish 268-page true OCR coverage from bounded 6-shard model calls
+        shell: bash
+        run: |
+          python -m scripts.cangjie_semantic_batch_aggregate \
+            --ocr-audits public-safe-evidence/audit-*.json \
+            --model-reports public-safe-evidence/model-*.json \
+            --selection-reports public-safe-evidence/plan-*.json \
+            --output m16-23-six-shard-real-semantic-aggregate-only.json
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-23-six-shard-real-semantic-aggregate-only.json"))
+          assert r["actual_1925_original_PDF_pages_re_OCR_processed"]==268
+          assert r["verified_original_scan_shards"]==6
+          assert r["real_model_shards_with_private_OCR"]==6
+          assert r["actual_Cangjie_guided_Qwen_model_requests"]>0
+          assert r["new_Faceface_live_rules"]==0
+          assert r["full_268_page_Cangjie_five_role_semantic_extraction_executed"] is False
+          print("REAL SOURCE SHARDED MODEL RESULTS:",r)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m16-23-actual-six-shard-semantic-aggregate-only
+          path: m16-23-six-shard-real-semantic-aggregate-only.json
+          retention-days: 21

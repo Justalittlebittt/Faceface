@@ -1,0 +1,38 @@
+{
+  "milestone": "M16.23",
+  "kind": "REAL_1925_ORIGINAL_268_PAGE_PP_OCR_SIX_SHARD_BOUNDED_CANGJIE_QWEN_RESEARCH",
+  "run_id": 44495321765,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44495321765",
+  "source_SHA256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "actual_pages_reOCR_processed": 268,
+  "six_shards_completed": 6,
+  "private_ocr_cues_selected": 48,
+  "real_qwen3_inference_requests": 48,
+  "unreviewed_OCR_literal_matching_research_drafts": 49,
+  "domain_memberships": {
+    "wealth": 15,
+    "longevity": 7,
+    "moral_character": 7,
+    "family": 1,
+    "none": 19
+  },
+  "rejected_model_outputs_by_reason": {
+    "outcome_domain_conflicts_with_claim": 19,
+    "no_evidence_spans": 4,
+    "claim_domain_not_supported_by_literal_span": 12,
+    "model_span_not_literal_original": 1,
+    "duplicate_relation": 1
+  },
+  "pages_with_any_outcome_lexical_signal": 240,
+  "official_cangjie_pinned_prompts_loaded": true,
+  "official_cangjie_full_five_extractor_agents_executed": false,
+  "model_processed_every_original_OCR_line": false,
+  "new_human_signed_full_pages": 0,
+  "verified_historical_claims": 0,
+  "new_live_faceface_rules": 0,
+  "public_contains_original_OCR_or_model_text": false,
+  "caveat": "268 pages genuinely reOCR-ed; only 48 selected source-unverified short OCR excerpts entered real model. Do not call 49 candidates verified original scan statements or complete book extraction."
+}
