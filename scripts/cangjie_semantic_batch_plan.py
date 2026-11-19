@@ -80,7 +80,7 @@ def plan_private_shard(paths: list[Path], limit: int = 8) -> tuple[list[dict], d
     selected_rows = [original[e["id"]] for e in chosen]
     domain_counts = Counter(d for e in chosen for d in e["candidate_lexical_domains"])
     result = {
-        "source_private_cues_before_policy": stats["available_private_cues"],
+        "source_private_cues_before_policy": stats["available_private_cues"] + sum(stats["excluded_private_cues_by_reason"].values()),
         "source_modelable_cues": stats["selected_cues"],
         "private_cues_selected_for_model": len(chosen),
         "distinct_original_scan_pages_selected": len(pages),
