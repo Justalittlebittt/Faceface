@@ -1,0 +1,56 @@
+{
+  "milestone": "M16.21",
+  "kind": "REAL_268_PAGE_TRADITIONAL_OUTCOME_OCR_LEXICAL_EVIDENCE",
+  "source_run": "https://github.com/Justalittlebittt/Faceface/actions/runs/44490222577",
+  "actual_source_pages_processed": 268,
+  "source_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "shards_checked": 6,
+  "pages_with_any_outcome_lexical_signal": 240,
+  "pages_with_no_outcome_lexical_signal": 28,
+  "pages_with_same_line_face_outcome_proximity": 139,
+  "pages_by_domain": {
+    "wealth": 197,
+    "longevity": 93,
+    "moral_character": 75,
+    "temperament": 12,
+    "marriage": 13,
+    "family": 39,
+    "offspring": 16,
+    "career": 89,
+    "social_status": 21,
+    "fortune": 76
+  },
+  "OCR_line_hits_by_domain": {
+    "wealth": 540,
+    "longevity": 152,
+    "moral_character": 115,
+    "temperament": 13,
+    "marriage": 15,
+    "family": 75,
+    "offspring": 18,
+    "career": 154,
+    "social_status": 26,
+    "fortune": 125
+  },
+  "same_OCR_line_morphology_proximity_by_domain": {
+    "wealth": 175,
+    "longevity": 48,
+    "moral_character": 32,
+    "temperament": 4,
+    "marriage": 9,
+    "family": 21,
+    "offspring": 11,
+    "career": 50,
+    "social_status": 6,
+    "fortune": 31
+  },
+  "new_human_verified_original_pages": 0,
+  "historically_valid_morphology_outcome_relations": 0,
+  "official_Cangjie_model_calls": 0,
+  "new_live_faceface_rules": 0,
+  "unreviewed_original_text_or_short_quotes_in_public_report": false,
+  "caveat": "All counts are UNREVIEWED OCR lexical proxies; single words may be anatomy names or misread glyphs. Same OCR line is not semantic linking. Public result is metadata only; private original text was not retained across ephemeral shards."
+}
