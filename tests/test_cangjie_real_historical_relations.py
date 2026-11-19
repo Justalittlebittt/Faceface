@@ -47,6 +47,25 @@ class HistoricalRelationExtractionTests(unittest.TestCase):
         self.assertEqual(accepted, [])
         self.assertEqual(rejected[0]["reason"], "model_span_not_literal_original")
 
+    def test_lifespan_phrase_must_not_be_labeled_moral_character(self):
+        self.source[0]["source_excerpt"] = "鼻長有壽"
+        self.row["morphology_span"] = "鼻長"
+        self.row["claim_span"] = "有壽"
+        self.row["claim_domain"] = "moral_character"
+        accepted, rejected = translate_model_relations({"relations": [self.row]}, self.source)
+        self.assertEqual(accepted, [])
+        self.assertEqual(rejected[0]["reason"], "claim_domain_not_supported_by_literal_span")
+        self.row["claim_domain"] = "longevity"
+        accepted, rejected = translate_model_relations({"relations": [self.row]}, self.source)
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(rejected, [])
+
+    def test_classical_moral_claim_without_moral_words_is_rejected(self):
+        self.row["claim_domain"] = "moral_character"
+        accepted, rejected = translate_model_relations({"relations": [self.row]}, self.source)
+        self.assertEqual(accepted, [])
+        self.assertEqual(rejected[0]["reason"], "claim_domain_not_supported_by_literal_span")
+
     def test_only_shape_does_not_invent_outcome(self):
         self.row["claim_span"] = ""
         self.row["claim_domain"] = "none"
