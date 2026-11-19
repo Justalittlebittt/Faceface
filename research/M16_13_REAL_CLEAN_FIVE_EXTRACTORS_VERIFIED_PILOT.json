@@ -1,0 +1,81 @@
+{
+  "milestone": "M16.13",
+  "status": "STRICT_FIVE_ROLE_CLEAN_SHORT_SOURCE_QUALITY_GATE_PASSED",
+  "actual_successful_run": "https://github.com/Justalittlebittt/Faceface/actions/runs/44463236836",
+  "initial_failed_run": "https://github.com/Justalittlebittt/Faceface/actions/runs/44461626484",
+  "original_1925_PDF_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "original_cangjie_skill_pinned_commit": "a28de55ba881b9928956a55048f743f7a9e3b23e",
+  "actual_Cangjie_prompts": "Original official Adler/5 extractor source files verified and hashed; prompt input portions necessarily truncated due to 4096-token Qwen local inference window",
+  "local_model": "qwen3:4b-instruct",
+  "exact_model_digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+  "source_input_description": "Existing ten prior AI visually original-PDF-checked V5 cultural cards + three pre-existing historical framework short quotes; no new human signer",
+  "source_input_short_phrases": 13,
+  "adler_scoped_sample_inference_successful": true,
+  "adler_complete_full_268_original_PDF_pages": false,
+  "distinct_official_extractor_roles_attempted": 5,
+  "distinct_roles_completed_structured_successfully": 5,
+  "model_requests_including_two_genuine_JSON_retries": 7,
+  "roles_first_response_invalid_JSON_retried": [
+    "case",
+    "counter_example"
+  ],
+  "matched_source_quote_ID_semantic_candidate_drafts": 4,
+  "distinct_previously_known_legacy_source_entries_used": 3,
+  "source_record_ids": [
+    "MY25-FRAME-MOUNTAINS-01",
+    "MY25-FRAME-RIVERS-01",
+    "MY25-FRAME-THREE-01"
+  ],
+  "per_role_results": {
+    "framework": {
+      "actual_completed": true,
+      "source_match_candidates": 2
+    },
+    "principle": {
+      "actual_completed": true,
+      "source_match_candidates": 0,
+      "rejected_candidates": 2,
+      "reason": "invalid_extractor_concept"
+    },
+    "case": {
+      "actual_completed": true,
+      "real_retry_requests": 1,
+      "source_match_candidates": 0,
+      "appropriate_if_no_supported_case": true
+    },
+    "counter_example": {
+      "actual_completed": true,
+      "real_retry_requests": 1,
+      "source_match_candidates": 0,
+      "appropriate_if_no_supported_counterexample": true
+    },
+    "glossary": {
+      "actual_completed": true,
+      "source_match_candidates": 2
+    }
+  },
+  "first_run_outcome": {
+    "role_success_count": 3,
+    "source_match_candidates": 2,
+    "adler_successful": true,
+    "hard_quality_gate": "FAILED"
+  },
+  "second_run_outcome": {
+    "role_success_count": 5,
+    "source_match_candidates": 4,
+    "adler_successful": true,
+    "hard_quality_gate": "PASSED"
+  },
+  "counted_4_are_new_ancient_original_rules": false,
+  "original_full_text_or_model_unreviewed_interpretations_uploaded": false,
+  "new_human_signed_original_short_RoIs": 0,
+  "new_full_page_original_manually_reviewed": 0,
+  "live_Faceface_rules_added": 0,
+  "guarantee": "Source ID and source quote hash match previously curated V5 entries, not independent new human original-page verification, NOT scientific predictive fact",
+  "decision": "PILOT_WORKS_FOR_CLEAN_HISTORICAL_FRAMEWORK_SEMANTIC_ORGANIZATION_ONLY",
+  "further_evidence_needed": "Signed short-source photo-observable morphology text or independently checked original images, multi-page clean data, representative real inference quality before adding to live knowledge",
+  "next": "M16.14 ingest private short-ROI human attestations with scan and image hash validation into source-bound, reproducible batch input, separate framework from geometry-usable conditions, then re-run official extractors selectively."
+}
