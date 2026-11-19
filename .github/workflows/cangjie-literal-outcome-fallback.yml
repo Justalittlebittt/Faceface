@@ -1,0 +1,49 @@
+name: M16.20 original short-quote literal outcome fallback
+
+on:
+  pull_request:
+    paths:
+      - "scripts/cangjie_literal_claim_fallback.py"
+      - "tests/test_cangjie_literal_claim_fallback.py"
+      - ".github/workflows/cangjie-literal-outcome-fallback.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-literal-short-quote-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test actual V5 short-quote lexical evidence with zero promotions
+        run: python -m unittest -v tests.test_cangjie_literal_claim_fallback tests.test_cangjie_historical_claim_ledger
+
+      - name: Execute non-LLM literal source scan and metadata-only result
+        shell: bash
+        run: |
+          python -m scripts.cangjie_literal_claim_fallback \
+            --catalog src/knowledge/maiyi-source-checked-v5.json \
+            --private-output "$RUNNER_TEMP/m16-20-original-short-candidates-private.json" \
+            --public-audit m16-20-source-literal-metadata-only.json
+          python - <<'PY'
+          import json
+          r=json.load(open("m16-20-source-literal-metadata-only.json"))
+          assert r["source_count"]==10
+          assert r["domain_counts"]["longevity"]>=1
+          assert r["new_live_rules"]==0
+          assert r["official_cangjie_model_calls"]==0
+          assert r["complete_source_book_coverage"] is False
+          print("Actual existing V5 short quote research literal relation evidence:",r["literal_pair_hits"])
+          print("NO human-reviewed source, NO model run claimed, NO live rules")
+          PY
+
+      - name: Upload aggregate numbers only
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-20-original-short-quote-literal-aggregate
+          path: m16-20-source-literal-metadata-only.json
+          retention-days: 21
