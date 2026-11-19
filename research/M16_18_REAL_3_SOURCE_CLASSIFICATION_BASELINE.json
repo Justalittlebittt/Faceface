@@ -1,0 +1,24 @@
+{
+  "schema": "M16.18_ACTUAL_THREE_SOURCE_PRE_DOMAIN_REPAIR_RUN_V1",
+  "run_id": 44480604941,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44480604941",
+  "git_commit_sha": "392c46b88543cf323d297167f899eb3f283eac1e",
+  "actual_real_local_qwen3_4b_calls": 3,
+  "source_short_excerpts": 3,
+  "original_1925_pdfs_sha256_verified": true,
+  "pinned_official_cangjie_checkout_verified": true,
+  "pinned_upstream_role_prompts_are_partial": true,
+  "literal_source_span_matched_drafts": 2,
+  "model_rejected_outputs": 0,
+  "reported_historical_domains": {
+    "moral_character": 2,
+    "longevity": 0,
+    "wealth": 0,
+    "others": 0
+  },
+  "classification_concern": "Three-source sample included 鼻長有壽 but both accepted drafts were classified moral_character; aggregate-only data cannot prove which exact source entries were incorrectly classified. The output lacks sufficient semantic corroboration; two drafts are not verified traditional-outcome links.",
+  "new_independent_human_signed_rois": 0,
+  "new_live_rules": 0,
+  "fix": "Added domain-versus-exact-claim-span conservative marker contradiction gate; a new actual model run is needed to assess revised results.",
+  "records_are_not_promoted": true
+}
