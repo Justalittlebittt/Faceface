@@ -19,6 +19,33 @@ from scripts.cangjie_clean_source_agents import (
 from scripts.cangjie_review_core import ReviewWorkspace, atomic_write
 from scripts.cangjie_historical_claim_ledger import DOMAINS, validate_relations
 
+# Conservative CLASSIFICATION gate over literal *claim_span*, not the entire
+# excerpt. A noun appearing elsewhere on the page is not outcome evidence.
+# These anchors are high-precision clues, not complete historical semantics.
+STRONG_DOMAIN_MARKERS = {
+    "longevity": ("壽", "寿", "夭", "長命", "长命", "短命"),
+    "wealth": ("富", "貴", "贵", "財", "财", "祿", "禄", "貧", "贫"),
+    "moral_character": ("德", "仁", "義", "义", "忠", "孝", "善", "惡", "恶", "奸", "廉", "賢", "贤", "愚"),
+}
+
+
+def literal_domain_supported(domain: str, claim: str) -> bool:
+    """Fail closed for the three high-risk domain categories with obvious markers.
+
+    Reject rather than silently *relabel* the model's unsupported outcome.
+    A valid marker is still only a lexical hint, never proof of interpretation.
+    """
+    anchors = STRONG_DOMAIN_MARKERS.get(domain)
+    if anchors is None:
+        return True
+    if not any(t in claim for t in anchors):
+        return False
+    return not any(
+        other != domain and any(t in claim for t in terms)
+        for other, terms in STRONG_DOMAIN_MARKERS.items()
+    )
+
+
 RELATION_FORMAT = {
     "type": "object",
     "properties": {"relations": {
@@ -77,6 +104,9 @@ def translate_model_relations(output: dict, sources: list[dict]) -> tuple[list[d
         domain = row["claim_domain"]
         if domain not in DOMAINS or ((not claim) != (domain == "none")):
             rejected.append({"reason": "outcome_domain_conflicts_with_claim"})
+            continue
+        if claim and not literal_domain_supported(domain, claim):
+            rejected.append({"reason": "claim_domain_not_supported_by_literal_span"})
             continue
         rid = hashlib.sha256((src["id"] + "|" + morph + "|" + claim + "|" +
                               row["relation_type"]).encode("utf-8")).hexdigest()[:24]
@@ -159,11 +189,17 @@ def main() -> None:
     p.add_argument("--public-metadata", type=Path, required=True)
     p.add_argument("--catalog", type=Path, default=Path("src/knowledge/maiyi-source-checked-v5.json"))
     p.add_argument("--model", default="qwen3:4b-instruct")
+    p.add_argument("--source-ids", nargs="*", default=None, help="Exact legacy source IDs to include in a genuine small-sample pilot")
     p.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     args = p.parse_args()
     ws = ReviewWorkspace(args.scan_dir, args.private_dir / "no-ocr",
                          args.private_dir / "no-full-page-review")
     sources = source_short_catalog(json.loads(args.catalog.read_text(encoding="utf-8")), ws)
+    if args.source_ids is not None:
+        chosen = set(args.source_ids)
+        if not chosen or len(chosen) != len(args.source_ids) or not chosen.issubset({r["id"] for r in sources}):
+            raise ValueError("Source sample must list distinct known legacy source IDs")
+        sources = [r for r in sources if r["id"] in chosen]
     upstream, official = official_role_texts(args.upstream)
     client = OllamaClient(args.ollama_url, args.model)
     model_identity = client.installed()

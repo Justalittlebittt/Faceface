@@ -1,0 +1,113 @@
+name: M16.18 REAL Cangjie historical outcomes 3-source LLM pilot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-real-historical-outcomes.yml"
+      - "scripts/cangjie_real_historical_relations.py"
+      - "tests/test_cangjie_real_historical_relations.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-historical-claim-model-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OLLAMA_HOST: "127.0.0.1:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Independent schema / literal source tests
+        run: python -m unittest tests.test_cangjie_real_historical_relations tests.test_cangjie_historical_claim_ledger
+
+      - name: Install PDF inspection dependency
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
+      - name: Download two ORIGINAL 1925 scanned PDFs, SHA pin, PRIVATE runner only
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/originals/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/originals/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/originals/part2.pdf" | sha256sum -c -
+
+      - name: Check out REAL PINNED official Cangjie and run doctor
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git "$RUNNER_TEMP/cangjie"
+          git -C "$RUNNER_TEMP/cangjie" checkout --quiet a28de55ba881b9928956a55048f743f7a9e3b23e
+          test "$(git -C "$RUNNER_TEMP/cangjie" rev-parse HEAD)" = "a28de55ba881b9928956a55048f743f7a9e3b23e"
+          python -m pip install --quiet PyYAML
+          python "$RUNNER_TEMP/cangjie/scripts/cangjie.py" doctor
+
+      - name: Install ACTUAL Ollama/Qwen3 4B model, no faked responses
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://ollama.com/install.sh -o "$RUNNER_TEMP/install-ollama.sh"
+          sh "$RUNNER_TEMP/install-ollama.sh"
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 50); do
+            curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
+            sleep 2
+          done
+          ollama pull qwen3:4b-instruct
+          ollama list
+
+      - name: ACTUAL model inference 3 pinned source snippets including traditional lifespan phrase
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/private-historical-claim-results"
+          python -m scripts.cangjie_real_historical_relations \
+            --scan-dir "$RUNNER_TEMP/originals" \
+            --upstream "$RUNNER_TEMP/cangjie" \
+            --private-dir "$RUNNER_TEMP/private-historical-claim-results" \
+            --public-metadata m16-18-historical-relation-metadata-only.json \
+            --source-ids MY25-NOSE-LONG-01 MY25-MOUTH-OX-01 MY25-MOUTH-01 \
+            --model qwen3:4b-instruct
+
+      - name: Verify GENUINE requests and NEVER claim full-book or new rules
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open("m16-18-historical-relation-metadata-only.json",encoding="utf-8"))
+          assert x["source_short_excerpts"]==3
+          assert x["actual_model_requests_attempted"]==3
+          assert x["new_human_signed_roi"]==0 and x["full_pages_human_checked"]==0
+          assert x["new_live_rules"]==0
+          assert x["not_a_complete_five_agent_run"] is True
+          print("REAL MODEL CLAIM-RELATION SAMPLE FINISHED.")
+          print("SOURCE-LITERAL CANDIDATE COUNT:",x["source_literally_grounded_draft_relations"])
+          print("MODEL REJECTED/FAILED COUNT:",x["rejected_model_outputs"])
+          print("CLASSICAL OUTCOME DOMAIN COUNTS:",x["historical_domain_memberships"])
+          print("ZERO is a valid negative research result: never invent a success.")
+          PY
+
+      - name: Upload ONLY aggregate metadata, never ancient quote text or model completions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m16-18-real-3-source-traditional-outcome-extraction-metadata-only
+          path: m16-18-historical-relation-metadata-only.json
+          retention-days: 21
+          if-no-files-found: warn
