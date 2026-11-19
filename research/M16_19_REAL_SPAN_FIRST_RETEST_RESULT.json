@@ -1,0 +1,22 @@
+{
+  "schema": "M16.19_REAL_SPAN_FIRST_RETTEST_V1",
+  "run_id": 44482597935,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44482597935",
+  "source_count": 3,
+  "actual_model_requests": 3,
+  "source_literally_grounded_drafts": 2,
+  "rejected_model_outputs": 2,
+  "historical_domain_memberships": {
+    "none": 2,
+    "longevity": 0,
+    "wealth": 0,
+    "moral_character": 0,
+    "other": 0
+  },
+  "conclusion": "No valid traditional longevity relation extracted from 鼻長有壽 despite source being in pilot; two shape-only relations passed, and two outputs rejected. Exact source candidate contents are private/unavailable via aggregate logs. Do not claim ancient quote semantic extraction success.",
+  "model": "local Ollama qwen3:4b-instruct",
+  "source_review_status": "preexisting_AI_visual_legacy_short_excerpts_not_new_human_attested",
+  "verified_full_original_pages": 0,
+  "live_rules_created": 0,
+  "next": "Expose source-ID scoped rejection-reason aggregate metrics and test claim spans separately, without copying private text."
+}
