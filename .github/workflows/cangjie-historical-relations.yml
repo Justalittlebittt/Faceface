@@ -1,0 +1,24 @@
+name: M16.17 Cangjie historical relation source-span contract
+
+on:
+  pull_request:
+    paths:
+      - "scripts/cangjie_real_historical_relations.py"
+      - "tests/test_cangjie_real_historical_relations.py"
+      - ".github/workflows/cangjie-historical-relations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  literal-source-span-and-archive-only-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate source-grounded outcomes and downstream archival contract
+        run: |
+          python -m unittest -v tests.test_cangjie_real_historical_relations tests.test_cangjie_historical_claim_ledger tests.test_cangjie_clean_source_agents
