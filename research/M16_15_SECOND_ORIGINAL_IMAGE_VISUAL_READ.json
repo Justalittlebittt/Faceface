@@ -1,0 +1,59 @@
+{
+  "schema": "M16.15_SECOND_AI_DIRECT_ORIGINAL_IMAGE_READ_V1",
+  "date": "2026-11-19",
+  "source": {
+    "id": "nlc-44091",
+    "title": "麻衣相法 (1925, 文明書局, 秦慎安校勘)",
+    "original_pdf_sha256_from_pinned_project_manifest_not_redownloaded_in_this_check": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "web_original_pdf": "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf",
+    "public_metadata_page": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "page_count_reported_by_source": 153
+  },
+  "method": "Second assistant visual inspection of original scanned PDF screenshots via original-PDF page render, NOT OCR and NOT a human sign-off; source pages zero-based 27 and 86, with neighbor-page context 83-88.",
+  "rechecked_target_phrases": [
+    {
+      "target_id": "M1612-T01",
+      "anchor_id": "M1610-A08",
+      "pdf_page_zero_based": 86,
+      "printed_page_visible": "三九",
+      "phrase": "兩頭略仰不垂低",
+      "visual_result": "visible_across_adjacent_vertical_columns",
+      "reading_direction": "top_to_bottom_then_right_to_left",
+      "specific_observation": "The first right-hand verse column includes the mouth description 口角光明唇兩齊 followed by 兩頭略仰不; adjacent column immediately left begins 垂低. The cross-column boundary is therefore essential, and the earlier single-crop OCR 0/3 does not establish phrase absence.",
+      "interpretation_limit": "Only textual description of slightly raised corners; facial expression, illumination, position and full lip conditions are not automatically measured or satisfied.",
+      "source_quality": "AI_direct_visual_second_pass_not_independent_human",
+      "human_verified": false,
+      "eligible_for_live_rules": false
+    },
+    {
+      "target_id": "M1612-T02",
+      "anchor_id": "M1610-A03",
+      "pdf_page_zero_based": 27,
+      "printed_page_visible": "一四",
+      "phrase": "眼須要含藏不露",
+      "visual_result": "visible_in_original_prose",
+      "specific_observation": "Prose text in the original scan contains 眼須要含藏不露 and surrounding eye-white/black discussion. Phrase does not mean the contemporary eye-openness metric equals the traditional concept.",
+      "source_quality": "AI_direct_visual_second_pass_not_independent_human",
+      "human_verified": false,
+      "eligible_for_live_rules": false
+    },
+    {
+      "target_id": "M1612-T03",
+      "anchor_id": "M1610-A01",
+      "pdf_page_zero_based": 27,
+      "printed_page_visible": "一四",
+      "phrase": "口須方大",
+      "visual_result": "visible_in_original_prose",
+      "specific_observation": "Column contains 口須方大 and lip/mouth appearance context. Do not equate mouth width alone with complete historical mouth type.",
+      "source_quality": "AI_direct_visual_second_pass_not_independent_human",
+      "human_verified": false,
+      "eligible_for_live_rules": false
+    }
+  ],
+  "neighbor_page_context_zero_based": [83, 84, 85, 87, 88],
+  "real_new_human_signed_roi_records": 0,
+  "real_new_human_reviewed_complete_pages": 0,
+  "official_cangjie_extractor_calls": 0,
+  "new_runtime_face_rules": 0,
+  "next_evidence_gate": "A real human independently checks original PDF page 86 rightmost two verses with diagram attribution, character order, and complete relevant conditions; signs an actual short ROI review. Then M16.13 and M16.14 private tools produce source-scoped inputs and official pinned Cangjie extractors can run without inventing human approval."
+}
