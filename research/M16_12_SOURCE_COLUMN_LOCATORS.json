@@ -1,0 +1,85 @@
+{
+  "schema": "M16.12_AI_PRELIMINARY_VISIBLE_ORIGINAL_COLUMN_LOCATORS_V1",
+  "method": "AI visually inspected original 1925 scan PDF screenshot; page-specific normalized rectangles are provisional and MUST be checked against high-resolution crop",
+  "document_warning": "Both image location and phrase reading require human confirmation for publishing; no complete page transcription is human verified.",
+  "original_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "targets": [
+    {
+      "target_id": "M1612-T01",
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 86,
+      "original_phrase_anchor_id": "M1610-A08",
+      "region": "mouth",
+      "phrase_source_status": "AI_visual_short_phrase_preliminary_only",
+      "original_phrase_preliminary": "兩頭略仰不垂低",
+      "photo_observability": "mouth.corner only, strongly expression-dependent",
+      "shape_only_historical_meaning": "poetic description of slightly raised mouth corners; surrounding predictions are excluded",
+      "original_layout": "adjacent_vertical_columns_in_illustrated_mouth_type_verse",
+      "column_boxes_right_to_left_normalized": [
+        [
+          0.808,
+          0.56,
+          0.86,
+          0.81
+        ],
+        [
+          0.756,
+          0.56,
+          0.808,
+          0.81
+        ]
+      ],
+      "page_image_has_diagrams": true,
+      "eligible_live_rule": false
+    },
+    {
+      "target_id": "M1612-T02",
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 27,
+      "original_phrase_anchor_id": "M1610-A03",
+      "region": "eye",
+      "phrase_source_status": "AI_visual_short_phrase_preliminary_only",
+      "original_phrase_preliminary": "眼須要含藏不露",
+      "photo_observability": "weak, not equivalent to eye opening ratio",
+      "shape_only_historical_meaning": "historical eye appearance phrase with figurative terms",
+      "original_layout": "single_vertical_column_in_facial_feature_paragraph",
+      "column_boxes_right_to_left_normalized": [
+        [
+          0.595,
+          0.278,
+          0.655,
+          0.8
+        ]
+      ],
+      "page_image_has_diagrams": false,
+      "eligible_live_rule": false
+    },
+    {
+      "target_id": "M1612-T03",
+      "source_id": "nlc-44091",
+      "pdf_page_zero_based": 27,
+      "original_phrase_anchor_id": "M1610-A01",
+      "region": "mouth",
+      "phrase_source_status": "AI_visual_short_phrase_preliminary_only",
+      "original_phrase_preliminary": "口須方大",
+      "photo_observability": "mouth.width partially, no historical threshold",
+      "shape_only_historical_meaning": "traditional mouth width and square shape wording, not measurable as a complete named face type",
+      "original_layout": "single_vertical_column_in_facial_feature_paragraph",
+      "column_boxes_right_to_left_normalized": [
+        [
+          0.468,
+          0.278,
+          0.538,
+          0.8
+        ]
+      ],
+      "page_image_has_diagrams": false,
+      "eligible_live_rule": false
+    }
+  ],
+  "full_page_human_reviewed_count": 0,
+  "user_report_rules_activated": 0
+}

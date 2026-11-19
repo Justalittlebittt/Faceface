@@ -228,6 +228,31 @@ python -m scripts.cangjie_working_corpus --scan-dir C:/faceface-corpus/scans --o
 
 **私有目录的长文本没有在公开GitHub发布，仓颉确定性分块也不等于五类Agent蒸馏。** M16.8应对这份有268页覆盖状态的`source_unverified`工作语料运行官方Adler和五个独立提取器，输出候选及覆盖审计，之后来源抽检并选择可由正脸/侧脸照片触发的条目；只验证拟上线条目，不将全书人审当成知识候选挖掘阻塞。
 
+## M16.12｜原图列定位与私有单短句校勘工具
+
+**实测：** [原版PDF裁列真OCR Action #44458691274](https://github.com/Justalittlebittt/Faceface/actions/runs/44458691274)；[代码PR #34](https://github.com/Justalittlebittt/Faceface/pull/34)；[可核证据](../research/M16_12_REAL_ORIGINAL_COLUMN_OCR_EVIDENCE.json)；[原图列坐标](../research/M16_12_SOURCE_COLUMN_LOCATORS.json)。
+
+前期直接查看1925年PDF1**零起第86页**，发现图谱下方「口角光明唇兩齊……兩頭略仰不垂低」一类传统诗诀处于**右起相邻两根竖列**；这与“同一条OCR输出行”完全不同。下一步不能胡乱把多列OCR混为一条“原著引文”。M16.12实现`scripts.cangjie_original_column_roi`：按原书PDF源SHA和页码，从完整原始页剪出有**物理位置**的竖列，逆时针旋转90°、放大2倍，让真实PP-OCRv5逐块识别。识别结果分别标记`单行命中`、`同一物理列命中`、`仅按实际右起相邻两列重组命中`三种证据，三者不能偷换。
+
+**真实测试结果为负：** PDF1零起p086的口角诗句2列、p027的眼形1列、口宽1列，总共**4个真实PP-OCRv5图片推理，3个短句目标全部0条完整检出**。p086两列仅24个未经校勘汉字、p027眼列27字与口宽列13字，无法认为文本可信。特别是口宽`口須方大`此前在220dpi**整页**能检出，这次狭窄转正裁列反而检不出，说明猜测列边界/切掉上下上下文也可能损害OCR。**此次没有自动修复竖排古籍识别，也没有获得任何已核对原著短句。**
+
+**私有本地短句校勘**（不同于M16.5“必须把整页全部誊写才能签审”的流程）：用新的`scripts.cangjie_source_short_review`工具；只有在真实Windows本机亲自对照原图/裁列修正字符后，才由具名真人签署一条短句ROI。校勘记录包括原版PDF SHA、p086数字零起页码、原图裁剪PNG哈希、原来的AI初读文字与人工修订文字、传统形态/断语/图谱/不确定分类、具名校勘人和时间。**原书短句人审记录不等于整页人审，不计入0/268全页校勘，也绝不自动新增网站规则。**
+
+本地Windows/Codex仓库根目录运行。原书两份PDF请按照M16.7在`C:/faceface-corpus/scans/part1.pdf`、`part2.pdf`使用固定SHA底本，并安装Poppler和PaddleOCR：
+
+~~~powershell
+# 第一步：在本机真正生成可用图像裁剪+候选OCR（GitHub CI的私有临时图像不会保存到用户本机）
+python -m scripts.cangjie_original_column_roi --scan-dir C:/faceface-corpus/scans --private-root C:/faceface-corpus/m16-12-region-work --source-region-locators research/M16_12_SOURCE_COLUMN_LOCATORS.json --source-phrases research/M16_10_ORIGINAL_IMAGE_PHRASE_PILOT.json --out C:/faceface-corpus/m16-12-region-metadata.json
+
+# 第二步：先目视查看原本原书p086两列裁图（请对原PDF完整页重新核对左右列及图谱关系）
+explorer C:/faceface-corpus/m16-12-region-work/original-source-column-crops/nlc-44091/086
+
+# 第三步：必须真实核对原图才可执行此条签审命令；文中“核实后的原文”只是输入占位，不代表已完成签审
+python -m scripts.cangjie_source_short_review --scan-dir C:/faceface-corpus/scans --private-root C:/faceface-corpus/m16-12-region-work --target-id M1612-T01 --reviewer "实际校勘人姓名或ID" --text "此处输入真人逐字核实后的原文" --classification observable_morphology --confirmed-from-image --note "记录不确定字、图谱对应和版式"
+~~~
+
+分类可用`observable_morphology`（可能是可观察形态）、`historical_assertion`（古代人生断语）、`figure_label`（图谱标题）和`uncertain`（原字读不清）。只有**真人已核对原图 + 短句类别为observable_morphology**才能进入*下一步仓颉来源限定语义研究池*，仍不允许进入Faceface网站的正式报告。不能由ChatGPT/Codex/CI工具代用户点击“已看原图”或自动署名。局部范围/图示边界如发现定位偏差，应先重新确定ROI并保存来源约束，而非隐瞒错页。
+
 ## M16.11｜原书竖排识别：为什么不能直接把220dpi上线
 
 **真实两次Action：** [6页13短句4配置开发试验](https://github.com/Justalittlebittt/Faceface/actions/runs/44246356697) · [另外7页12短句的独立留出原图试验](https://github.com/Justalittlebittt/Faceface/actions/runs/44247442594) · [总证据文件](../research/M16_11_REAL_OCR_PREPROCESSING_AND_HOLDOUT_EVIDENCE.json) · [PR #33](https://github.com/Justalittlebittt/Faceface/pull/33)。

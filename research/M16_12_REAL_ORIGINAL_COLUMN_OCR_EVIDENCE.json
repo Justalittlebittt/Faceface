@@ -1,0 +1,67 @@
+{
+  "milestone": "M16.12",
+  "result_kind": "ACTUAL_1925_ORIGINAL_PAGE_NARROW_VERTICAL_COLUMN_OCR_AND_LOCAL_SHORT_REGION_REVIEW_GATE",
+  "source_original_1925_pdf_sha256": {
+    "nlc-44091": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "nlc-44092": "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7"
+  },
+  "actual_github_action": "https://github.com/Justalittlebittt/Faceface/actions/runs/44458691274",
+  "original_PDF_zero_based_pages_tested": [
+    "nlc-44091:p027",
+    "nlc-44091:p086"
+  ],
+  "actual_physical_original_image_columns_cropped_and_recognized": 4,
+  "actual_AI_visual_preliminary_short_anchors_tested": 3,
+  "exact_matching_original_short_phrases_in_one_OCR_line": 0,
+  "exact_matching_original_short_phrases_in_single_physical_column": 0,
+  "exact_matching_only_by_explicitly_adjacent_historical_source_column_join": 0,
+  "target_details": [
+    {
+      "target_id": "M1612-T01",
+      "page_id": "nlc-44091:p086",
+      "region": "mouth",
+      "original_visual_phrase_reference_id": "M1610-A08",
+      "source_columns": 2,
+      "generated_OCR_candidate_han_count": 24,
+      "exact_match": false,
+      "layout_only_join": false,
+      "photo_relevant_shape": "mouth-corner direction; expression-dependent",
+      "source_location_review_status": "AI-screenshot normalized coordinate proposal, NOT independently human confirmed"
+    },
+    {
+      "target_id": "M1612-T02",
+      "page_id": "nlc-44091:p027",
+      "region": "eye",
+      "original_visual_phrase_reference_id": "M1610-A03",
+      "source_columns": 1,
+      "generated_OCR_candidate_han_count": 27,
+      "exact_match": false,
+      "photo_relevant_shape": "figurative eye appearance; cannot equate to eyes.openness",
+      "source_location_review_status": "AI-screenshot normalized coordinate proposal, NOT independently human confirmed"
+    },
+    {
+      "target_id": "M1612-T03",
+      "page_id": "nlc-44091:p027",
+      "region": "mouth",
+      "original_visual_phrase_reference_id": "M1610-A01",
+      "source_columns": 1,
+      "generated_OCR_candidate_han_count": 13,
+      "exact_match": false,
+      "photo_relevant_shape": "mouth width; previously recovered with 220dpi full-page but not after ROI cropping",
+      "source_location_review_status": "AI-screenshot normalized coordinate proposal, NOT independently human confirmed"
+    }
+  ],
+  "previous_m16_11_original_full_220dpi_at_p027_recovers_mouth_width": true,
+  "lesson": "Manually approximated narrow column crop plus CCW90 rotation LOST even a 220dpi-fullpage successful mouth width anchor; photo target coordinates and line recognition must be checked visually rather than assuming that ROI/rotation improves source fidelity.",
+  "private_local_workflow": [
+    "scripts/cangjie_original_column_roi.py",
+    "scripts/cangjie_source_short_review.py"
+  ],
+  "signed_real_human_review_record_created_in_this_run": false,
+  "complete_original_pdf_page_transcriptions_human_reviewed": 0,
+  "directly_source_confirmed_phrases_admitted_to_cangjie": 0,
+  "official_Cangjie_Adler_or_five_semantic_extractors_executed": false,
+  "new_live_Faceface_rules": 0,
+  "files_in_public_repository_are_metadata_and_provisional_short_reference_phrases_only": true,
+  "next_source_work": "Use manually zoomed original page screenshot / crop review to verify physical column coordinates and characters, then human-attest short-region source text in private workspace; no further blind global DPI or generic OCR model sweeps."
+}

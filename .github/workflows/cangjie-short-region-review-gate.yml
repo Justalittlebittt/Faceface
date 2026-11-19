@@ -1,0 +1,29 @@
+name: M16.12 private original short-ROI human review gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-short-region-review-gate.yml"
+      - "scripts/cangjie_source_short_review.py"
+      - "tests/test_cangjie_source_short_review.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  short-original-region-review-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Pillow for cropped source-image geometry unit tests
+        run: python -m pip install --quiet Pillow
+      - name: Test short ORIGINAL image review records are not automatically signable or publishable
+        run: |
+          python -m unittest discover -s tests -p "test_cangjie_source_short_review.py" -v
+          python -m unittest discover -s tests -p "test_cangjie_original_column_roi.py" -v
+          echo "Short-ROI review schema tested. No real human original-source review was performed."
