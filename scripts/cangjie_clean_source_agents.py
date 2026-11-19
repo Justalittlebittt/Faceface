@@ -208,7 +208,7 @@ class OllamaClient:
     def infer(self,system:str,user:str,schema:dict)->dict:
         payload={
             "model":self.model,"stream":False,"format":schema,
-            "options":{"temperature":0,"num_predict":600,"num_ctx":4096},
+            "options":{"temperature":0,"num_predict":900,"num_ctx":4096},
             "messages":[{"role":"system","content":system},
                         {"role":"user","content":user}],
         }
@@ -341,7 +341,7 @@ def run_agents(
             "确实没有案例或反例时允许返回空候选。"
             "输出严格JSON，只分析历史面部形态与文化术语，"
             "绝不预测真人命运、健康或性格。"
-            "\n官方源文件原文节选：\n"+txt[role][:1800]
+            "\n官方源文件原文节选：\n"+txt[role][:1200]
         )
         user=(
             "从下列原书短引文中挑最多2条真正符合你角色的内容。"
@@ -354,14 +354,41 @@ def run_agents(
         )
         record={"role":role,"actual_independent_Ollama_inference":False,
                 "schema_valid":False,"source_id_matched_candidates":0,
-                "rejected_candidate_count":0,"error_type":None}
+                "rejected_candidate_count":0,"error_type":None,
+                "real_model_requests_attempted":0,
+                "first_response_invalid_JSON":False,
+                "rejected_candidate_reasons":[]}
         try:
-            output=model.infer(system,user,ROLE_FORMAT)
+            record["real_model_requests_attempted"]+=1
+            try:
+                output=model.infer(system,user,ROLE_FORMAT)
+            except json.JSONDecodeError:
+                # The preceding REAL original-source experiment completed only
+                # 3/5 roles: case + counter_example emitted malformed JSON.
+                # ONE more REAL independent request for that same role uses
+                # an even shorter (still pinned upstream-derived) instruction,
+                # the SAME fixed source references and the SAME JSON schema.
+                # No mock/empty answer is silently substituted.
+                record["first_response_invalid_JSON"]=True
+                short_system=(
+                    "仓颉固定官方角色："+role+"。请严格使用JSON Schema返回一个对象。"
+                    "若输入确实没有这种类型的古籍证据，返回 {\"candidates\": []}。"
+                    "有证据时仅返回1条，quote_id为0到12整数，其他字段简短。"
+                    "禁止编造引文、当代人格和命运判断。"
+                    "\n固定仓颉原版角色提示节选：\n"+txt[role][:650]
+                )
+                short_user=(
+                    "同一原书来源13条短句，仅重新请求JSON格式，不改变参考资料。"
+                    "输出仅JSON，没有Markdown或解释。\n"+clean_input
+                )
+                record["real_model_requests_attempted"]+=1
+                output=model.infer(short_system,short_user,ROLE_FORMAT)
             record["actual_independent_Ollama_inference"]=True
             accepted,rejected=accept_role_candidates(output,role,sources)
             record["schema_valid"]=True
             record["source_id_matched_candidates"]=len(accepted)
             record["rejected_candidate_count"]=len(rejected)
+            record["rejected_candidate_reasons"]=rejected
             entries.extend(accepted)
         except (ValueError,KeyError,TypeError,OSError,HTTPError) as exc:
             record["error_type"]=type(exc).__name__
@@ -391,6 +418,9 @@ def run_agents(
         "Adler_scope":"13_SHORT_V5_LEGACY_PHRASES_NOT_268_PAGE_BOOK",
         "adler_failure_type":adler_error,
         "independent_real_extractor_roles_attempted":len(call_stats),
+        "real_model_requests_including_strict_JSON_retries":sum(
+            x["real_model_requests_attempted"] for x in call_stats
+        ),
         "independent_real_extractor_role_calls_completed":sum(
             r["actual_independent_Ollama_inference"] for r in call_stats
         ),
