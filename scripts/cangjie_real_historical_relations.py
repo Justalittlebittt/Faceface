@@ -151,15 +151,15 @@ def run_relation_agents(sources: list[dict], model: OllamaClient, official: dict
         # The historical claim may be absent. Never fill it from physiognomy lore.
         system = (
             "你正在使用固定版仓颉方法研究《麻衣相法》的传统相貌论述。"
-            "将外形、传统断语、条件、例外分开。只返回输入引文中逐字连续出现的片段。"
-            "引文没有财富寿命品德等说法就不要补写，也不得对真人作事实性推测。"
+            "先从引文逐字找出面部形态片段和传统断语片段，再根据断语片段归类。条件与例外另列。所有非空片段须逐字存在于原文。"
+            "断语含壽/寿/夭对应longevity；含富/貴/贵/財/财/祿/禄/貧/贫对应wealth；仅有德/仁/忠/孝/善/惡/奸/賢/愚等伦理字才选moral_character。不能因为古籍谈面相就默认品德；没有断语必须空字符串与none。绝不对真人预测。"
             "返回严格JSON。官方仓颉术语/原则提示节选：\n"
             + official["glossary"][:850] + "\n" + official["principle"][:850]
         )
         user = (
             f"quote_id: {i}\n古籍短引文: {src['source_excerpt']}\n"
-            "只抽取本条引文有确切原字依据的形态、命运或性情等传统观点，"
-            "缺少的字段用空字符串。不要返回别的quote_id。"
+            "必须先复制形貌文字和传统断语文字的原字，再做断语领域分类；"
+            "若只有形貌没有富贵寿夭等断语，claim_span要为空、claim_domain要为none。缺少的字段用空字符串。不要返回别的quote_id。"
             "每条原文最多输出两条关系。"
         )
         calls += 1
