@@ -70,6 +70,15 @@ class PrivateOCRBatchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             read_private_cues([self.path])
 
+    def test_real_one_character_OCR_cues_are_counted_and_excluded(self):
+        one = dict(self.row, cue_id="d"*24,
+                   short_ocr_line_unverified="壽")
+        self.save([self.row, one])
+        rows, stats = read_private_cues([self.path])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(stats["excluded_private_cues_by_reason"]["single_character_OCR_line_not_modelable"], 1)
+        self.assertEqual(stats["raw_lexical_domain_memberships"]["longevity"], 2)
+
     def test_missing_file_or_empty_source_does_not_create_fake_progress(self):
         with self.assertRaises(ValueError):
             read_private_cues([Path(self.temp.name)/"missing.jsonl"])
