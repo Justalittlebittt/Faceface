@@ -1,0 +1,23 @@
+{
+  "schema": "M16.18_POST_CLASSIFICATION_GATE_ACTUAL_RUN_V1",
+  "run_id": 44481827584,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44481827584",
+  "git_commit_sha": "6e78945ad1e33ea27a54f389b299a03674a255ac",
+  "actual_local_qwen3_4b_model_requests": 3,
+  "source_short_excerpts": 3,
+  "source_literally_grounded_candidate_count_after_domain_gate": 0,
+  "rejected_model_output_count": 2,
+  "reported_domain_memberships": {
+    "wealth": 0,
+    "longevity": 0,
+    "moral_character": 0,
+    "other_domains": 0
+  },
+  "workflow_conclusion": "success",
+  "source_coverage": "3 preexisting V5 short excerpts, not complete original book; source reviews are prior AI visual spots, not human independently signed",
+  "judgment": "Guard prevented unsupported candidate promotion; experiment does not establish accurate longevity extraction. Model results remain unusable for production.",
+  "evidence_limit": "Aggregate result cannot independently show each private candidate text or why each failed; original quote/model output retained only ephemeral runner storage.",
+  "human_signed_source_pages": 0,
+  "new_live_rules": 0,
+  "next": "Improve generation instructions or use separate deterministic phrase segmentation with explicit provenance. Rerun on pinned source and log rejection reason counts without private quotes."
+}
