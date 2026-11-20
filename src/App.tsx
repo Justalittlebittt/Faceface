@@ -646,6 +646,36 @@ export default function App() {
                         </article>
                       ))}
                     </div>
+                    {reading.modernReflections.length > 0 && (
+                      <section className="editorial-reflections"
+                        aria-label={language === "en" ? "Everyday reflection prompts" : "日常反思卡片"}>
+                        <div className="editorial-reflections-header">
+                          <span className="editorial-kicker">
+                            {language === "en" ? "A MOMENT TO REFLECT" : "一个值得想想的时刻"}
+                          </span>
+                          <h4>{language === "en" ? "See beyond the first impression" : "不止于第一眼的印象"}</h4>
+                          <p>{language === "en"
+                            ? "Inspired by the imagery of the old text, written in plain language for today. These are invitations to reflect, not personality facts inferred from your face."
+                            : "借古籍的形态意象展开，用今天能理解的话说生活。以下是邀请你思考的场景，不是根据面相得出的性格事实。"}</p>
+                        </div>
+                        <div className="editorial-reflection-grid">
+                          {reading.modernReflections.map((item, index) => (
+                            <article className="editorial-story" key={item.sourceCardId}>
+                              <span className="editorial-story-index">{String(index + 1).padStart(2, "0")} / {reading.modernReflections.length.toString().padStart(2, "0")}</span>
+                              <h5>{item.theme}</h5>
+                              <p className="editorial-story-scene">{item.scene}</p>
+                              <div className="editorial-story-question">
+                                <span>{language === "en" ? "A QUESTION FOR YOU" : "留给你的问题"}</span>
+                                <p>{item.question}</p>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                        <p className="editorial-footnote">{language === "en"
+                          ? "Contemporary editorial writing · Not an ancient quotation, diagnosis or prediction."
+                          : "现代编辑文字 · 并非古籍原句、人格诊断或命运预测。"}</p>
+                      </section>
+                    )}
                     <p className="reflection">{reading.reflection}</p>
                     <details className="source-details">
                       <summary>{t(language, "expandedTitle")}</summary>
