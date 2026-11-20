@@ -1,0 +1,47 @@
+{
+  "milestone": "M16.25",
+  "kind": "REAL_1925_ORIGINAL_PP_OCR_QWEN_PRIVATE_WORKPACK_AND_DIGEST_RESUME_INTEGRATION",
+  "run_id": 44678730350,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44678730350",
+  "source_id": "nlc-44091",
+  "pdf_zero_based_pages": [
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83
+  ],
+  "original_source_pdf_SHA256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+  "actual_original_scan_pages_ocr_processed": 7,
+  "actual_qwen3_4b_instruct_model_requests": 3,
+  "real_model_digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+  "unreviewed_source_OCR_literal_model_drafts": 4,
+  "domain_draft_memberships": {
+    "wealth": 2,
+    "moral_character": 1,
+    "none": 1
+  },
+  "model_rejected_outputs": {
+    "claim_domain_not_supported_by_literal_span": 2
+  },
+  "distinct_actual_original_pdf_page_pngs_in_private_review_pack": 3,
+  "private_pipeline_stages": [
+    "ocr",
+    "lexical",
+    "selected",
+    "inferred",
+    "review_pack"
+  ],
+  "resume_revalidated_all_five_private_stage_digests_without_reinference": true,
+  "unit_tests_contract_success": true,
+  "web_checks_success": true,
+  "human_reviewed_original_pages": 0,
+  "independently_verified_historical_relationships": 0,
+  "complete_original_book_cangjie_five_extractor_run": false,
+  "new_faceface_live_rules": 0,
+  "private_original_text_or_images_uploaded_as_public_artifact": false,
+  "runner_private_data_survives_runner_shutdown": false,
+  "critical_qualification": "The real live GitHub runner generated and reloaded all five private stage artifacts during that single runner session; GitHub's runner-local directory is ephemeral. Durable long-term retention requires the user to run the same CLI inside a privately backed up persistent Windows workspace outside the public repository. No actual original OCR/model text is retained in this public JSON evidence. Candidates are unreviewed OCR literal spans, not human-confirmed antique claims."
+}
