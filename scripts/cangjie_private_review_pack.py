@@ -208,14 +208,101 @@ def build_pack(record_path: Path, scan_dir: Path, out_dir: Path, dpi: int=150) -
     return summary
 
 
+DECISION_STATES = {"pending", "short_span_confirmed", "OCR_mismatch",
+                   "ambiguous_original", "out_of_scope"}
+
+
+def audit_manual_decisions(pack_dir: Path, output: Path) -> dict:
+    """Audit human *short-span* annotations only; never produce a live rule.
+
+    Reading "short_span_confirmed" is only an assertion by a named human
+    comparing the PNG. It is NOT an independent check of reading accuracy
+    or a signed full-page transcription.
+    """
+    pack_dir = pack_dir.resolve()
+    output = output.resolve()
+    if output.exists() or output.is_relative_to(pack_dir):
+        raise ValueError("Audit output must be NEW and outside private review pack")
+    manifest = json.loads((pack_dir/"private-pack-manifest.json").read_text(encoding="utf-8"))
+    evidence = json.loads((pack_dir/"private-OCR-model-evidence.json").read_text(encoding="utf-8"))
+    decisions = json.loads((pack_dir/"private-review-decisions.json").read_text(encoding="utf-8"))
+    if (manifest.get("schema")!="M16.24_PRIVATE_ORIGINAL_PAGE_REVIEW_PACK_V1"
+        or decisions.get("schema")!="M16.24_PRIVATE_SHORT_EXCERPT_DECISIONS_TEMPLATE_V1"
+        or decisions.get("full_page_transcription_reviewed") is not False):
+        raise ValueError("Wrong review pack schema or forged full-page review")
+    rows=decisions.get("items")
+    if not isinstance(rows,list) or len(rows)!=len(evidence):
+        raise ValueError("Review decisions must preserve exact candidate count")
+    expected={x["candidate_id"]:x for x in evidence}
+    seen=set()
+    states=Counter()
+    for row in rows:
+        if not isinstance(row,dict) or row.get("candidate_id") not in expected:
+            raise ValueError("Unexpected review row")
+        cid=row["candidate_id"]
+        if cid in seen:
+            raise ValueError("Duplicate manual review candidate")
+        seen.add(cid)
+        src=expected[cid]
+        if (row.get("source_id")!=src["source_id"]
+            or row.get("pdf_page_zero_based")!=src["pdf_page_zero_based"]
+            or row.get("original_pdf_sha256")!=src["original_pdf_sha256"]
+            or row.get("ocr_excerpt_sha256")!=src["unreviewed_OCR_excerpt_sha256"]):
+            raise ValueError("Review decision source evidence was modified")
+        status=row.get("status")
+        if status not in DECISION_STATES:
+            raise ValueError("Unknown short-span decision")
+        reviewer=row.get("reviewer")
+        confirmed=row.get("confirmed_against_original_page_image")
+        corrected=row.get("manually_corrected_original_text")
+        if not isinstance(corrected,str) or len(corrected)>600:
+            raise ValueError("Manual original text invalid")
+        if not isinstance(row.get("review_notes"),str) or len(row["review_notes"])>1500:
+            raise ValueError("Review notes invalid")
+        if status=="pending":
+            if reviewer or confirmed or corrected or row["review_notes"]:
+                raise ValueError("Pending decision cannot contain review attestation")
+        else:
+            if (not isinstance(reviewer,str) or not 2<=len(reviewer.strip())<=80
+                or reviewer.strip().lower() in {"auto","ocr","agent","bot","model","anonymous"}
+                or confirmed is not True):
+                raise ValueError("Non-pending decisions require a named manual source-image check")
+            if status=="short_span_confirmed" and not corrected.strip():
+                raise ValueError("Confirmed short span needs independently manually corrected text")
+        states[status]+=1
+    if seen!=set(expected):
+        raise ValueError("Missing manual decisions")
+    result={
+        "schema":"M16.24_PRIVATE_REVIEW_DECISION_AUDIT_V1",
+        "short_OCR_spans_by_manual_decision":dict(states),
+        "named_human_short_span_attestations":len(rows)-states["pending"],
+        "new_full_page_verified_transcriptions":0,
+        "original_ancient_text_in_audit":False,
+        "independently_verified_historical_associations":0,
+        "live_rules_created":0,
+        "note":"Manual short-span annotations are not complete-page reviews and are never runtime beliefs.",
+    }
+    atomic_write(output,(json.dumps(result,ensure_ascii=False,indent=2)+"\\n").encode("utf-8"))
+    return result
+
+
 def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--private-record",type=Path,required=True)
-    p.add_argument("--scan-dir",type=Path,required=True)
-    p.add_argument("--out-dir",type=Path,required=True)
+    p.add_argument("--audit-decisions",type=Path,help="Existing private workpack directory; validate manually filled decision JSON")
+    p.add_argument("--audit-output",type=Path,help="New metadata-only decision audit JSON outside pack")
+    p.add_argument("--private-record",type=Path)
+    p.add_argument("--scan-dir",type=Path)
+    p.add_argument("--out-dir",type=Path)
     p.add_argument("--dpi",type=int,default=150)
     a=p.parse_args()
-    build_pack(a.private_record,a.scan_dir,a.out_dir,a.dpi)
+    if a.audit_decisions is not None:
+        if a.audit_output is None:
+            p.error("--audit-output required with --audit-decisions")
+        print(json.dumps(audit_manual_decisions(a.audit_decisions,a.audit_output),ensure_ascii=False))
+    else:
+        if a.private_record is None or a.scan_dir is None or a.out_dir is None:
+            p.error("--private-record, --scan-dir and --out-dir are required for generation")
+        build_pack(a.private_record,a.scan_dir,a.out_dir,a.dpi)
 
 
 if __name__=="__main__":
