@@ -663,10 +663,28 @@ export default function App() {
                             <article className="editorial-story" key={item.sourceCardId}>
                               <span className="editorial-story-index">{String(index + 1).padStart(2, "0")} / {reading.modernReflections.length.toString().padStart(2, "0")}</span>
                               <h5>{item.theme}</h5>
+                              {reading.featuredLinks.filter(link => link.cardId === item.sourceCardId).map(link => (
+                                <div className="editorial-classical-bridge" key={link.cardId}>
+                                  <span>{language === "en" ? "THE CLASSICAL IMAGE" : "古籍中的意象"}</span>
+                                  <p>{language === "en"
+                                    ? (link.historicalGloss || link.historicalTerm)
+                                    : link.historicalTerm}</p>
+                                  <small>{language === "en"
+                                    ? "A partial appearance comparison, not a personality assessment."
+                                    : "仅为外形的局部对照，不是性格判断。"}</small>
+                                  <a href={link.source.source_url} target="_blank" rel="noopener noreferrer">
+                                    {language === "en" ? "Original scanned page" : "查看原书扫描"} · {link.source.volume} · {link.source.pdf_page_zero_based + 1}
+                                  </a>
+                                </div>
+                              ))}
                               <p className="editorial-story-scene">{item.scene}</p>
                               <div className="editorial-story-question">
                                 <span>{language === "en" ? "A QUESTION FOR YOU" : "留给你的问题"}</span>
                                 <p>{item.question}</p>
+                              </div>
+                              <div className="editorial-story-practice">
+                                <span>{language === "en" ? "ONE SMALL THING TO TRY" : "一个可以试试的小行动"}</span>
+                                <p>{item.practice}</p>
                               </div>
                             </article>
                           ))}
