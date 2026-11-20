@@ -1,0 +1,19 @@
+{
+  "milestone": "M16.24",
+  "kind": "PRIVATE_ORIGINAL_SCAN_IMAGE_REVIEW_WORKPACK_REAL_RENDER_SYNTHETIC_MODEL_FIXTURE",
+  "run_id": 44673043066,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44673043066",
+  "unit_tests_passed": 16,
+  "actual_original_PDF_scans_SHA256_verified": true,
+  "actual_scanned_original_PDF_pages_rendered": 1,
+  "input_candidate_fixture": "SYNTHETIC parser contract test; not recovered real M16.23 model output",
+  "new_real_Qwen_model_calls_in_this_run": 0,
+  "private_original_OCR_or_model_text_uploaded": false,
+  "local_original_page_HTML_pack_rendered": true,
+  "source_annotated_manual_decision_template_created": true,
+  "manual_short_excerpt_reviews_completed": 0,
+  "full_original_page_reviews_completed": 0,
+  "new_live_Faceface_rules": 0,
+  "limitation": "The 49 real M16.23 OCR-literal research candidates were in ephemeral GitHub runners and only aggregate metadata survived. This run proves local pack rendering and format validation, not original-line proofreading or preservation of those private candidates. Real user workpack requires retained local M16.22/M16.23 private output.",
+  "next": "Run actual extraction with durable private output; generate workpack; manually compare original page images, then audit reviewer-signed short spans."
+}
