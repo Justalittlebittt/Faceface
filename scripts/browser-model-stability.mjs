@@ -139,6 +139,14 @@ try {
       throw new Error(variant.name + ": no report. " +
         await page.locator(".error-message").allTextContents());
     }
+    // Product now defaults to quick life reading: source metrics are opt-in.
+    const detailed=page.getByRole("button",{name:"详细版"});
+    if (await page.locator(".observations").count()!==0 ||
+        await page.locator(".source-detail").count()!==0 ||
+        await page.locator(".life-reading-brief").count()!==1) {
+      throw new Error("M8 stability test: brief mode unexpectedly exposed detailed source data");
+    }
+    await detailed.click();
     await page.getByRole("button", { name: "查看计算依据" }).click();
     const snapshot = await page.evaluate(({ descriptorIds, sourceIds }) => {
       const observations = Array.from(document.querySelectorAll(".observation"));

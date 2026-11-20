@@ -110,10 +110,10 @@ try {
   if (!robots?.includes("noindex")) throw new Error("Preview must remain noindex");
   // The actual international preview defaults to English, without persistent storage.
   const initialHeading = await page.locator(".hero h1").textContent();
-  if (!initialHeading?.includes("Read facial features")) throw new Error("English must be default");
+  if (!initialHeading?.includes("Discover your face")) throw new Error("English must be default");
   await page.getByRole("button", { name: "Switch language / 切换语言" }).click();
   const localHeading = await page.locator(".hero h1").textContent();
-  if (!localHeading?.includes("让面部形态")) throw new Error("Chinese UI toggle failed");
+  if (!localHeading?.includes("看面相")) throw new Error("Chinese UI toggle failed");
   if (engine === "webkit") {
     // WebKit's headless CanvasCaptureStream fixture may not deliver frames.
     // This tests the real model on the actual picture via our optional local-file
@@ -205,6 +205,39 @@ try {
        document.querySelector(".processing-layer") === null);
   }, { timeout: 90000 });
 
+  // Short life reading MUST be the initial display: no source citations,
+  // unreviewed technical diagnostics, or inferred "known" past life history.
+  const briefButton=page.getByRole("button",{name:"简要版"});
+  const detailButton=page.getByRole("button",{name:"详细版"});
+  if (await briefButton.getAttribute("aria-pressed") !== "true" ||
+      await page.locator(".life-reading-brief").count() !== 1 ||
+      await page.locator(".observations").count() !== 0 ||
+      await page.locator(".source-details").count() !== 0) {
+    throw new Error("Brief traditional-life mode must be default and hide source/geometry audit");
+  }
+  const shortText=await page.locator(".life-reading-brief").textContent();
+  if (!shortText?.includes("过往") || !shortText.includes("未来") ||
+      shortText.includes("PDF 零起页") || shortText.includes("原书扫描")) {
+    throw new Error("Brief life-reading story is missing or leaks technical book citation");
+  }
+  // Save the *brief* version and assert no ancient source text is exposed.
+  const [briefDownload]=await Promise.all([
+    page.waitForEvent("download",{timeout:15000}),
+    page.getByRole("button",{name:"保存或分享面相解读"}).click()
+  ]);
+  const briefPath=await briefDownload.path();
+  if (!briefPath) throw new Error("Brief report download missing");
+  const briefFile=await readFile(briefPath,"utf8");
+  if (!briefFile.includes("回看过往") || !briefFile.includes("未来走势") ||
+      briefFile.includes("PDF 零起页") || briefFile.includes("古籍文化解读")) {
+    throw new Error("Brief file contains detailed original sources or is missing life-reading sections");
+  }
+  await detailButton.click();
+  if (await detailButton.getAttribute("aria-pressed") !== "true" ||
+      await page.locator(".observations").count() !== 1 ||
+      await page.locator(".source-details").count() !== 1) {
+    throw new Error("Detailed switch did not reveal the original text and source audit");
+  }
   // Use the existing user-facing measurement toggle; do not export face coordinates.
   await page.getByRole("button", { name: "查看计算依据" }).click();
   const measuredRatios = await page.locator(".observation small").allTextContents();
@@ -268,7 +301,7 @@ try {
   }
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    page.getByRole("button", { name: "保存或分享文化报告" }).click()
+    page.getByRole("button", { name: "保存或分享面相解读" }).click()
   ]);
   const downloadedPath = await download.path();
   if (!downloadedPath) throw new Error("No downloadable report file");
@@ -367,6 +400,12 @@ try {
     : "dist/ci-portrait.jpg";
   await page.locator('input[aria-label="Choose a second photo of the same person"]')
     .setInputFiles(secondPhoto);
+  // A previous report may still be in the DOM while the new local image
+  // decodes. Wait for it to disappear before asserting the new default tab.
+  await page.waitForSelector(".report", { state: "hidden", timeout: 30000 });
+  await page.waitForSelector(".life-reading-brief", { state: "visible", timeout: 90000 });
+  // The test switched the site to ENGLISH before comparing the second photo.
+  await page.getByRole("button", { name: "Detailed Reading" }).click();
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
   if (comparisonStats.join("|") !== "0 / 10|0 / 10") {

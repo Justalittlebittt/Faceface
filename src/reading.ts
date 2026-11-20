@@ -2,6 +2,7 @@ import catalog from "./knowledge/maiyi-source-checked-v5.json" with { type: "jso
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 import { modernReflectionForCard, type EditorialReflection } from "./editorial.ts";
+import { buildSpeculativeLifeReading, type LifeReadingCard } from "./lifeReading.ts";
 
 /**
  * M2 seed: source-linked cultural notes, not historical trait classifiers.
@@ -74,6 +75,7 @@ export type FaceReading = {
   featuredLinks: CulturalLink[];
   briefInsights: string[];
   modernReflections: EditorialReflection[];
+  lifeNarratives: LifeReadingCard[];
   frameworkNotes: HistoricalFramework[];
   threeSections: ThreeSectionsReading | null;
   reflection: string;
@@ -334,6 +336,7 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     briefInsights,
     modernReflections: featuredLinks.map(link => modernReflectionForCard(link.cardId, language))
       .filter((item): item is EditorialReflection => item !== null),
+    lifeNarratives: buildSpeculativeLifeReading(featuredLinks.map(link => link.cardId), language),
     frameworkNotes,
     threeSections,
     reflection: language === "en"
@@ -343,6 +346,34 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
       ? "Source: Mai Yi Xiang Fa (麻衣相法), 1925 Wenming Press edition with Qin Shen'an collation. Verified scan references: volume 1 'General Discussion of the Five Features' (五官总论), PDF page 27; 'Five Mountains' (五岳), page 27; 'Four Rivers' (四渎), page 28; illustrated eye category on PDF page 66, mouth illustrations on pages 86–87, plus 'On the Face' on page 52 and 'On the Nose' on page 77 (printed volume 2); the 'Catfish-mouth' illustration in 'On the Mouth' on page 89 (printed volume 2), and 'Three Talents and Three Sections' (三才三停) on page 34 and the 'Three Sections' passage on page 35 (printed volume 1). All PDF pages are zero-based and refer to the same Wikimedia digital file labelled 第1卷. English glosses are explanatory, not an authoritative translation. Modern geometry thresholds do not originate in the book."
       : "依据：1925年文明书局秦慎安校勘《麻衣相法》，已核对卷一《五官总论》《五岳》（PDF零起页27）、《四渎》（页28），及印刷卷二《相目》《相口》图例（同一数字文件PDF零起页66、86、87、89）、卷二《论面》（页52）和《相鼻》（页77）、卷一《三才三停》（页34）及《三停》（页35）。现代几何阈值是项目实验设定，并非古籍原文；英文释义非权威译文。"
   };
+}
+
+/** User-facing report export defaults to concise, not research details. */
+export function shortLifeReadingAsText(reading: FaceReading, language: Language = "en"): string {
+  const en = language === "en";
+  const parts=[
+    en ? "FACEFACE | YOUR LIFE READING" : "FACEFACE｜人生面相解读",
+    en ? "A traditional, speculative interpretation. Not a factual account of your past or a reliable forecast." :
+      "传统相术主题的推演，不代表已知晓你的过往，也不保证未来预测准确。",
+    ""
+  ];
+  if (!reading.lifeNarratives.length) {
+    parts.push(en
+      ? "This photograph does not provide enough supported appearance details for a specific traditional life story. We will not invent one."
+      : "这张照片缺少足够的外形线索，无法给出有依据的传统生平推演；系统不会凭空编造。");
+  } else {
+    for(const item of reading.lifeNarratives){
+      parts.push(item.title,
+        (en?"TEMPERAMENT THEME: ":"性情主题：")+item.temperament,
+        (en?"LOOKING BACK (POSSIBILITY): ":"回看过往（推测）：")+item.retrospective,
+        (en?"LOOKING AHEAD (POSSIBILITY): ":"未来走势（推测）：")+item.outlook,
+        "");
+    }
+  }
+  parts.push(en
+    ? "Check the past suggestions against your own experience. A resemblance does not validate the prediction. Open Detailed Reading for the exact original source and limitations."
+    : "请自行核对过往的描述；即使有所相似也不代表预测得到验证。原书出处和判断限制见详细版。");
+  return parts.join("\n");
 }
 
 export function readingAsText(reading: FaceReading, language: Language = "zh"): string {
