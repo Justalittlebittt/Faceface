@@ -530,7 +530,7 @@ test("past and future interpretations are explicitly uncertain and never claim v
     }
     const text=shortLifeReadingAsText(reading,lang);
     assert.doesNotMatch(text,/We know you|It is proven|You definitely experienced|我们证明了|你一定经历过/);
-    assert.match(text,lang==="en" ? /not known facts/i : /不是已知的过去事实/);
+    assert.match(text,lang==="en" ? /not a factual account/i : /不是已知的过去事实/);
   }
 });
 
