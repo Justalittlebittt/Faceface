@@ -475,3 +475,31 @@ test("different eligible source shapes produce different editorial scenes, not a
     b.modernReflections.map(x => x.sourceCardId));
   assert.ok(b.modernReflections.some(x => x.question.includes("understood")));
 });
+
+
+test("each displayed modern story offers one bounded action and a traceable original classical source", () => {
+  for (const language of ["en", "zh"]) {
+    const reading = makeReading(ok, language);
+    for (const item of reading.modernReflections) {
+      const link = reading.featuredLinks.find(link => link.cardId === item.sourceCardId);
+      assert.ok(link);
+      assert.equal(link.status, "related-observation");
+      assert.ok(link.source.source_url.includes("commons.wikimedia.org"));
+      assert.ok(item.practice.length >= 18);
+      assert.ok(item.scene.length >= 35);
+      assert.equal(item.provenance, "modern-editorial-reflection");
+    }
+    const exportText = readingAsText(reading, language);
+    assert.ok(exportText.includes(reading.modernReflections[0].practice));
+    assert.ok(exportText.includes(language === "en"
+      ? "One small thing to try:" : "一个可以试试的小行动："));
+  }
+});
+
+test("historical shape notes are never reclassified as scan-backed personality diagnoses", () => {
+  const reading = makeReading(ok, "en");
+  const exported = readingAsText(reading, "en");
+  assert.match(exported, /not translated ancient advice or a facial personality assessment/i);
+  assert.doesNotMatch(exported, /your eyes mean you are|your mouth proves you are|your face reveals your personality/i);
+  assert.ok(reading.sourceLinks.every(link => link.status !== "confirmed"));
+});
