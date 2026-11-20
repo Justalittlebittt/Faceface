@@ -1,0 +1,158 @@
+name: M16.25 real original OCR Qwen persistent-private workspace recovery
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-durable-private-batch.yml"
+      - "scripts/cangjie_durable_private_batch.py"
+      - "tests/test_cangjie_durable_private_batch.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  durable-private-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: No dropped model evidence, no silent private overwrite, reject altered OCR
+        run: |
+          python -m unittest -v tests.test_cangjie_durable_private_batch tests.test_cangjie_private_review_pack
+
+  real-original-durable-private-integration:
+    needs: durable-private-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OLLAMA_HOST: "127.0.0.1:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install actual PP-OCRv5 CPU and Poppler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2 PyYAML
+
+      - name: Download BOTH original 1925 scans and verify SHA-256
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/pinned-1925-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/pinned-1925-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/pinned-1925-originals/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/pinned-1925-originals/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/pinned-1925-originals/part2.pdf" | sha256sum -c -
+
+      - name: Clone fixed official Cangjie prompts and check upstream identity
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/kangarooking/cangjie-skill.git "$RUNNER_TEMP/pinned-cangjie"
+          git -C "$RUNNER_TEMP/pinned-cangjie" checkout --quiet a28de55ba881b9928956a55048f743f7a9e3b23e
+          test "$(git -C "$RUNNER_TEMP/pinned-cangjie" rev-parse HEAD)" = "a28de55ba881b9928956a55048f743f7a9e3b23e"
+          python "$RUNNER_TEMP/pinned-cangjie/scripts/cangjie.py" doctor
+
+      - name: Install Ollama and actual Qwen3 4B Instruct inference weights
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://ollama.com/install.sh -o "$RUNNER_TEMP/install-ollama.sh"
+          sh "$RUNNER_TEMP/install-ollama.sh"
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 50); do
+            curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null && break
+            sleep 2
+          done
+          ollama pull qwen3:4b-instruct
+
+      - name: Actually run ORIGINAL OCR, PRIVATE source lexical cues, real Qwen3 and original PNG workpack
+        shell: bash
+        run: |
+          python -m scripts.cangjie_durable_private_batch \
+            --workspace "$RUNNER_TEMP/PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS" \
+            --scan-dir "$RUNNER_TEMP/pinned-1925-originals" \
+            --upstream "$RUNNER_TEMP/pinned-cangjie" \
+            --source nlc-44091 --start 77 --end 83 --max-cues 3
+
+      - name: Replay same batch with --resume, verify all private digests; no repeat model calls
+        shell: bash
+        run: |
+          python -m scripts.cangjie_durable_private_batch \
+            --workspace "$RUNNER_TEMP/PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS" \
+            --scan-dir "$RUNNER_TEMP/pinned-1925-originals" \
+            --upstream "$RUNNER_TEMP/pinned-cangjie" \
+            --source nlc-44091 --start 77 --end 83 --max-cues 3 --resume
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS"
+          m=json.loads((root/"batch-manifest.json").read_text())
+          assert list(m["completed"])==["ocr","lexical","selected","inferred","review_pack"]
+          paths=list((root/"private"/"review-packets").glob("*/private-pack-manifest.json"))
+          assert len(paths)==1
+          pack=json.loads(paths[0].read_text())
+          assert pack["real_original_PDF_images_rendered"]>=1
+          assert pack["human_full_page_reviews_by_this_build"]==0
+          assert pack["verified_historical_relations"]==0
+          model_files=list((root/"metadata").glob("semantic-*.json"))
+          assert len(model_files)==1
+          summary=json.loads(model_files[0].read_text())
+          assert summary["real_model_requests_attempted"]==3
+          assert summary["new_live_Faceface_rules"]==0
+          print("PASS: REAL ORIGINAL PDF IMAGE + 3 GENUINE QWEN CALLS + PERSISTENT WORKPACK + DIGEST VERIFIED RESUME")
+          print("Original source OCR and model text stay PRIVATE on this runner, not publicly uploaded.")
+          PY
+
+      - name: Export ONLY de-identified aggregate smoke counts (not a private backup)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS"
+          meta=next((root/"metadata").glob("semantic-*.json"))
+          result=json.loads(meta.read_text())
+          pack=next((root/"private"/"review-packets").glob("*/private-pack-manifest.json"))
+          p=json.loads(pack.read_text())
+          out={
+            "kind":"M16.25_REAL_ORIGINAL_1925_PRIVATE_WORKPACK_BOUNDED_CI_SMOKE",
+            "actual_original_1925_pdf_pages_ocr_processed":7,
+            "real_Cangjie_prompt_guided_Qwen_model_calls":result["real_model_requests_attempted"],
+            "unreviewed_OCR_literal_draft_count":result["OCR_literal_draft_relations"],
+            "actual_original_page_PNGs_rendered":p["real_original_PDF_images_rendered"],
+            "existing_private_manifest_verified_on_resume":True,
+            "independently_human_reviewed_pages":0,
+            "full_five_agent_Cangjie_executed":False,
+            "new_live_faceface_rules":0,
+            "model_and_private_original_text_uploaded":False,
+            "runner_storage_is_ephemeral_NOT_a_durable_user_backup":True
+          }
+          Path("m16-25-public-safe-evidence.json").write_text(json.dumps(out,indent=2)+"\n")
+          print(json.dumps(out))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m16-25-aggregate-only-no-private-original-text
+          path: m16-25-public-safe-evidence.json
+          retention-days: 21
+          if-no-files-found: warn
