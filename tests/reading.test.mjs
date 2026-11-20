@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { makeReading, readingAsText } from "../src/reading.ts";
+import { makeReading, readingAsText, shortLifeReadingAsText } from "../src/reading.ts";
 
 const descriptors = [
   { id: "face.aspect", region: "整体脸型", measurement: "face ratio", ratio: 1.4, text: "面部长宽比例相对均衡", caveat: "仅技术观察" },
@@ -502,4 +502,45 @@ test("historical shape notes are never reclassified as scan-backed personality d
   assert.match(exported, /not translated ancient advice or a facial personality assessment/i);
   assert.doesNotMatch(exported, /your eyes mean you are|your mouth proves you are|your face reveals your personality/i);
   assert.ok(reading.sourceLinks.every(link => link.status !== "confirmed"));
+});
+
+test("concise life reading is separated from detailed book citations and source diagnostics", () => {
+  for (const lang of ["en","zh"]) {
+    const reading=makeReading(ok,lang);
+    const brief=shortLifeReadingAsText(reading,lang);
+    assert.equal(reading.lifeNarratives.length, reading.featuredLinks.length);
+    assert.ok(brief.includes(lang==="en" ? "LOOKING BACK" : "回看过往"));
+    assert.ok(brief.includes(lang==="en" ? "LOOKING AHEAD" : "未来走势"));
+    assert.ok(brief.includes(lang==="en" ? "TEMPERAMENT" : "性情主题"));
+    assert.doesNotMatch(brief, /source_url|Wenming Press|PDF zero-based page|扫描 PDF 零起页|原书位置|出典|《麻衣相法》/);
+    const detailed=readingAsText(reading,lang);
+    assert.match(detailed, lang==="en" ? /Original scan/ : /原始文件/);
+  }
+});
+
+test("past and future interpretations are explicitly uncertain and never claim verification", () => {
+  for (const lang of ["en","zh"]) {
+    const reading=makeReading(ok,lang);
+    for (const item of reading.lifeNarratives) {
+      assert.equal(item.attribution,"speculative-modern-reading");
+      assert.ok(reading.featuredLinks.some(link=>link.cardId===item.sourceCardId));
+      assert.ok(item.temperament.length>30);
+      assert.ok(item.retrospective.length>35);
+      assert.ok(item.outlook.length>35);
+    }
+    const text=shortLifeReadingAsText(reading,lang);
+    assert.doesNotMatch(text,/We know you|It is proven|You definitely experienced|我们证明了|你一定经历过/);
+    assert.match(text,lang==="en" ? /not known facts/i : /不是已知的过去事实/);
+  }
+});
+
+test("no matching photographed shape produces no fabricated historical personal past", () => {
+  const noSource={...ok,descriptors:descriptors.map(d=>
+    d.id==="eyes.openness"?{...d,ratio:.25,text:"middle eye opening"}:d)};
+  const reading=makeReading(noSource,"en");
+  assert.equal(reading.featuredLinks.length,0);
+  assert.equal(reading.lifeNarratives.length,0);
+  const short=shortLifeReadingAsText(reading,"en");
+  assert.match(short,/will not invent one/i);
+  assert.doesNotMatch(short,/LOOKING BACK \(POSSIBILITY\)/);
 });
