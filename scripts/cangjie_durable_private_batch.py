@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 
 from scripts.cangjie_corpus_stage import SCANS
@@ -22,7 +23,7 @@ from scripts.cangjie_paddleocr_candidates import batch as run_original_ocr
 from scripts.cangjie_outcome_ocr_audit import audit_shard
 from scripts.cangjie_semantic_batch_plan import plan_private_shard
 from scripts.cangjie_private_ocr_semantic_batch import run_private_batch, read_private_cues
-from scripts.cangjie_private_review_pack import assemble_review_items, build_pack
+from scripts.cangjie_private_review_pack import assemble_review_items, build_pack, audit_manual_decisions
 
 STAGES = ("ocr", "lexical", "selected", "inferred", "review_pack")
 VERSION = "M16.25_PERSISTENT_PRIVATE_ORIGINAL_CANGJIE_RESEARCH_V1"
@@ -111,6 +112,12 @@ def stage_file_hashes(stage: str, paths: dict[str, Path]) -> dict[str, str]:
     for p in stage_files(stage, paths):
         if not p.is_file():
             raise ValueError(f"Missing private stage evidence: {p.name}")
+        if stage == "review_pack" and p.name == "private-review-decisions.json":
+            # Human proofreading notes are intentionally mutable. Verify their
+            # provenance and signoff rules, but never require old bytes.
+            with tempfile.TemporaryDirectory(prefix="faceface-short-review-audit-") as tmp:
+                audit_manual_decisions(paths["review_pack"], Path(tmp)/"metadata-only.json")
+            continue
         result[p.relative_to(paths["manifest"].parent).as_posix()] = file_sha256(p)
     if stage == "ocr":
         report = json.loads(paths["ocr_report"].read_text(encoding="utf-8"))
