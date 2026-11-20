@@ -432,3 +432,46 @@ test("M15: new mouth-source must not be inferred from upturned corners or treate
   assert.equal(report.sourceLinks.find(x=>x.cardId==="MY25-MOUTH-ARC-01").status,"related-observation");
   assert.ok(report.sourceLinks.every(link=>link.status!=="confirmed"));
 });
+
+
+test("modern story prompts are clearly separated from old text and face-based claims", () => {
+  const en = makeReading(ok, "en");
+  const zh = makeReading(ok, "zh");
+  assert.ok(en.modernReflections.length > 0);
+  assert.deepEqual(en.modernReflections.map(x => x.sourceCardId),
+    en.featuredLinks.map(x => x.cardId));
+  assert.deepEqual(en.modernReflections.map(x => x.sourceCardId),
+    zh.modernReflections.map(x => x.sourceCardId));
+  assert.ok(en.modernReflections.every(x =>
+    x.provenance === "modern-editorial-reflection" &&
+    x.question.endsWith("?") &&
+    x.scene.length > 40));
+  const exported = readingAsText(en, "en");
+  assert.match(exported, /MODERN REFLECTIONS/);
+  assert.match(exported, /not translated ancient advice or a facial personality assessment/i);
+  assert.match(readingAsText(zh), /现代生活情境与反思/);
+  assert.match(readingAsText(zh), /不是根据外貌得出的人格判断/);
+});
+
+test("no source overlap means no forced personality reflection or stock flattering verdict", () => {
+  const noSource = { ...ok, descriptors: descriptors.map(d =>
+    d.id === "eyes.openness" ? { ...d, ratio: 0.25, text: "Eye opening is near the middle" } : d) };
+  const en = makeReading(noSource, "en");
+  assert.equal(en.featuredLinks.length, 0);
+  assert.deepEqual(en.modernReflections, []);
+  assert.doesNotMatch(readingAsText(en, "en"), /You are (naturally|definitely|always)/);
+});
+
+test("different eligible source shapes produce different editorial scenes, not a fixed reading", () => {
+  const modified = { ...ok, descriptors: [
+    ...descriptors.map(d => d.id === "eyes.openness"
+      ? { ...d, ratio: .25, text: "Eye opening in middle range" }
+      : d.id === "mouth.width"
+        ? { ...d, ratio: .54, text: "Relatively wide mouth" }
+        : d)
+  ] };
+  const a = makeReading(ok, "en"), b = makeReading(modified, "en");
+  assert.notDeepEqual(a.modernReflections.map(x => x.sourceCardId),
+    b.modernReflections.map(x => x.sourceCardId));
+  assert.ok(b.modernReflections.some(x => x.question.includes("understood")));
+});
