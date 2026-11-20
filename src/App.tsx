@@ -7,7 +7,7 @@ import { LiveFaceOverlay } from "./LiveFaceOverlay";
 import { advanceStationaryHold, clockwiseFacePath, projectFaceGuide,
   smoothFacePoints, EMPTY_HOLD, READY_HOLD_MS,
   type GuideMode, type GuideState, type FaceAnchor, type XY } from "./faceGuide";
-import { makeReading, readingAsText } from "./reading";
+import { makeReading, readingAsText, shortLifeReadingAsText } from "./reading";
 import { localizeAnalysisMessage, localizeDescriptor, t, type Language } from "./i18n";
 
 type Phase = "idle" | "camera" | "analyzing" | "result";
@@ -58,6 +58,7 @@ export default function App() {
   const [comparisonBaseline, setComparisonBaseline] = useState<Analysis | null>(null);
   const [error, setError] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [reportMode, setReportMode] = useState<"brief" | "detailed">("brief");
   const [cameraAspect, setCameraAspect] = useState<number | null>(null);
   const [guideMode, setGuideMode] = useState<GuideMode>("front");
   const [guideStatus, setGuideStatus] = useState<GuideState>("loading");
@@ -96,6 +97,7 @@ export default function App() {
     setComparisonBaseline(null);
     setError("");
     setShowMeasurements(false);
+    setReportMode("brief");
     setTiming(null);
     setCameraAspect(null);
     setPhotoSource(null);
@@ -350,6 +352,7 @@ export default function App() {
       const inferenceMs = performance.now() - inferenceStart;
       if (request !== requestRef.current) return;
       setTiming({ modelMs: Math.round(modelMs), inferenceMs: Math.round(inferenceMs) });
+      setReportMode("brief");
       setAnalysis(describeLandmarks(result.faceLandmarks, { width: canvas.width, height: canvas.height }));
       setPhase("result");
     } catch (cause) {
@@ -432,7 +435,7 @@ export default function App() {
 
   const saveObservations = async () => {
     if (!reading) return;
-    const file = new File([readingAsText(reading, language)], "faceface-reading.txt", { type: "text/plain;charset=utf-8" });
+    const file = new File([reportMode === "brief" ? shortLifeReadingAsText(reading, language) : readingAsText(reading, language)], "faceface-reading.txt", { type: "text/plain;charset=utf-8" });
     // iOS can use the native share sheet to save the text in Files.
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
@@ -570,11 +573,63 @@ export default function App() {
 
         {analysis && phase === "result" && (
           <section className="report" aria-live="polite">
-            <div className="stage-header"><div><span className="step-label">{t(language, "observationStep")}</span><h2>{t(language, "observationTitle")}</h2></div></div>
-            <p className={analysis.status === "ok" ? "report-intro" : "error-message"}>{localizeAnalysisMessage(analysis, language)}</p>
-            {timing && <p className="privacy-detail" role="status">{t(language, "modelTime")} {timing.modelMs} {t(language, "ms")} · {t(language, "inferenceTime")} {timing.inferenceMs} {t(language, "ms")}. {t(language, "timingNotice")}</p>}
+            <div className="stage-header"><div><span className="step-label">{language === "en" ? "YOUR FACE READING" : "你的面相解读"}</span><h2>{language === "en" ? "Your life reading" : "人生面相解读"}</h2></div></div>
+            {analysis.status === "ok" && reading && (
+              <div className="reading-mode-switch" role="group" aria-label={language === "en" ? "Report detail level" : "报告版本"}>
+                <button type="button" aria-pressed={reportMode === "brief"}
+                  className={reportMode === "brief" ? "active" : ""}
+                  onClick={() => setReportMode("brief")}>{language === "en" ? "Quick Reading" : "简要版"}</button>
+                <button type="button" aria-pressed={reportMode === "detailed"}
+                  className={reportMode === "detailed" ? "active" : ""}
+                  onClick={() => setReportMode("detailed")}>{language === "en" ? "Detailed Reading" : "详细版"}</button>
+              </div>
+            )}
+            {analysis.status !== "ok" && <p className="error-message">{localizeAnalysisMessage(analysis, language)}</p>}
+            {reportMode === "detailed" && <p className="report-intro">{localizeAnalysisMessage(analysis, language)}</p>}
+            {reportMode === "detailed" && timing && <p className="privacy-detail" role="status">{t(language, "modelTime")} {timing.modelMs} {t(language, "ms")} · {t(language, "inferenceTime")} {timing.inferenceMs} {t(language, "ms")}. {t(language, "timingNotice")}</p>}
             {analysis.status === "ok" && (
               <>
+                {reportMode === "brief" && reading && (
+                  <div className="life-reading-brief" aria-label={language === "en" ? "Short life reading" : "简要面相解读"}>
+                    <div className="life-reading-intro">
+                      <span>{language === "en" ? "A READING OF LIFE'S CHAPTERS" : "生平与未来的传统解读"}</span>
+                      <h3>{language === "en" ? "Your story, through an old lens" : "从面相意象，看人生篇章"}</h3>
+                      <p>{language === "en"
+                        ? "These are possible interpretations, not known facts about your past or dependable predictions of your future."
+                        : "以下是传统面相主题的可能解读，不是已知的过去事实，也不是可靠的未来预言。"}</p>
+                    </div>
+                    {reading.lifeNarratives.length ? (
+                      <div className="life-reading-card-list">
+                        {reading.lifeNarratives.map((item,index) => (
+                          <article className="life-reading-card" key={item.sourceCardId}>
+                            <span className="life-reading-number">{String(index + 1).padStart(2,"0")}</span>
+                            <h4>{item.title}</h4>
+                            <div className="life-reading-segment">
+                              <h5>{language === "en" ? "Temperament" : "性情分析"}</h5>
+                              <p>{item.temperament}</p>
+                            </div>
+                            <div className="life-reading-segment">
+                              <h5>{language === "en" ? "Looking back · a possibility" : "过往经历 · 待核对的推测"}</h5>
+                              <p>{item.retrospective}</p>
+                            </div>
+                            <div className="life-reading-segment">
+                              <h5>{language === "en" ? "Looking ahead · a possibility" : "未来走势 · 一种可能"}</h5>
+                              <p>{item.outlook}</p>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="life-reading-no-match">{language === "en"
+                        ? "There is not enough matching facial-shape evidence in this photo to offer a specific reading. We won't invent a past for you."
+                        : "这张照片没有足够的形态线索形成具体解读，我们不会凭空编造你的过往。"}</p>
+                    )}
+                    <p className="life-reading-footnote">{language === "en"
+                      ? "Does any part feel familiar? Compare it with what really happened. A resemblance cannot establish that face reading works."
+                      : "哪些描述与你的经历相似？请结合真实经历自行核对；描述相似并不能证明面相预测准确。"}</p>
+                  </div>
+                )}
+                {reportMode === "detailed" && (<>
                 <div className="observations">
                   {observations.map(item => (
                     <article className="observation" key={item.id}>
@@ -731,7 +786,8 @@ export default function App() {
                     </details>
                   </div>
                 )}
-                {comparison && (
+                </>)}
+                {comparison && reportMode === "detailed" && (
                   <section className="consistency-panel" aria-label={t(language, "compareTitle")}>
                     <h3>{t(language, "compareTitle")}</h3>
                     <div className="consistency-totals" role="status">
@@ -783,8 +839,8 @@ export default function App() {
                 )}
                 <div className="actions">
                   <button className="primary" onClick={() => void saveObservations()}>{t(language, "saveReport")}</button>
-                  <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{t(language, showMeasurements ? "hideMeasurements" : "showMeasurements")}</button>
-                  <label className="secondary file-action">
+                  {reportMode === "detailed" && <button className="secondary" onClick={() => setShowMeasurements(value => !value)}>{t(language, showMeasurements ? "hideMeasurements" : "showMeasurements")}</button>}
+                  {reportMode === "detailed" && <label className="secondary file-action">
                     {t(language, "compareAction")}
                     <input
                       className="file-input"
@@ -801,9 +857,9 @@ export default function App() {
                         void selectLocalPhoto(file);
                       }}
                     />
-                  </label>
+                  </label>}
                 </div>
-                <p className="privacy-detail">{t(language, "compareNotice")}</p>
+                {reportMode === "detailed" && <p className="privacy-detail">{t(language, "compareNotice")}</p>}
                 <p className="disclaimer">{t(language, "disclaimer")}</p>
               </>
             )}
