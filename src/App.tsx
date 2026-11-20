@@ -589,7 +589,7 @@ export default function App() {
             {reportMode === "detailed" && timing && <p className="privacy-detail" role="status">{t(language, "modelTime")} {timing.modelMs} {t(language, "ms")} · {t(language, "inferenceTime")} {timing.inferenceMs} {t(language, "ms")}. {t(language, "timingNotice")}</p>}
             {analysis.status === "ok" && (
               <>
-                {reportMode === "brief" && reading && (
+                {reading && (
                   <div className="life-reading-brief" aria-label={language === "en" ? "Short life reading" : "简要面相解读"}>
                     <div className="life-reading-intro">
                       <span>{language === "en" ? "A READING OF LIFE'S CHAPTERS" : "生平与未来的传统解读"}</span>
