@@ -27,7 +27,8 @@ jobs:
           python -m unittest -v \
             tests.test_cangjie_ocr_geometry \
             tests.test_cangjie_durable_private_batch \
-            tests.test_cangjie_private_context_quality
+            tests.test_cangjie_private_context_quality \
+            tests.test_cangjie_paddleocr_candidates
 
   real-original-PaddleOCR-recognition-rectangles:
     needs: original-geometry-contract
