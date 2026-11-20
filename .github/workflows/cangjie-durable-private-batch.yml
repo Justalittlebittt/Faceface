@@ -1,4 +1,4 @@
-name: M16.25 real original OCR Qwen persistent-private workspace recovery
+name: M16.26 real original OCR context quality on durable private Qwen workpack
 
 on:
   pull_request:
@@ -6,6 +6,8 @@ on:
       - ".github/workflows/cangjie-durable-private-batch.yml"
       - "scripts/cangjie_durable_private_batch.py"
       - "tests/test_cangjie_durable_private_batch.py"
+      - "scripts/cangjie_private_context_quality.py"
+      - "tests/test_cangjie_private_context_quality.py"
   workflow_dispatch:
 
 permissions:
@@ -22,7 +24,7 @@ jobs:
           python-version: "3.11"
       - name: No dropped model evidence, no silent private overwrite, reject altered OCR
         run: |
-          python -m unittest -v tests.test_cangjie_durable_private_batch tests.test_cangjie_private_review_pack
+          python -m unittest -v tests.test_cangjie_durable_private_batch tests.test_cangjie_private_review_pack tests.test_cangjie_private_context_quality
 
   real-original-durable-private-integration:
     needs: durable-private-contract
@@ -122,6 +124,34 @@ jobs:
           print("Original source OCR and model text stay PRIVATE on this runner, not publicly uploaded.")
           PY
 
+      - name: Validate REAL model OCR line indices, neighboring source page text, and private review priority
+        shell: bash
+        run: |
+          ROOT="$RUNNER_TEMP/PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS"
+          STEM="nlc-44091-p077-083"
+          python -m scripts.cangjie_private_context_quality \
+            --selected "$ROOT/private/selected/$STEM.jsonl" \
+            --model "$ROOT/private/semantic/$STEM.json" \
+            --ocr-root "$ROOT/private/ocr" \
+            --review-pack "$ROOT/private/review-packets/$STEM" \
+            --out-dir "$ROOT/private/quality-context/$STEM"
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS"
+          pack=root/"private/quality-context/nlc-44091-p077-083"
+          quality=json.loads((pack/"quality-summary-metadata-only.json").read_text())
+          original=json.loads((root/"metadata/semantic-nlc-44091-p077-083.json").read_text())
+          assert quality["candidate_count"]==original["selected_private_OCR_cues"]==3
+          assert quality["model_OCR_literal_drafts"]==original["OCR_literal_draft_relations"]
+          assert quality["verified_source_image_transcriptions"]==0
+          assert quality["OCR_reading_order_human_verified"] is False
+          assert quality["new_live_Faceface_rules"]==0
+          assert (pack/"index.html").is_file()
+          assert len(list((pack/"pages").glob("*.png")))>=1
+          print("M16.26: REAL OCR target-line hashes, neighbors and source-image context PASS (UNREVIEWED).")
+          PY
+
       - name: Export ONLY de-identified aggregate smoke counts (not a private backup)
         shell: bash
         run: |
@@ -133,8 +163,12 @@ jobs:
           result=json.loads(meta.read_text())
           pack=next((root/"private"/"review-packets").glob("*/private-pack-manifest.json"))
           p=json.loads(pack.read_text())
+          quality=json.loads(next((root/"private"/"quality-context").glob("*/quality-summary-metadata-only.json")).read_text())
           out={
-            "kind":"M16.25_REAL_ORIGINAL_1925_PRIVATE_WORKPACK_BOUNDED_CI_SMOKE",
+            "kind":"M16.26_REAL_ORIGINAL_1925_PRIVATE_CONTEXT_QUALITY_BOUNDED_CI_SMOKE",
+            "real_original_OCR_source_context_candidates_verified_against_line_id":quality["candidate_count"],
+            "real_OCR_quality_lexical_flag_counts":quality["lexical_risk_flag_counts"],
+            "OCR_reading_order_human_verified":False,
             "actual_original_1925_pdf_pages_ocr_processed":7,
             "real_Cangjie_prompt_guided_Qwen_model_calls":result["real_model_requests_attempted"],
             "unreviewed_OCR_literal_draft_count":result["OCR_literal_draft_relations"],
