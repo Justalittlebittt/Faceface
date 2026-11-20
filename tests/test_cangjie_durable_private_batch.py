@@ -69,7 +69,7 @@ class DurableLocalPrivateTests(unittest.TestCase):
              "eligible_for_live_rules":False}
         stem=f"{source}-p{first:03d}-{last:03d}"
         atomic_write(private_dir/f"{stem}.jsonl",(json.dumps(cue,ensure_ascii=False)+"\n").encode())
-        atomic_write(public_dir/f"lexical-{stem}.json",canonical_bytes({
+        atomic_write(public_dir/f"{stem}.json",canonical_bytes({
             "source_id":source,"first_pdf_page_zero_based":first,
             "last_pdf_page_zero_based":last,"source_pdf_sha256":self.sha
         }))
