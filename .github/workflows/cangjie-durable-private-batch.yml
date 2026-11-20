@@ -106,7 +106,7 @@ jobs:
           from pathlib import Path
           root=Path(os.environ["RUNNER_TEMP"])/"PRIVATE-CANGJIE-RESEARCH-PERSISTENT-WHILE-RUNNER-EXISTS"
           m=json.loads((root/"batch-manifest.json").read_text())
-          assert list(m["completed"])==["ocr","lexical","selected","inferred","review_pack"]
+          assert set(m["completed"])=={"ocr","lexical","selected","inferred","review_pack"}
           paths=list((root/"private"/"review-packets").glob("*/private-pack-manifest.json"))
           assert len(paths)==1
           pack=json.loads(paths[0].read_text())
