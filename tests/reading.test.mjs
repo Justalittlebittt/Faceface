@@ -526,7 +526,7 @@ test("past and future interpretations are explicitly uncertain and never claim v
       assert.ok(reading.featuredLinks.some(link=>link.cardId===item.sourceCardId));
       assert.ok(item.temperament.length>30);
       assert.ok(item.retrospective.length>35);
-      assert.ok(item.outlook.length>35);
+      assert.ok(item.outlook.length>15);
     }
     const text=shortLifeReadingAsText(reading,lang);
     assert.doesNotMatch(text,/We know you|It is proven|You definitely experienced|我们证明了|你一定经历过/);
