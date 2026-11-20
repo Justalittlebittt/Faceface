@@ -1,0 +1,26 @@
+{
+  "milestone": "M16.27",
+  "kind": "REAL_PINNED_1925_PP_OCR_V5_RECOGNITION_BOXES_UNVERIFIED_COLUMN_DIAGNOSTIC",
+  "run_id": 44686708234,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44686708234",
+  "source_id": "nlc-44091",
+  "original_pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+  "pdf_zero_based_pages": [
+    77,
+    78
+  ],
+  "real_original_scanned_pages_processed": 2,
+  "real_recognition_rectangles_and_text_regions": 59,
+  "pages_with_complete_geometry_suggestions": 2,
+  "pages_with_geometry_order_different_from_original_PaddleOCR_order": 2,
+  "possible_wide_titles_or_illustrations_pages": 2,
+  "public_aggregate_contains_original_text": false,
+  "actual_original_recognition_boxes_saved_privately_in_runner": true,
+  "source_OCR_candidate_order_changed": false,
+  "actual_Cangjie_or_Qwen_calls_in_geometry_run": 0,
+  "human_verified_original_ancient_column_order": false,
+  "human_verified_full_original_pages": 0,
+  "new_live_faceface_rules": 0,
+  "scope": "Actual original 1925 OCR recognition rectangles were available and aligned with original OCR text for the two scanned test pages. The approximate right-to-left order is a NON-AUTHORITATIVE geometric candidate, not a verified classical textual reading. Private source boxes are runner-local, not a durable user backup.",
+  "legacy_full_book_OCR_contract_synthetic_fixture_hash_fix": "Keep production source SHA validation strict; synthetic regression tests must patch source identity for both initial and empty OCR calls."
+}
