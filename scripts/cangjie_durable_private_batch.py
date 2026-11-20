@@ -87,7 +87,7 @@ def read_manifest(path: Path, config: dict) -> dict:
     records = existing.get("completed")
     if not isinstance(records, dict) or not set(records).issubset(STAGES):
         raise ValueError("Invalid persisted stage manifest")
-    if list(records) != list(STAGES[:len(records)]):
+    if set(records) != set(STAGES[:len(records)]):
         raise ValueError("Completed stages must be contiguous")
     return existing
 
