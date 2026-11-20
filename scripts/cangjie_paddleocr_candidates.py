@@ -27,6 +27,7 @@ from scripts.cangjie_ocr_candidates import digest
 from scripts.cangjie_ocr_benchmark import only_han
 from scripts.cangjie_paddleocr_benchmark import SETTINGS, extract_lines
 from scripts.cangjie_review_core import KNOWN_SCAN_SHA256, atomic_write
+from scripts.cangjie_ocr_geometry import geometry_sidecar
 
 OCR_ID = "m16.7-paddleocr-v5-cpu-original-scan"
 ENGINE = "PaddleOCR_PP-OCRv5_mobile_det_server_rec"
@@ -64,6 +65,14 @@ def candidate_page(pdf: Path, source_id: str, index: int, pdf_sha: str,
         atomic_write(txt,(text+"\n").encode("utf-8"))
     else:
         txt.unlink(missing_ok=True)
+    # M16.27: preserve actual recognition boxes alongside canonical OCR lines.
+    # Do not silently substitute geometric sorting for original OCR text order.
+    geometry = geometry_sidecar(source_id, index, pdf_sha,
+                                digest(txt) if text else None,
+                                lines, scores, boxes)
+    geometry_file = base.with_suffix(".geometry.json")
+    atomic_write(geometry_file,
+                 (json.dumps(geometry, ensure_ascii=False, indent=2)+"\n").encode("utf-8"))
     conf=round(sum(scores)/len(scores),4) if scores else None
     record={
         "source_id":source_id,
@@ -73,6 +82,8 @@ def candidate_page(pdf: Path, source_id: str, index: int, pdf_sha: str,
         "ocr_version":OCR_ID,
         "engine":ENGINE,
         "render_dpi":dpi,
+        "geometry_sidecar_sha256":digest(geometry_file),
+        "geometry_candidate_status":"source_unverified",
         "state":"ocr_candidate" if text else "empty_ocr_candidate",
         "candidate_text_sha256":digest(txt) if text else None,
         "han_char_count":len(only_han(text)),
