@@ -1,0 +1,44 @@
+{
+  "milestone": "M16.26",
+  "kind": "REAL_ORIGINAL_OCR_LINE_CONTEXT_AND_SOURCE_GROUNDING_PRIVATE_REVIEW",
+  "run_id": 44680920472,
+  "run_url": "https://github.com/Justalittlebittt/Faceface/actions/runs/44680920472",
+  "original_scan_id": "nlc-44091",
+  "original_pdf_zero_based_pages": [
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83
+  ],
+  "actual_original_pdf_pages_OCR_processed": 7,
+  "actual_Qwen3_4b_inference_requests": 3,
+  "source_unverified_literal_OCR_draft_relations": 4,
+  "actual_original_source_page_PNGs": 3,
+  "original_OCR_line_context_sources_checked": 3,
+  "distinct_source_pages_checked": 3,
+  "manual_review_priority": {
+    "manual_first": 2,
+    "manual_normal": 1
+  },
+  "ocr_lexical_quality_risk_counts": {
+    "very_short_OCR_line": 1,
+    "no_morphology_on_same_OCR_line": 1,
+    "model_asserts_explicit_link_not_human_verified": 1,
+    "neighboring_OCR_line_contains_morphology": 1,
+    "multiple_outcome_lexical_domains_on_one_line": 1,
+    "neighboring_OCR_line_contains_outcome": 1
+  },
+  "unit_tests_passed": 22,
+  "source_line_hash_and_candidate_id_recomputed_against_real_OCR": true,
+  "original_OCR_reading_order_human_verified": false,
+  "source_image_independent_human_reviewed_pages": 0,
+  "verified_historical_morphology_outcome_links": 0,
+  "production_rules_activated": 0,
+  "full_official_Cangjie_five_extractor_pipeline_ran": false,
+  "original_ocr_or_model_text_in_public_artifact": false,
+  "ephemeral_CI_runner_is_durable_user_backup": false,
+  "interpretation": "The three actual model-input excerpts were traced to exact source-hashed OCR full-page bytes and original PDF page image references. Risk flags are conservative lexical review priorities, not conclusions about the original antique text. All OCR, model interpretation and adjacency remain unverified until human comparison of original print."
+}
