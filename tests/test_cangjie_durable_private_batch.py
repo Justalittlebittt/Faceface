@@ -101,7 +101,7 @@ class DurableLocalPrivateTests(unittest.TestCase):
         rows,summary=assemble_review_items(private)
         summary["real_original_PDF_images_rendered"]=1
         atomic_write(output/"private-OCR-model-evidence.json",
-                     (json.dumps(rows,ensure_ascii=False)+"\\n").encode())
+                     (json.dumps(rows,ensure_ascii=False)+"\n").encode())
         decisions={
             "schema":"M16.24_PRIVATE_SHORT_EXCERPT_DECISIONS_TEMPLATE_V1",
             "full_page_transcription_reviewed":False,
