@@ -325,3 +325,51 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
   .editorial-story { padding: 16px; }
   .editorial-story h5 { font-size: 21px; }
 }
+
+
+/* Cultural evidence lives with its contemporary interpretation. */
+.editorial-classical-bridge {
+  margin: 14px 0 17px;
+  padding: 12px 14px;
+  border-left: 2px solid #a58b63;
+  background: #f0e7d7;
+  border-radius: 0 8px 8px 0;
+}
+.editorial-classical-bridge > span,
+.editorial-story-practice > span {
+  display: block;
+  color: #78603c;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  margin-bottom: 7px;
+}
+.editorial-classical-bridge p {
+  color: #27372c;
+  margin: 0 0 5px;
+  font: 500 17px/1.5 Georgia, "Songti SC", serif;
+}
+.editorial-classical-bridge small {
+  display: block;
+  line-height: 1.6;
+  color: #797366;
+  font-size: 11px;
+}
+.editorial-classical-bridge a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #395d46;
+  font-size: 12px;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.editorial-classical-bridge a:focus-visible { outline: 2px solid #446c53; outline-offset: 3px; }
+.editorial-story-practice {
+  margin-top: 16px;
+  padding: 13px 14px;
+  border-radius: 9px;
+  background: #e1e9da;
+  border: 1px solid #ccd8c5;
+}
+.editorial-story-practice > span { color: #536c55; }
+.editorial-story-practice p { margin: 0; line-height: 1.7; font-size: 13px; color: #314634; }
