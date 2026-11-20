@@ -369,6 +369,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "MODERN REFLECTIONS (TODAY\u2019S WRITING, NOT CLAIMS ABOUT YOU)",
       ...reading.modernReflections.map(item => [
         item.theme, item.scene, "A question to consider: " + item.question,
+        "One small thing to try: " + item.practice,
         "Contemporary editorial prompt; not translated ancient advice or a facial personality assessment."
       ].join("\n")),
       "",
@@ -428,6 +429,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "【现代生活情境与反思（非古籍原文／非性格诊断）】",
     ...reading.modernReflections.map(item => [
       item.theme, item.scene, "留给你的问题：" + item.question,
+      "一个可以试试的小行动：" + item.practice,
       "现代编辑写作，仅供自我反思，不是根据外貌得出的人格判断。"
     ].join("\n")),
     "",
