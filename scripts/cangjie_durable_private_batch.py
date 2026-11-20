@@ -39,7 +39,7 @@ def private_paths(root: Path, source: str, first: int, last: int) -> dict[str, P
         "ocr_report":root/"private"/"ocr"/"reports"/f"{stem}.json",
         "ocr_root":root/"private"/"ocr",
         "lexical":root/"private"/"lexical"/f"{stem}.jsonl",
-        "lexical_report":root/"metadata"/f"lexical-{stem}.json",
+        "lexical_report":root/"metadata"/f"{stem}.json",
         "selected":root/"private"/"selected"/f"{stem}.jsonl",
         "selection_report":root/"metadata"/f"selection-{stem}.json",
         "model":root/"private"/"semantic"/f"{stem}.json",
