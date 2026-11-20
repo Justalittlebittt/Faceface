@@ -78,7 +78,8 @@ class PaddleWholeBookTests(unittest.TestCase):
                                      self.out,engine,170,self.root)
         self.assertEqual(first["state"],"ocr_candidate")
         engine.lines=[]
-        with patch.object(ocr,"render_page",side_effect=self.render):
+        with patch.object(ocr,"render_page",side_effect=self.render), \
+             patch("scripts.cangjie_ocr_geometry.KNOWN_SCAN_SHA256",{"nlc-44091":self.hash}):
             second=ocr.candidate_page(self.pdf,"nlc-44091",27,self.hash,
                                       self.out,engine,170,self.root)
         self.assertEqual(second["state"],"empty_ocr_candidate")
