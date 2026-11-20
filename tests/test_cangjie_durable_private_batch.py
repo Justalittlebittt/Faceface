@@ -100,8 +100,25 @@ class DurableLocalPrivateTests(unittest.TestCase):
         private=json.loads(model_path.read_text(encoding="utf-8"))
         rows,summary=assemble_review_items(private)
         summary["real_original_PDF_images_rendered"]=1
-        atomic_write(output/"private-OCR-model-evidence.json",canonical_bytes({"items":rows}))
-        atomic_write(output/"private-review-decisions.json",canonical_bytes({"status":"pending"}))
+        atomic_write(output/"private-OCR-model-evidence.json",
+                     (json.dumps(rows,ensure_ascii=False)+"\\n").encode())
+        decisions={
+            "schema":"M16.24_PRIVATE_SHORT_EXCERPT_DECISIONS_TEMPLATE_V1",
+            "full_page_transcription_reviewed":False,
+            "items":[{
+                "candidate_id":r["candidate_id"],
+                "source_id":r["source_id"],
+                "pdf_page_zero_based":r["pdf_page_zero_based"],
+                "original_pdf_sha256":r["original_pdf_sha256"],
+                "ocr_excerpt_sha256":r["unreviewed_OCR_excerpt_sha256"],
+                "status":"pending",
+                "manually_corrected_original_text":"",
+                "reviewer":"",
+                "confirmed_against_original_page_image":False,
+                "review_notes":""
+            } for r in rows]
+        }
+        atomic_write(output/"private-review-decisions.json",canonical_bytes(decisions))
         atomic_write(output/"private-pack-manifest.json",canonical_bytes(summary))
         atomic_write(output/"index.html",b"<html><body>PRIVATE SYNTHETIC TEST</body></html>")
         atomic_write(output/"pages"/"nlc-44091-p044.png",b"PNG SYNTHETIC ONLY - NO REAL IMAGE CLAIM")
@@ -125,6 +142,29 @@ class DurableLocalPrivateTests(unittest.TestCase):
         self.assertIn("inferred",manifest["completed"])
         self.pipeline(resume=True)
         self.assertEqual(self.calls,{"ocr":1,"lexical":1,"model":1,"pack":1})
+
+    def test_human_review_annotations_can_change_without_overwriting_model(self):
+        self.pipeline()
+        path=private_paths(self.destination,self.sid,self.page,self.page)["review_pack"]/"private-review-decisions.json"
+        decisions=json.loads(path.read_text(encoding="utf-8"))
+        item=decisions["items"][0]
+        item["status"]="short_span_confirmed"
+        item["manually_corrected_original_text"]="鼻長有壽"
+        item["reviewer"]="human-proofreader"
+        item["confirmed_against_original_page_image"]=True
+        atomic_write(path,canonical_bytes(decisions))
+        self.pipeline(resume=True)
+        self.assertEqual(self.calls,{"ocr":1,"lexical":1,"model":1,"pack":1})
+
+    def test_tampered_manual_source_reference_is_rejected(self):
+        self.pipeline()
+        path=private_paths(self.destination,self.sid,self.page,self.page)["review_pack"]/"private-review-decisions.json"
+        decisions=json.loads(path.read_text(encoding="utf-8"))
+        decisions["items"][0]["original_pdf_sha256"]="0"*64
+        atomic_write(path,canonical_bytes(decisions))
+        with self.assertRaises(ValueError):
+            self.pipeline(resume=True)
+        self.assertEqual(self.calls["model"],1)
 
     def test_rejects_tampered_ocr_before_reusing_model(self):
         self.pipeline()
