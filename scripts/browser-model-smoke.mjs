@@ -400,7 +400,10 @@ try {
     : "dist/ci-portrait.jpg";
   await page.locator('input[aria-label="Choose a second photo of the same person"]')
     .setInputFiles(secondPhoto);
-  await page.waitForSelector(".life-reading-brief", { timeout: 90000 });
+  // A previous report may still be in the DOM while the new local image
+  // decodes. Wait for it to disappear before asserting the new default tab.
+  await page.waitForSelector(".report", { state: "hidden", timeout: 30000 });
+  await page.waitForSelector(".life-reading-brief", { state: "visible", timeout: 90000 });
   await page.getByRole("button", { name: "详细版" }).click();
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
