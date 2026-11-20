@@ -8,6 +8,7 @@ The suggested order is for image comparison ONLY.
 """
 from __future__ import annotations
 
+import argparse
 from collections import Counter
 import hashlib
 import json
@@ -172,3 +173,23 @@ def audit_pages(ocr_root: Path, sid: str, pages: list[int], output_private: Path
     atomic_write(output_public,(json.dumps(summary,ensure_ascii=False,indent=2)+"\n").encode())
     print(json.dumps(summary,ensure_ascii=False))
     return summary
+
+
+def main() -> None:
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--ocr-root",required=True,type=Path)
+    parser.add_argument("--source",required=True,choices=list(KNOWN_SCAN_SHA256))
+    parser.add_argument("--start",required=True,type=int)
+    parser.add_argument("--end",required=True,type=int)
+    parser.add_argument("--private-output",required=True,type=Path)
+    parser.add_argument("--public-output",required=True,type=Path)
+    a=parser.parse_args()
+    maximum=153 if a.source=="nlc-44091" else 115
+    if not 0<=a.start<=a.end<maximum:
+        parser.error("Invalid original scan page interval")
+    audit_pages(a.ocr_root,a.source,list(range(a.start,a.end+1)),
+                a.private_output,a.public_output)
+
+
+if __name__=="__main__":
+    main()
