@@ -404,7 +404,8 @@ try {
   // decodes. Wait for it to disappear before asserting the new default tab.
   await page.waitForSelector(".report", { state: "hidden", timeout: 30000 });
   await page.waitForSelector(".life-reading-brief", { state: "visible", timeout: 90000 });
-  await page.getByRole("button", { name: "详细版" }).click();
+  // The test switched the site to ENGLISH before comparing the second photo.
+  await page.getByRole("button", { name: "Detailed Reading" }).click();
   await page.waitForSelector(".consistency-panel", { timeout: 90000 });
   const comparisonStats = await page.locator(".consistency-totals strong").allTextContents();
   if (comparisonStats.join("|") !== "0 / 10|0 / 10") {
