@@ -1,0 +1,119 @@
+name: M16.24 private original-page OCR/Cangjie review packet contract
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-private-original-review-pack.yml"
+      - "scripts/cangjie_private_review_pack.py"
+      - "tests/test_cangjie_private_review_pack.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-image-review-pack-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate original-to-OCR linkage, safe HTML, no false human signoff or overwriting manual notes
+        run: |
+          python -m unittest -v tests.test_cangjie_private_review_pack tests.test_cangjie_historical_claim_ledger
+      - name: Install real scanned-original PDF viewer dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+      - name: Download ACTUAL pinned 1925 source scans privately
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/faceface-private-originals"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-private-originals/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/faceface-private-originals/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/faceface-private-originals/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/faceface-private-originals/part2.pdf" | sha256sum -c -
+      - name: Construct explicitly SYNTHETIC private parser fixture (NOT a new model inference)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          from scripts.cangjie_review_core import KNOWN_SCAN_SHA256
+          from scripts.cangjie_real_historical_relations import translate_model_relations
+          from scripts.cangjie_private_ocr_semantic_batch import BATCH_KIND
+          original="鼻長有壽"
+          src={
+            "id":"m1622-ocr:"+"1"*24,"source_id":"nlc-44091",
+            "pdf_page_zero_based":44,"page_id":"nlc-44091:p044",
+            "original_pdf_sha256":KNOWN_SCAN_SHA256["nlc-44091"],
+            "source_excerpt":original,
+            "source_excerpt_sha256":hashlib.sha256(original.encode()).hexdigest(),
+            "unreviewed_ocr_text_sha256":"2"*64,
+            "candidate_lexical_domains":["longevity"],
+            "source_excerpt_newly_human_reviewed":False,
+            "this_experiment_may_add_live_rule":False
+          }
+          rows,_=translate_model_relations({"relations":[{
+            "quote_id":0,"morphology_span":"鼻長","claim_span":"有壽",
+            "condition_span":"","exception_span":"",
+            "relation_type":"explicit_in_source","claim_domain":"longevity"
+          }]},[src])
+          fixture={
+            "kind":BATCH_KIND,"full_book_source_text_verified":False,
+            "no_live_rules_created":True,"source_records_UNVERIFIED":[src],
+            "archival_ledger_SOURCE_UNVERIFIED":{"schema":"faceface-historical-claims-v1","relations":rows},
+            "rejections_private":[],"actual_model_requests_attempted":1
+          }
+          out=Path(os.environ["RUNNER_TEMP"])/"SYNTHETIC-CONTRACT-FIXTURE-NOT-MODEL-RESULT.json"
+          out.write_text(json.dumps(fixture,ensure_ascii=False),encoding="utf-8")
+          PY
+      - name: Actually render 1925 original PDF page to PRIVATE side-by-side work packet
+        shell: bash
+        run: |
+          python -m scripts.cangjie_private_review_pack \
+            --private-record "$RUNNER_TEMP/SYNTHETIC-CONTRACT-FIXTURE-NOT-MODEL-RESULT.json" \
+            --scan-dir "$RUNNER_TEMP/faceface-private-originals" \
+            --out-dir "$RUNNER_TEMP/faceface-ORIGINAL-IMAGE-private-workpack" --dpi 150
+          python - <<'PY'
+          from pathlib import Path
+          import json,os
+          private=Path(os.environ["RUNNER_TEMP"])/"faceface-ORIGINAL-IMAGE-private-workpack"
+          m=json.loads((private/"private-pack-manifest.json").read_text())
+          assert m["real_original_PDF_images_rendered"]==1
+          assert m["human_short_spans_reviewed_by_this_build"]==0
+          assert m["verified_historical_relations"]==0
+          assert m["live_rules_added"]==0
+          assert (private/"pages/nlc-44091-p044.png").is_file()
+          assert (private/"index.html").is_file()
+          print("REAL ORIGINAL-SCAN IMAGE RENDERING VERIFIED. Parser data was an explicitly SYNTHETIC test fixture.")
+          print("PRIVATE SOURCE/IMAGE/REVIEW PACK WILL NOT BE UPLOADED")
+          PY
+      - name: Publish metadata-only smoke count, never original scan/OCR/model text
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          x={
+            "schema":"M16.24_REAL_PDF_RENDER_SYNTHETIC_PARSER_FIXTURE_TEST",
+            "original_1925_PDF_page_image_rendered":1,
+            "model_inference_attempts_performed_in_this_test":0,
+            "test_fixture_source_was_synthetic":True,
+            "new_human_original_image_reviews":0,
+            "historical_rules_verified":0,
+            "live_faceface_rules":0,
+            "private_workpack_uploaded":False
+          }
+          open("m16-24-safe-render-smoke-metadata.json","w").write(json.dumps(x,indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m16-24-safe-review-pack-render-smoke-metadata-only
+          path: m16-24-safe-render-smoke-metadata.json
+          retention-days: 21
