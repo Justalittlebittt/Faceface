@@ -1,0 +1,111 @@
+name: M16.27 actual original scan PaddleOCR geometry and reading-order audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cangjie-original-geometry-audit.yml"
+      - "scripts/cangjie_ocr_geometry.py"
+      - "scripts/cangjie_paddleocr_candidates.py"
+      - "scripts/cangjie_durable_private_batch.py"
+      - "tests/test_cangjie_ocr_geometry.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-geometry-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Source SHA/geometry alignment, alternate order is NEVER authoritative
+        run: |
+          python -m unittest -v \
+            tests.test_cangjie_ocr_geometry \
+            tests.test_cangjie_durable_private_batch \
+            tests.test_cangjie_private_context_quality
+
+  real-original-PaddleOCR-recognition-rectangles:
+    needs: original-geometry-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      OMP_NUM_THREADS: "3"
+      OPENBLAS_NUM_THREADS: "3"
+      MKL_NUM_THREADS: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install real PaddleOCR/Poppler for original antique PDF pages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m pip install --quiet --no-cache-dir paddlepaddle==3.2.0
+          python -m pip install --quiet --no-cache-dir paddleocr==3.3.2 PyYAML
+
+      - name: Download BOTH original 1925 source PDFs and SHA-verify
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/original-1925"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a0/NLC416-12jh002690-44091_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC1%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/original-1925/part1.pdf"
+          curl --fail --location --retry 3 --max-time 120 \
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/NLC416-12jh002690-44092_%E9%BA%BB%E8%A1%A3%E7%9B%B8%E6%B3%95_%E7%AC%AC2%E5%8D%B7.pdf" \
+            -o "$RUNNER_TEMP/original-1925/part2.pdf"
+          echo "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649  $RUNNER_TEMP/original-1925/part1.pdf" | sha256sum -c -
+          echo "ce9020bb7d2e404f16689519c0c33df3525e3131b980b02344ed9ed967303ef7  $RUNNER_TEMP/original-1925/part2.pdf" | sha256sum -c -
+
+      - name: REAL PP-OCRv5 original pages 77-78 with PRIVATE recognition coordinates
+        shell: bash
+        run: |
+          python -m scripts.cangjie_paddleocr_candidates \
+            --scan-dir "$RUNNER_TEMP/original-1925" \
+            --out-dir "$RUNNER_TEMP/PRIVATE-1925-OCR" \
+            --source nlc-44091 --start 77 --end 78 --dpi 170
+
+      - name: Verify actual boxes, original OCR order, alternative order and page fingerprints
+        shell: bash
+        run: |
+          python -m scripts.cangjie_ocr_geometry \
+            --ocr-root "$RUNNER_TEMP/PRIVATE-1925-OCR" \
+            --source nlc-44091 --start 77 --end 78 \
+            --private-output "$RUNNER_TEMP/PRIVATE-1925-ALTERNATE-COLUMN-ORDER.json" \
+            --public-output m16-27-original-geometry-metadata-only.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"PRIVATE-1925-OCR"
+          report=json.loads(Path("m16-27-original-geometry-metadata-only.json").read_text())
+          assert report["actual_pages_with_geometry_checked"]==2
+          assert report["recognition_region_count"]>0
+          assert report["pages_with_complete_box_suggestions"]>0
+          assert report["proposed_order_human_verified"] is False
+          assert report["verified_original_page_transcriptions"]==0
+          assert report["new_live_Faceface_rules"]==0
+          for page in (77,78):
+            base=root/"transcripts"/"nlc-44091"/f"{page:03d}"
+            raw=base.with_suffix(".txt")
+            g=base.with_suffix(".geometry.json")
+            assert raw.is_file() and g.is_file()
+            d=json.loads(g.read_text())
+            assert d["read_order_authoritative"] is False
+            assert d["human_verified_ancient_column_order"] is False
+          print("M16.27 real original PaddleOCR rectangle source audit PASS:",report)
+          PY
+
+      - name: Upload NO original text, private rectangles or source page images
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m16-27-original-reading-order-metadata-only
+          path: m16-27-original-geometry-metadata-only.json
+          retention-days: 21
+          if-no-files-found: warn
