@@ -1,6 +1,7 @@
 import catalog from "./knowledge/maiyi-source-checked-v5.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
+import { modernReflectionForCard, type EditorialReflection } from "./editorial.ts";
 
 /**
  * M2 seed: source-linked cultural notes, not historical trait classifiers.
@@ -72,6 +73,7 @@ export type FaceReading = {
   sourceLinks: CulturalLink[];
   featuredLinks: CulturalLink[];
   briefInsights: string[];
+  modernReflections: EditorialReflection[];
   frameworkNotes: HistoricalFramework[];
   threeSections: ThreeSectionsReading | null;
   reflection: string;
@@ -330,6 +332,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     sourceLinks,
     featuredLinks,
     briefInsights,
+    modernReflections: featuredLinks.map(link => modernReflectionForCard(link.cardId, language))
+      .filter((item): item is EditorialReflection => item !== null),
     frameworkNotes,
     threeSections,
     reflection: language === "en"
@@ -361,6 +365,12 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
         "Original scan: " + reading.threeSections.source.source_url
       ] : []),
       ...reading.briefInsights,
+      "",
+      "MODERN REFLECTIONS (TODAY\u2019S WRITING, NOT CLAIMS ABOUT YOU)",
+      ...reading.modernReflections.map(item => [
+        item.theme, item.scene, "A question to consider: " + item.question,
+        "Contemporary editorial prompt; not translated ancient advice or a facial personality assessment."
+      ].join("\\n")),
       "",
       "DETAILED OBSERVATIONS (PROVISIONAL)",
       ...reading.observations.map(d => d.region + ": " + d.text),
