@@ -118,7 +118,7 @@ def stage_file_hashes(stage: str, paths: dict[str, Path]) -> dict[str, str]:
             sid,index=page["source_id"],page["pdf_page_zero_based"]
             meta=paths["ocr_root"]/"transcripts"/sid/f"{index:03d}.ocr.json"
             result[meta.relative_to(paths["manifest"].parent).as_posix()]=file_sha256(meta)
-            candidate=meta.with_suffix(".txt") if False else meta.parent/f"{index:03d}.txt"
+            candidate=meta.parent/f"{index:03d}.txt"
             if page["state"]=="ocr_candidate":
                 result[candidate.relative_to(paths["manifest"].parent).as_posix()]=file_sha256(candidate)
             elif candidate.exists():
@@ -137,6 +137,57 @@ def verify_saved_stage(stage: str, paths: dict[str, Path], expected: dict[str, s
     actual=stage_file_hashes(stage,paths)
     if actual != expected:
         raise ValueError(f"PRIVATE EVIDENCE CHANGED for {stage}; refusing silent re-run")
+
+
+def recover_complete_uncommitted_stage(stage: str, paths: dict[str, Path],
+                                        config: dict) -> dict[str, str] | None:
+    """Reattach fully written private data after crash before manifest commit.
+
+    Never guess partial outputs or rerun a finished private model completion.
+    Structural integrity is not OCR accuracy or historical validity.
+    """
+    files = stage_files(stage, paths)
+    present = [p.exists() for p in files]
+    if not any(present):
+        return None
+    if not all(present):
+        raise ValueError(f"PARTIAL PRIVATE STAGE {stage}; manual recovery required; no overwrites")
+    digests = stage_file_hashes(stage, paths)
+    if stage == "ocr":
+        report = json.loads(paths["ocr_report"].read_text(encoding="utf-8"))
+        if (report.get("source_id") != config["source"]
+            or report.get("first_pdf_page_zero_based") != config["start"]
+            or report.get("last_pdf_page_zero_based") != config["end"]
+            or report.get("processed_pages") != config["end"]-config["start"]+1
+            or report.get("source_pdf_sha256") != KNOWN_SCAN_SHA256[config["source"]]):
+            raise ValueError("OCR stage cannot be recovered with changed original source")
+    elif stage == "lexical":
+        audit = json.loads(paths["lexical_report"].read_text(encoding="utf-8"))
+        if (audit.get("source_id") != config["source"]
+            or audit.get("first_pdf_page_zero_based") != config["start"]
+            or audit.get("last_pdf_page_zero_based") != config["end"]
+            or audit.get("source_pdf_sha256") != KNOWN_SCAN_SHA256[config["source"]]):
+            raise ValueError("Cannot recover altered OCR lexical scope")
+        read_private_cues([paths["lexical"]])
+    elif stage == "selected":
+        entries, _ = read_private_cues([paths["selected"]])
+        stats = json.loads(paths["selection_report"].read_text(encoding="utf-8"))
+        if not entries or len(entries) != stats.get("private_cues_selected_for_model"):
+            raise ValueError("Incomplete private selection stage")
+    elif stage == "inferred":
+        record = json.loads(paths["model"].read_text(encoding="utf-8"))
+        entries, _ = assemble_review_items(record)
+        public = json.loads(paths["model_report"].read_text(encoding="utf-8"))
+        if (public.get("selected_private_OCR_cues") != len(entries)
+            or public.get("real_model_requests_attempted") != len(entries)):
+            raise ValueError("Private model and metadata disagree")
+    elif stage == "review_pack":
+        record = json.loads((paths["review_pack"]/"private-pack-manifest.json").read_text(encoding="utf-8"))
+        if (record.get("schema") != "M16.24_PRIVATE_ORIGINAL_PAGE_REVIEW_PACK_V1"
+            or record.get("real_original_PDF_images_rendered") < 1
+            or record.get("human_full_page_reviews_by_this_build") != 0):
+            raise ValueError("Incorrect private review packet state")
+    return digests
 
 
 def run_persistent_batch(root: Path, scan_dir: Path, upstream: Path,
@@ -159,6 +210,12 @@ def run_persistent_batch(root: Path, scan_dir: Path, upstream: Path,
         if stage in saved:
             verify_saved_stage(stage,paths,saved[stage])
             print(json.dumps({"stage":stage,"status":"verified_existing_private_evidence"}),flush=True)
+            continue
+        recovered = recover_complete_uncommitted_stage(stage,paths,config)
+        if recovered is not None:
+            saved[stage]=recovered
+            atomic_write(paths["manifest"],canonical_bytes(manifest))
+            print(json.dumps({"stage":stage,"status":"reattached_complete_private_evidence"}),flush=True)
             continue
         if stage=="ocr":
             run_original_ocr(scan_dir,paths["ocr_root"],source,first,last,dpi)
