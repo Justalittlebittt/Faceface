@@ -370,7 +370,7 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       ...reading.modernReflections.map(item => [
         item.theme, item.scene, "A question to consider: " + item.question,
         "Contemporary editorial prompt; not translated ancient advice or a facial personality assessment."
-      ].join("\\n")),
+      ].join("\n")),
       "",
       "DETAILED OBSERVATIONS (PROVISIONAL)",
       ...reading.observations.map(d => d.region + ": " + d.text),
@@ -424,6 +424,12 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "扫描原件：" + reading.threeSections.source.source_url
     ] : []),
     ...reading.briefInsights,
+    "",
+    "【现代生活情境与反思（非古籍原文／非性格诊断）】",
+    ...reading.modernReflections.map(item => [
+      item.theme, item.scene, "留给你的问题：" + item.question,
+      "现代编辑写作，仅供自我反思，不是根据外貌得出的人格判断。"
+    ].join("\n")),
     "",
     "【详细版：全部面部形态观察（实验项）】",
     ...reading.observations.map(d => d.region + "：" + d.text),
