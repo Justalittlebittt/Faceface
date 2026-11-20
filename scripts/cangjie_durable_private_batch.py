@@ -125,6 +125,15 @@ def stage_file_hashes(stage: str, paths: dict[str, Path]) -> dict[str, str]:
             sid,index=page["source_id"],page["pdf_page_zero_based"]
             meta=paths["ocr_root"]/"transcripts"/sid/f"{index:03d}.ocr.json"
             result[meta.relative_to(paths["manifest"].parent).as_posix()]=file_sha256(meta)
+            # If PaddleOCR produced M16.27 private geometry, bind its exact
+            # digest into the persistent stage manifest as well.
+            meta_record=json.loads(meta.read_text(encoding="utf-8"))
+            if "geometry_sidecar_sha256" in meta_record:
+                box_file=meta.parent/f"{index:03d}.geometry.json"
+                if (not box_file.is_file() or
+                    file_sha256(box_file)!=meta_record["geometry_sidecar_sha256"]):
+                    raise ValueError("OCR recognition geometry missing or modified")
+                result[box_file.relative_to(paths["manifest"].parent).as_posix()]=file_sha256(box_file)
             candidate=meta.parent/f"{index:03d}.txt"
             if page["state"]=="ocr_candidate":
                 result[candidate.relative_to(paths["manifest"].parent).as_posix()]=file_sha256(candidate)

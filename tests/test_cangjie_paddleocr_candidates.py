@@ -45,7 +45,8 @@ class PaddleWholeBookTests(unittest.TestCase):
     def test_two_real_codepath_candidates_are_unreviewed_with_source_hash(self):
         engine=FakePaddle(["口須方大","眼或細長"])
         with patch.object(ocr,"pdf_pages",return_value=153), \
-             patch.object(ocr,"render_page",side_effect=self.render):
+             patch.object(ocr,"render_page",side_effect=self.render), \
+             patch("scripts.cangjie_ocr_geometry.KNOWN_SCAN_SHA256",{"nlc-44091":self.hash}):
             report=ocr.batch(self.scans,self.out,"nlc-44091",27,28,
                              engine=engine,expected_hash=self.hash)
         self.assertEqual(report["processed_pages"],2)
@@ -62,16 +63,23 @@ class PaddleWholeBookTests(unittest.TestCase):
         self.assertEqual(meta["mean_recognition_score_0_to_1"],.95)
         self.assertIsNone(meta["mean_word_confidence"])
         self.assertFalse(meta["eligible_for_cangjie_verified_corpus"])
+        self.assertEqual(meta["geometry_candidate_status"],"source_unverified")
+        geometry=page.with_suffix(".geometry.json")
+        self.assertTrue(geometry.is_file())
+        self.assertEqual(meta["geometry_sidecar_sha256"],ocr.digest(geometry))
+        self.assertFalse(json.loads(geometry.read_text())["read_order_authoritative"])
         self.assertFalse(verify_page_review(page,self.hash,27))
 
     def test_empty_ocr_does_not_leave_stale_candidate(self):
         engine=FakePaddle(["二字"])
-        with patch.object(ocr,"render_page",side_effect=self.render):
+        with patch.object(ocr,"render_page",side_effect=self.render), \
+             patch("scripts.cangjie_ocr_geometry.KNOWN_SCAN_SHA256",{"nlc-44091":self.hash}):
             first=ocr.candidate_page(self.pdf,"nlc-44091",27,self.hash,
                                      self.out,engine,170,self.root)
         self.assertEqual(first["state"],"ocr_candidate")
         engine.lines=[]
-        with patch.object(ocr,"render_page",side_effect=self.render):
+        with patch.object(ocr,"render_page",side_effect=self.render), \
+             patch("scripts.cangjie_ocr_geometry.KNOWN_SCAN_SHA256",{"nlc-44091":self.hash}):
             second=ocr.candidate_page(self.pdf,"nlc-44091",27,self.hash,
                                       self.out,engine,170,self.root)
         self.assertEqual(second["state"],"empty_ocr_candidate")
