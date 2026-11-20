@@ -1,6 +1,7 @@
 import catalog from "./knowledge/maiyi-source-checked-v5.json" with { type: "json" };
 import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
+import { modernReflectionForCard, type EditorialReflection } from "./editorial.ts";
 
 /**
  * M2 seed: source-linked cultural notes, not historical trait classifiers.
@@ -72,6 +73,7 @@ export type FaceReading = {
   sourceLinks: CulturalLink[];
   featuredLinks: CulturalLink[];
   briefInsights: string[];
+  modernReflections: EditorialReflection[];
   frameworkNotes: HistoricalFramework[];
   threeSections: ThreeSectionsReading | null;
   reflection: string;
@@ -330,6 +332,8 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     sourceLinks,
     featuredLinks,
     briefInsights,
+    modernReflections: featuredLinks.map(link => modernReflectionForCard(link.cardId, language))
+      .filter((item): item is EditorialReflection => item !== null),
     frameworkNotes,
     threeSections,
     reflection: language === "en"
@@ -361,6 +365,12 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
         "Original scan: " + reading.threeSections.source.source_url
       ] : []),
       ...reading.briefInsights,
+      "",
+      "MODERN REFLECTIONS (TODAY\u2019S WRITING, NOT CLAIMS ABOUT YOU)",
+      ...reading.modernReflections.map(item => [
+        item.theme, item.scene, "A question to consider: " + item.question,
+        "Contemporary editorial prompt; not translated ancient advice or a facial personality assessment."
+      ].join("\n")),
       "",
       "DETAILED OBSERVATIONS (PROVISIONAL)",
       ...reading.observations.map(d => d.region + ": " + d.text),
@@ -414,6 +424,12 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "扫描原件：" + reading.threeSections.source.source_url
     ] : []),
     ...reading.briefInsights,
+    "",
+    "【现代生活情境与反思（非古籍原文／非性格诊断）】",
+    ...reading.modernReflections.map(item => [
+      item.theme, item.scene, "留给你的问题：" + item.question,
+      "现代编辑写作，仅供自我反思，不是根据外貌得出的人格判断。"
+    ].join("\n")),
     "",
     "【详细版：全部面部形态观察（实验项）】",
     ...reading.observations.map(d => d.region + "：" + d.text),
