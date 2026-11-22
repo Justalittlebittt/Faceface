@@ -544,3 +544,37 @@ test("no matching photographed shape produces no fabricated historical personal 
   assert.match(short,/will not invent one/i);
   assert.doesNotMatch(short,/LOOKING BACK \(POSSIBILITY\)/);
 });
+
+
+test("only real source-checked classical outcome wording appears in detailed edition", () => {
+  for (const lang of ["en","zh"]) {
+    const reading=makeReading(ok,lang);
+    assert.deepEqual(reading.classicalLifeOutcomes.map(x=>x.historicalQuote),
+      ["鼻長有壽","平生衣祿更昌隆"]);
+    assert.equal(reading.classicalLifeOutcomes.length,2);
+    for (const record of reading.classicalLifeOutcomes) {
+      assert.ok(reading.sourceLinks.some(x=>x.cardId===record.sourceCardId));
+      assert.equal(record.appliesToUserAsFact,false);
+      assert.equal(record.isVerifiedFuturePrediction,false);
+      assert.match(record.source.source_url,/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+      assert.ok([77,87].includes(record.source.pdf_page_zero_based));
+    }
+    const brief=shortLifeReadingAsText(reading,lang);
+    for (const quote of ["鼻長有壽","平生衣祿更昌隆"]) {
+      assert.ok(!brief.includes(quote),"brief must not show ancient quote");
+      assert.ok(readingAsText(reading,lang).includes(quote),"details cite original wording");
+    }
+    assert.match(readingAsText(reading,lang),lang==="en"
+      ? /DIRECT HISTORICAL LIFE-OUTCOME STATEMENTS/ : /原书记载的生平断语/);
+  }
+});
+
+test("historical outcomes remain archived even when photo does not match their shape", () => {
+  const reading=makeReading(ok,"en");
+  const nose=reading.classicalLifeOutcomes.find(x=>x.historicalQuote==="鼻長有壽");
+  const ox=reading.classicalLifeOutcomes.find(x=>x.historicalQuote==="平生衣祿更昌隆");
+  assert.equal(nose?.sourceCardMatchStatus,"insufficient");
+  assert.equal(ox?.sourceCardMatchStatus,"insufficient");
+  assert.ok(readingAsText(reading,"en").includes("do not apply the historical claim"));
+  assert.ok(!shortLifeReadingAsText(reading,"en").includes("longevity"));
+});
