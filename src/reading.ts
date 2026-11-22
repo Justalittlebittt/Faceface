@@ -3,6 +3,7 @@ import type { Analysis, Descriptor } from "./descriptors";
 import { localizeDescriptor, type Language } from "./i18n.ts";
 import { modernReflectionForCard, type EditorialReflection } from "./editorial.ts";
 import { buildSpeculativeLifeReading, type LifeReadingCard } from "./lifeReading.ts";
+import { archivedClassicalLifeOutcomes, type ClassicalLifeOutcome } from "./classicalLifeOutcomes.ts";
 
 /**
  * M2 seed: source-linked cultural notes, not historical trait classifiers.
@@ -76,6 +77,7 @@ export type FaceReading = {
   briefInsights: string[];
   modernReflections: EditorialReflection[];
   lifeNarratives: LifeReadingCard[];
+  classicalLifeOutcomes: ClassicalLifeOutcome[];
   frameworkNotes: HistoricalFramework[];
   threeSections: ThreeSectionsReading | null;
   reflection: string;
@@ -337,6 +339,7 @@ export function makeReading(analysis: Analysis, language: Language = "zh"): Face
     modernReflections: featuredLinks.map(link => modernReflectionForCard(link.cardId, language))
       .filter((item): item is EditorialReflection => item !== null),
     lifeNarratives: buildSpeculativeLifeReading(featuredLinks.map(link => link.cardId), language),
+    classicalLifeOutcomes: archivedClassicalLifeOutcomes(sourceLinks, language),
     frameworkNotes,
     threeSections,
     reflection: language === "en"
@@ -407,6 +410,21 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
       "DETAILED OBSERVATIONS (PROVISIONAL)",
       ...reading.observations.map(d => d.region + ": " + d.text),
       "",
+      "DIRECT HISTORICAL LIFE-OUTCOME STATEMENTS (SOURCE ARCHIVE ONLY)",
+      ...reading.classicalLifeOutcomes.flatMap(item => [
+        item.historicalQuote,
+        "Historical shape illustration or wording: " + item.historicalShapePhrase,
+        "Interpretation of the ORIGINAL historical belief: " + item.explanation,
+        "This photographed person: " + (item.sourceCardMatchStatus==="related-observation"
+          ? "Only a partial observable resemblance; the classical type is unconfirmed."
+          : "Insufficient appearance overlap; do not apply the historical claim."),
+        "Source: " + item.source.edition + " / " + item.source.volume + " / " +
+          item.source.section + " / PDF zero-based page " + item.source.pdf_page_zero_based,
+        "Original scan: " + item.source.source_url,
+        "Not a known life event, medical estimate, or verified future prediction.",
+        ""
+      ]),
+      "",
       "HISTORICAL REFERENCES (NOT CONFIRMED FACE TYPES)",
       ...reading.sourceLinks.map(link => [
         link.organ + " / " + link.traditionalName,
@@ -466,6 +484,21 @@ export function readingAsText(reading: FaceReading, language: Language = "zh"): 
     "",
     "【详细版：全部面部形态观察（实验项）】",
     ...reading.observations.map(d => d.region + "：" + d.text),
+    "",
+    "【原书记载的生平断语（仅供详细版查证，不作本人断定）】",
+    ...reading.classicalLifeOutcomes.flatMap(item => [
+      "原文：" + item.historicalQuote,
+      "传统相型/外形字样：" + item.historicalShapePhrase,
+      "历史语境解释：" + item.explanation,
+      "本次照片：" + (item.sourceCardMatchStatus==="related-observation"
+        ? "仅具局部外形相似，不代表古籍完整相型已成立"
+        : "外形条件不足，不可把古籍断语套用到本人"),
+      "出处：" + item.source.edition + " / " + item.source.volume + "《" +
+        item.source.section + "》 / 扫描 PDF 零起页" + item.source.pdf_page_zero_based,
+      "扫描原件：" + item.source.source_url,
+      "不是已知的真人经历、健康判断或可靠未来预测。",
+      ""
+    ]),
     "",
     "【与古籍对应的文化材料】",
     ...reading.sourceLinks.map(link => [

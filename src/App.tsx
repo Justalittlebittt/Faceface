@@ -753,6 +753,28 @@ export default function App() {
                     <details className="source-details">
                       <summary>{t(language, "expandedTitle")}</summary>
                       <p>{reading.evidenceNotice}</p>
+                      <section className="classical-life-claims" aria-label={language === "en" ? "Historical life-outcome passages" : "古籍生平断语出处"}>
+                        <h4>{language === "en" ? "What the original text actually says about life" : "原书记载的生平断语"}</h4>
+                        <p>{language === "en"
+                          ? "Archived traditional claims, quoted in context. These are not claims about your own past or future: an approximate photo measurement cannot verify an entire classical face type."
+                          : "这里收录原书中的传统生平断语，并说明对应原页。局部照片相似不等于完整相型成立，不能将古籍说法当作你的真实过往或未来。"}</p>
+                        {reading.classicalLifeOutcomes.map(item => (
+                          <article className="classical-life-claim" key={item.id}>
+                            <span className="historical-quote">「{item.historicalQuote}」</span>
+                            <p>{item.explanation}</p>
+                            <small>{language === "en"
+                              ? (item.sourceCardMatchStatus === "related-observation"
+                                ? "Photo: partial resemblance only; classical type not confirmed."
+                                : "Photo: insufficient for this classical type.")
+                              : (item.sourceCardMatchStatus === "related-observation"
+                                ? "本次照片：仅有局部相似，不能确认完整古籍相型。"
+                                : "本次照片：不能确认符合此古籍相型。")}</small>
+                            <a href={item.source.source_url} target="_blank" rel="noopener noreferrer">
+                              {language === "en" ? "View original scan" : "查看原书扫描"} · {item.source.volume}《{item.source.section}》 · {language === "en" ? "PDF page" : "PDF页码"} {item.source.pdf_page_zero_based + 1}
+                            </a>
+                          </article>
+                        ))}
+                      </section>
                       {reading.sourceLinks.map(link => (
                         <article className="source-detail" key={link.cardId}>
                           <h4>{link.organ}: {link.historicalTerm} {link.historicalGloss ? " — " + link.historicalGloss : ""} <span>({language === "en" ? (link.status === "related-observation" ? "Related observation" : "Insufficient evidence") : (link.status === "related-observation" ? "相关观察" : "条件不足")})</span></h4>

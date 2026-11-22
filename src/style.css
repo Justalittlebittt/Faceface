@@ -426,3 +426,14 @@ footer a { color: #bfe6c8; text-decoration: underline; text-underline-offset: 3p
   .life-reading-card { padding: 16px; }
   .life-reading-card h4 { font-size: 22px; }
 }
+
+
+/* Historic original outcome excerpts appear only in the opt-in detailed area. */
+.classical-life-claims { margin: 20px 0 24px; padding: 18px; border: 1px solid #657360; border-radius: 13px; background: #1d2a23; }
+.classical-life-claims h4 { margin: 0 0 8px; font: 500 22px/1.4 Georgia, "Songti SC", serif; color: #e6ecd9; }
+.classical-life-claims > p { font-size: 13px; line-height: 1.7; color: #becbbb; margin: 0 0 13px; }
+.classical-life-claim { margin-top: 12px; border-top: 1px solid #47584b; padding-top: 13px; }
+.classical-life-claim .historical-quote { display: block; font: 500 20px/1.55 Georgia, "Songti SC", serif; color: #e7dbbb; }
+.classical-life-claim p { font-size: 13px; line-height: 1.75; color: #d2ddcf; margin: 8px 0; }
+.classical-life-claim small { display: block; font-size: 11px; line-height: 1.6; color: #b0bda9; }
+.classical-life-claim a { display: inline-block; margin-top: 9px; font-size: 12px; color: #b6ddc3; text-underline-offset: 3px; overflow-wrap: anywhere; }
