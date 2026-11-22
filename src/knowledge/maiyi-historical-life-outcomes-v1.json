@@ -1,0 +1,50 @@
+{
+  "schema": "faceface-verified-archival-outcome-claims-v1",
+  "scope": "Strictly historical assertions in already source-checked 1925 illustrated Mai Yi Xiang Fa. NOT proof of any person's real life or appearance category.",
+  "records": [
+    {
+      "id": "MY-OUTCOME-1925-001",
+      "source_card_id": "MY25-NOSE-LONG-01",
+      "domain": "longevity",
+      "historical_shape_phrase": "鼻長",
+      "historical_claim_phrase": "有壽",
+      "source_exact_phrase": "鼻長有壽",
+      "original_excerpt_review_status": "direct_scan_cited_in_existing_source_card",
+      "relation_review_status": "literal_same_short_verse_as_existing_card",
+      "source_scan_pdf_page_zero_based": 77,
+      "source_book_section": "相鼻·诗",
+      "verified_for_personal_photo_prediction": false,
+      "source_entire_historical_type_photo_match_confirmed": false,
+      "plain_english": "In this traditional verse, a long nose is linked with longevity. This reflects a historical belief, not a forecast of a person's lifespan.",
+      "plain_chinese": "原书把“鼻长”和“有寿”连在一起，表达古人关于长寿的相术说法，不代表现实中的寿命预测。",
+      "appropriate_use": "detailed_reference_only"
+    },
+    {
+      "id": "MY-OUTCOME-1925-002",
+      "source_card_id": "MY25-MOUTH-OX-01",
+      "domain": "livelihood",
+      "historical_shape_phrase": "牛口",
+      "historical_claim_phrase": "平生衣祿更昌隆",
+      "source_exact_phrase": "平生衣祿更昌隆",
+      "original_excerpt_review_status": "source_card_2026_11_13_visual_and_original_phrase_transcribed_in_source_card_gloss",
+      "relation_review_status": "historical_illustration_section_context_only_not_full_photo_shape",
+      "source_scan_pdf_page_zero_based": 87,
+      "source_book_section": "相口·牛口图",
+      "verified_for_personal_photo_prediction": false,
+      "source_entire_historical_type_photo_match_confirmed": false,
+      "plain_english": "The ox-mouth illustration associates the depicted form with prosperous livelihood across life. This is a traditional auspicious saying, not evidence of anyone's finances.",
+      "plain_chinese": "“牛口”图式下的“平生衣祿更昌隆”是在传统语境中祝述衣食禄份丰足，不表示已能从照片确认现实财运。",
+      "appropriate_use": "detailed_reference_only"
+    }
+  ],
+  "unfilled_priority_domains": [
+    "temperament",
+    "early_life",
+    "career",
+    "family",
+    "relationships",
+    "late_life",
+    "wealth_outcome"
+  ],
+  "eligibility_note": "No statement in this file may be used as a user's own past fact, future certainty, medical assessment, or confirmed physiognomic life rule. Literal history must be tied to a vetted scan and morphology condition before use as personal narrative."
+}
