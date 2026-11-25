@@ -1,0 +1,223 @@
+{
+  "schema": "faceface_historical_topic_archive_v1",
+  "source": {
+    "work": "麻衣相法",
+    "edition": "1925年文明書局本（项目固定版本）",
+    "scan_id": "nlc-44091",
+    "url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649",
+    "hash_status": "inherited project reference; not recomputed this turn"
+  },
+  "method": "Direct visual review of 11 relevant scan screenshots (zero-based 2–6 and 14–19). Bilingual thematic paraphrases, not exact transcription or Cangjie output. Diagram companion records deliberately distinguished from earlier text summaries.",
+  "records": [
+    {
+      "id": "MY-ARCHIVE-B05-001",
+      "pdf_page_zero_based": 2,
+      "section": "十三部位總要圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "A labeled atlas of traditional facial locations; it is a terminology reference, not a prediction.",
+      "summary_zh": "传统面部部位总图，用于术语定位，不是预测结果。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-002",
+      "pdf_page_zero_based": 3,
+      "section": "流年運氣部位圖",
+      "domain": "life_stages",
+      "historical_region": "全脸",
+      "summary_en": "The diagram labels facial regions with historical year numbers; it is a separate age-indexed symbolic system.",
+      "summary_zh": "流年图以年龄数字标注部位，属于独立的年龄取象体系。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-003",
+      "pdf_page_zero_based": 4,
+      "section": "十二宮分之圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "The palace diagram organizes traditional life topics spatially, distinct from the age diagram.",
+      "summary_zh": "十二宫图以空间位置组织传统人生主题，与流年图不同。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-004",
+      "pdf_page_zero_based": 4,
+      "section": "五星六曜五嶽四瀆之圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "Several astronomical and geographical naming conventions share a single illustration.",
+      "summary_zh": "五星六曜、五岳、四渎等不同取象名称并列于同一图。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-005",
+      "pdf_page_zero_based": 5,
+      "section": "六府三才三停之圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "The diagram gives a visual companion to the existing six-region and three-section text archive.",
+      "summary_zh": "六府三才三停图作为既有文字档案的图示补充。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-006",
+      "pdf_page_zero_based": 5,
+      "section": "九州八卦干支之圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "A separate diagram combines geographical, trigram and calendrical terminology; it does not establish an independent I Ching source.",
+      "summary_zh": "九州八卦干支图并列地理、卦象与干支术语，不等同已核对《易经》原文。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-007",
+      "pdf_page_zero_based": 6,
+      "section": "四學堂八學堂之圖",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "The four and eight halls share an illustration, but their names and scope should be kept distinct.",
+      "summary_zh": "四学堂与八学堂同图展示，名称与范围仍应分别记录。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-008",
+      "pdf_page_zero_based": 6,
+      "section": "五官之圖",
+      "domain": "framework",
+      "historical_region": "五官",
+      "summary_en": "The five offices diagram is a visual reference for the historical five-organ terminology.",
+      "summary_zh": "五官图提供传统五官名称的图示定位。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-009",
+      "pdf_page_zero_based": 14,
+      "section": "十三部位總圖歌",
+      "domain": "framework",
+      "historical_region": "上部",
+      "summary_en": "The opening part of the mnemonic enumerates named regions in order; it complements the atlas rather than providing a biography.",
+      "summary_zh": "十三部位总图歌前段依次列举部位名称，是图谱文字补充。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-010",
+      "pdf_page_zero_based": 15,
+      "section": "十三部位總圖歌",
+      "domain": "framework",
+      "historical_region": "中部",
+      "summary_en": "The middle part continues the named-region sequence across the nose and adjacent areas.",
+      "summary_zh": "歌诀中段继续列举鼻部及周边名称。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-011",
+      "pdf_page_zero_based": 16,
+      "section": "十三部位總圖歌",
+      "domain": "framework",
+      "historical_region": "下部",
+      "summary_en": "The closing portion completes the thirteen-region sequence before the annual-fortune mnemonic begins.",
+      "summary_zh": "本页先结束十三部位序列，再进入流年歌，不应混作同一段。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-012",
+      "pdf_page_zero_based": 16,
+      "section": "流年運氣部位歌",
+      "domain": "life_stages",
+      "historical_region": "全脸",
+      "summary_en": "The opening verse introduces age sequencing and a historical sex-based left/right convention; neither is a validated modern measurement.",
+      "summary_zh": "流年歌开头引入年龄序列及旧式男女左右区别，均不是现代测量标准。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-013",
+      "pdf_page_zero_based": 17,
+      "section": "流年運氣部位歌",
+      "domain": "life_stages",
+      "historical_region": "全脸",
+      "summary_en": "The middle passage continues its year-by-year symbolic location sequence, distinct from the broad three-section framework.",
+      "summary_zh": "中段延续逐年部位取象，与粗略三停阶段不同。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-014",
+      "pdf_page_zero_based": 18,
+      "section": "流年運氣部位歌",
+      "domain": "life_stages",
+      "historical_region": "全脸",
+      "summary_en": "The concluding passage extends the symbolic sequence into advanced age and describes a cycle beyond a century.",
+      "summary_zh": "末段延伸至高龄，并述及百岁之后的循环观念。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-015",
+      "pdf_page_zero_based": 18,
+      "section": "流年運氣部位歌",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "The closing verse combines several historical concepts, including mountains, rivers and complexion; location alone is not the whole textual context.",
+      "summary_zh": "结尾并论五岳、四渎和气色等传统概念，不宜把部位单独抽离为完整断语。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-016",
+      "pdf_page_zero_based": 19,
+      "section": "運氣口訣",
+      "domain": "framework",
+      "historical_region": "五形",
+      "summary_en": "The mnemonic uses elemental categories and different ordering conventions; this is not simply the preceding annual location list.",
+      "summary_zh": "运气口诀采用五形及不同顺逆次序，与前面的逐年部位列表有别。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B05-017",
+      "pdf_page_zero_based": 19,
+      "section": "識限歌",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "A separate mnemonic discusses age limits and positional comparisons, requiring its own context when cataloged.",
+      "summary_zh": "识限歌另论年龄限运及部位对照，归档时须独立保留上下文。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    }
+  ],
+  "limitations": [
+    "No individual age-event mapping, personal prediction or personality inference.",
+    "No independently verified transcription; no model run or runtime change.",
+    "Prior batches not reverified this turn."
+  ]
+}
