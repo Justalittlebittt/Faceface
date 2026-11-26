@@ -1,0 +1,101 @@
+{
+  "milestone": "M16.16",
+  "source": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+  "source_id": "nlc-44091",
+  "edition": "1925 文明書局 秦慎安校勘",
+  "page_index": "zero-based",
+  "method": "AI visual reading of retrieved PDF screenshots; no human signature or fresh SHA verification",
+  "pages_inspected": [
+    52,
+    53,
+    58,
+    59,
+    60,
+    61,
+    82,
+    83,
+    84,
+    91,
+    92,
+    93,
+    94
+  ],
+  "candidates": [
+    {
+      "id": "M1616-1",
+      "page": 93,
+      "region": "ear",
+      "quote": "輪廓分明",
+      "observation": "outer ear contour definition",
+      "limit": "Requires visible ear; no validated metric",
+      "publish": false
+    },
+    {
+      "id": "M1616-2",
+      "page": 94,
+      "region": "ear",
+      "quote": "耳門廣闊",
+      "observation": "ear opening width",
+      "limit": "Requires unobstructed ear close-up; not currently measured",
+      "publish": false
+    },
+    {
+      "id": "M1616-3",
+      "page": 94,
+      "region": "ear",
+      "quote": "下有垂珠",
+      "observation": "earlobe presence/outline",
+      "limit": "Requires unobstructed ear and suitable angle",
+      "publish": false
+    },
+    {
+      "id": "M1616-4",
+      "page": 53,
+      "region": "face_structure",
+      "quote": "地閣豐圓",
+      "observation": "rounded lower-face/chin contour",
+      "limit": "Not identical to chin width; pose matters",
+      "publish": false
+    },
+    {
+      "id": "M1616-5",
+      "page": 53,
+      "region": "face_structure",
+      "quote": "天庭平潤",
+      "observation": "forehead surface appearance",
+      "limit": "Relief and luster cannot be established from current 2D ratios",
+      "publish": false
+    },
+    {
+      "id": "M1616-6",
+      "page": 53,
+      "region": "ear",
+      "quote": "對面不見耳",
+      "observation": "ear visibility from frontal view",
+      "limit": "Hair, head rotation and camera framing confound",
+      "publish": false
+    },
+    {
+      "id": "M1616-7",
+      "page": 82,
+      "region": "nose",
+      "quote": "鼻梁高",
+      "observation": "nasal bridge height",
+      "limit": "Requires profile geometry; not current frontal width",
+      "publish": false
+    },
+    {
+      "id": "M1616-8",
+      "page": 83,
+      "region": "philtrum",
+      "quote": "上下直而深",
+      "observation": "philtrum straightness and depth",
+      "limit": "Depth requires additional geometry; lighting confounds",
+      "publish": false
+    }
+  ],
+  "prior_batch": "M16.14 and M16.15 are separate preliminary records; prior evidence claims not independently reverified in this batch.",
+  "human_signed": 0,
+  "cangjie_executed": false,
+  "new_live_cards": 0
+}
