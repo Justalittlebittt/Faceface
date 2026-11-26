@@ -5,14 +5,14 @@
     "url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
     "source_id": "nlc-44091",
     "page_index": "zero-based PDF",
-    "method": "AI direct visual reading of public PDF screenshots, 2026-11-26; no independent human signoff or fresh byte hash verification"
+    "method": "Original public PDF screenshots independently retrieved in M16.15 (2026-11-26); AI visual reading only, no human signature or fresh file hash."
   },
   "comparison": "V5 has no source cards at PDF indices 67–69; these are new candidate passages relative to V5, not necessarily unseen in all historical research.",
   "candidates": [
     {
       "id": "M1614-E01",
       "pdf_page_zero_based": 67,
-      "section": "鴛鴦眼",
+      "section": "page 67 second chart from right; heading pending exact transcription",
       "quote": "眼圓略露",
       "gloss": "Rounded-looking eye opening, with slight exposure",
       "limit": "Eye contour only; exposure referent ambiguous; no threshold.",
@@ -33,10 +33,10 @@
       "id": "M1614-E03",
       "pdf_page_zero_based": 68,
       "section": "陰陽眼",
-      "quote": "兩目雌雄睛大小",
+      "quote": "兩目雌雄〔睛/晴〕大小",
       "gloss": "The two eyes are described as differing in size",
-      "limit": "Potential left/right visible aperture asymmetry; pupil versus opening ambiguous, do not equate.",
-      "status": "research_only",
+      "limit": "Potential left/right visible aperture asymmetry; pupil versus opening ambiguous, do not equate. Exact glyph requires review.",
+      "status": "research_only_ambiguous_glyph",
       "publish": false
     },
     {
@@ -52,5 +52,6 @@
   ],
   "new_live_cards": 0,
   "human_signed": 0,
-  "cangjie_executed": false
+  "cangjie_executed": false,
+  "correction": "M16.15 direct screenshots substantiate three exact snippets, one ambiguous glyph; prior chart heading not confirmed."
 }
