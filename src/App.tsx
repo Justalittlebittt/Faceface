@@ -630,6 +630,9 @@ export default function App() {
                   </div>
                 )}
                 {reportMode === "detailed" && (<>
+                <p className="report-intro">{language === "en"
+                  ? "Coverage: this front-view analysis describes visible facial proportions. Ear shape is not measured by the current model; the side-view guide does not provide ear measurements."
+                  : "识别范围：本次正脸分析描述可见面部比例。当前模型不测量耳部形态，侧脸拍摄引导也不提供耳部测量结果。"}</p>
                 <div className="observations">
                   {observations.map(item => (
                     <article className="observation" key={item.id}>
