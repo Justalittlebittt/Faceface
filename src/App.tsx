@@ -605,15 +605,15 @@ export default function App() {
                             <span className="life-reading-number">{String(index + 1).padStart(2,"0")}</span>
                             <h4>{item.title}</h4>
                             <div className="life-reading-segment">
-                              <h5>{language === "en" ? "Temperament" : "性情分析"}</h5>
+                              <h5>{language === "en" ? "Traditional theme" : "传统解读主题"}</h5>
                               <p>{item.temperament}</p>
                             </div>
                             <div className="life-reading-segment">
-                              <h5>{language === "en" ? "Looking back · a possibility" : "过往经历 · 待核对的推测"}</h5>
+                              <h5>{language === "en" ? "Reflecting on the past" : "回顾过往 · 自我思考"}</h5>
                               <p>{item.retrospective}</p>
                             </div>
                             <div className="life-reading-segment">
-                              <h5>{language === "en" ? "Looking ahead · a possibility" : "未来走势 · 一种可能"}</h5>
+                              <h5>{language === "en" ? "Looking ahead · reflection" : "展望未来 · 生活启发"}</h5>
                               <p>{item.outlook}</p>
                             </div>
                           </article>
