@@ -1,0 +1,56 @@
+{
+  "milestone": "M16.14",
+  "source": {
+    "edition": "1925 文明書局 秦慎安校勘",
+    "url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "source_id": "nlc-44091",
+    "page_index": "zero-based PDF",
+    "method": "AI direct visual reading of public PDF screenshots, 2026-11-26; no independent human signoff or fresh byte hash verification"
+  },
+  "comparison": "V5 has no source cards at PDF indices 67–69; these are new candidate passages relative to V5, not necessarily unseen in all historical research.",
+  "candidates": [
+    {
+      "id": "M1614-E01",
+      "pdf_page_zero_based": 67,
+      "section": "鴛鴦眼",
+      "quote": "眼圓略露",
+      "gloss": "Rounded-looking eye opening, with slight exposure",
+      "limit": "Eye contour only; exposure referent ambiguous; no threshold.",
+      "status": "research_only",
+      "publish": false
+    },
+    {
+      "id": "M1614-E02",
+      "pdf_page_zero_based": 68,
+      "section": "瑞鳳眼",
+      "quote": "兩角齊",
+      "gloss": "The two eye corners are level",
+      "limit": "Potential roll-corrected inner/outer canthus elevation; verify interpretation before mapping.",
+      "status": "research_only",
+      "publish": false
+    },
+    {
+      "id": "M1614-E03",
+      "pdf_page_zero_based": 68,
+      "section": "陰陽眼",
+      "quote": "兩目雌雄睛大小",
+      "gloss": "The two eyes are described as differing in size",
+      "limit": "Potential left/right visible aperture asymmetry; pupil versus opening ambiguous, do not equate.",
+      "status": "research_only",
+      "publish": false
+    },
+    {
+      "id": "M1614-E04",
+      "pdf_page_zero_based": 69,
+      "section": "rightmost eye illustration",
+      "quote": "白少黑多",
+      "gloss": "Less visible white, more dark area",
+      "limit": "Potential visible sclera proportion; gaze, lighting and iris appearance confound; not inferred from current opening ratio.",
+      "status": "research_only",
+      "publish": false
+    }
+  ],
+  "new_live_cards": 0,
+  "human_signed": 0,
+  "cangjie_executed": false
+}
