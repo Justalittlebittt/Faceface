@@ -592,6 +592,10 @@ export default function App() {
                         ? "These are possible interpretations, not known facts about your past or dependable predictions of your future."
                         : "以下是传统面相主题的可能解读，不是已知的过去事实，也不是可靠的未来预言。"}</p>
                     </div>
+                    <section className="life-reading-segment" aria-label={language === "en" ? "Your visible features" : "你的面部形态"}>
+                      <h4>{language === "en" ? "Your visible features" : "你的面部形态"}</h4>
+                      <p>{reading.patternSummary}</p>
+                    </section>
                     {reading.lifeNarratives.length ? (
                       <div className="life-reading-card-list">
                         {reading.lifeNarratives.map((item,index) => (
@@ -615,8 +619,8 @@ export default function App() {
                       </div>
                     ) : (
                       <p className="life-reading-no-match">{language === "en"
-                        ? "There is not enough matching facial-shape evidence in this photo to offer a specific reading. We won't invent a past for you."
-                        : "这张照片没有足够的形态线索形成具体解读，我们不会凭空编造你的过往。"}</p>
+                        ? "Your visible features are described above. No specific traditional theme matches these measurements closely enough."
+                        : "上方是本次照片的形态观察；这些比例暂无足够明确的传统主题对应。"}</p>
                     )}
                     <p className="life-reading-footnote">{language === "en"
                       ? "Does any part feel familiar? Compare it with what really happened. A resemblance cannot establish that face reading works."
