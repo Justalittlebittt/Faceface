@@ -360,10 +360,11 @@ export function shortLifeReadingAsText(reading: FaceReading, language: Language 
       "传统相术主题的推演，不代表已知晓你的过往，也不保证未来预测准确。",
     ""
   ];
+  parts.push(en ? "YOUR VISIBLE FEATURES" : "你的面部形态", reading.patternSummary, "");
   if (!reading.lifeNarratives.length) {
     parts.push(en
-      ? "This photograph does not provide enough supported appearance details for a specific traditional life story. We will not invent one."
-      : "这张照片缺少足够的外形线索，无法给出有依据的传统生平推演；系统不会凭空编造。");
+      ? "No specific traditional theme matches these measurements closely enough."
+      : "这些照片比例暂无足够明确的传统主题对应。");
   } else {
     for(const item of reading.lifeNarratives){
       parts.push(item.title,
