@@ -1,0 +1,221 @@
+{
+  "schema": "faceface_historical_topic_archive_v1",
+  "source": {
+    "work": "麻衣相法",
+    "edition": "1925年文明書局本",
+    "scan_id": "nlc-44091",
+    "url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf",
+    "pdf_sha256": "466adfaba96be3ba63cab4784b97dd04d1a7e86950601073e27aa6bdffbcc649"
+  },
+  "method": "Direct visual inspection of 13 PDF page screenshots, thematic paraphrases only, no new independent human signoff or Cangjie run.",
+  "records": [
+    {
+      "id": "MY-ARCHIVE-B04-001",
+      "pdf_page_zero_based": 55,
+      "section": "相眉",
+      "domain": "framework",
+      "historical_region": "眉",
+      "summary_en": "Eyebrow verse combines ridge, density and texture rather than relying on one measurement.",
+      "summary_zh": "眉诗同时讨论眉棱、疏密与毛质。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-002",
+      "pdf_page_zero_based": 56,
+      "section": "相眉圖",
+      "domain": "life_stages",
+      "historical_region": "眉",
+      "summary_en": "Illustrated verses distinguish early prosperity from later circumstances.",
+      "summary_zh": "图说区分早年与老年际遇。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-003",
+      "pdf_page_zero_based": 57,
+      "section": "相眉圖",
+      "domain": "family",
+      "historical_region": "眉",
+      "summary_en": "Illustrations include kinship and household themes.",
+      "summary_zh": "图说涉及亲缘与家庭主题。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-004",
+      "pdf_page_zero_based": 58,
+      "section": "相眉圖",
+      "domain": "life_stages",
+      "historical_region": "眉",
+      "summary_en": "Verses distinguish early, middle and later achievements.",
+      "summary_zh": "图说区分早岁、中岁与末年成就。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-005",
+      "pdf_page_zero_based": 59,
+      "section": "相眉圖",
+      "domain": "career",
+      "historical_region": "眉",
+      "summary_en": "Examination success and official advancement appear among the historical themes.",
+      "summary_zh": "图说包含登科与仕途主题。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-006",
+      "pdf_page_zero_based": 60,
+      "section": "相眉圖",
+      "domain": "temperament_history",
+      "historical_region": "眉",
+      "summary_en": "The verses employ courage and ambition as literary character motifs.",
+      "summary_zh": "图说使用胆志等性情意象。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-007",
+      "pdf_page_zero_based": 66,
+      "section": "相目圖",
+      "domain": "temperament_history",
+      "historical_region": "眼",
+      "summary_en": "Illustrated eye verses employ contrasting character ideals, including composure and severity.",
+      "summary_zh": "眼形图说涉及沉稳、威严等历史性情观念。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-008",
+      "pdf_page_zero_based": 77,
+      "section": "相鼻圖",
+      "domain": "framework",
+      "historical_region": "鼻",
+      "summary_en": "The nose illustrations distinguish several named forms and discuss multiple nasal regions together.",
+      "summary_zh": "鼻图区分多种象形类别，并综合讨论鼻部多个区域。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-009",
+      "pdf_page_zero_based": 78,
+      "section": "相鼻圖",
+      "domain": "temperament_history",
+      "historical_region": "鼻",
+      "summary_en": "The illustrated verses include tolerance and straightforwardness as historical character ideals.",
+      "summary_zh": "图说包含宽容、直率等历史性情主题。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-010",
+      "pdf_page_zero_based": 78,
+      "section": "相鼻圖",
+      "domain": "life_stages",
+      "historical_region": "鼻",
+      "summary_en": "The verses include middle-life and later-life prosperity motifs.",
+      "summary_zh": "图说涉及中年与晚景的吉祥意象。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-011",
+      "pdf_page_zero_based": 86,
+      "section": "相口圖",
+      "domain": "career",
+      "historical_region": "口",
+      "summary_en": "Illustrated mouth verses discuss literary achievement, recognition and official standing.",
+      "summary_zh": "口形图说涉及文章、声望与仕途。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-012",
+      "pdf_page_zero_based": 86,
+      "section": "相口圖",
+      "domain": "life_stages",
+      "historical_region": "口",
+      "summary_en": "One verse includes a middle-life prosperity motif.",
+      "summary_zh": "图说中包含中年福禄主题。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-013",
+      "pdf_page_zero_based": 87,
+      "section": "相口圖",
+      "domain": "framework",
+      "historical_region": "口",
+      "summary_en": "The illustrations distinguish lip fullness, outline and mouth corners as separate descriptive elements.",
+      "summary_zh": "图说区分唇部丰厚、轮廓与口角等描述要素。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-014",
+      "pdf_page_zero_based": 92,
+      "section": "相齒",
+      "domain": "framework",
+      "historical_region": "齒",
+      "summary_en": "The chapter describes tooth arrangement, size, spacing and color in its historical classificatory scheme.",
+      "summary_zh": "相齿论讨论牙齿排列、大小、间距及颜色。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-015",
+      "pdf_page_zero_based": 93,
+      "section": "相耳",
+      "domain": "framework",
+      "historical_region": "耳",
+      "summary_en": "The ear chapter distinguishes the rim, lobe, opening and other visible structures.",
+      "summary_zh": "相耳论区分轮廓、垂珠、耳门等结构。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-016",
+      "pdf_page_zero_based": 93,
+      "section": "相耳",
+      "domain": "career",
+      "historical_region": "耳",
+      "summary_en": "The text contains historical motifs of reputation and official rank.",
+      "summary_zh": "原文包含声名与禄位主题。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B04-017",
+      "pdf_page_zero_based": 93,
+      "section": "相耳",
+      "domain": "framework",
+      "historical_region": "耳",
+      "summary_en": "The chapter explicitly discusses both color and shape and mentions the eyes as additional context.",
+      "summary_zh": "本篇同时讨论色与形，并提到眼部作为其他观察背景。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    }
+  ],
+  "limitations": [
+    "Historical themes indexed by chapter, not feature-to-personality rules or individual predictions.",
+    "No runtime integration; no independently verified transcription."
+  ]
+}

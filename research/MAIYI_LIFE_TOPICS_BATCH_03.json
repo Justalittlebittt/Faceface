@@ -1,0 +1,160 @@
+{
+  "schema": "faceface_historical_topic_archive_v1",
+  "source": {
+    "work": "麻衣相法",
+    "edition": "1925年文明書局本",
+    "scan_id": "nlc-44091",
+    "url": "https://commons.wikimedia.org/wiki/File:NLC416-12jh002690-44091_麻衣相法_第1卷.pdf"
+  },
+  "method": "Direct visual inspection of PDF pages 37–40 (one-based), paraphrases only; no independent human signoff or Cangjie run.",
+  "records": [
+    {
+      "id": "MY-ARCHIVE-B03-001",
+      "pdf_page_zero_based": 36,
+      "section": "人面總論",
+      "domain": "framework",
+      "historical_region": "全脸",
+      "summary_en": "The verse describes a composite ideal across many facial regions, rather than one isolated feature.",
+      "summary_zh": "本段综合额、鼻、口、颧等部位描述传统相貌理想。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-002",
+      "pdf_page_zero_based": 36,
+      "section": "五行形",
+      "domain": "framework",
+      "historical_region": "五行形",
+      "summary_en": "The five-element scheme introduces distinct body-form categories.",
+      "summary_zh": "五行形以不同形体作为分类依据。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-003",
+      "pdf_page_zero_based": 37,
+      "section": "五形象說",
+      "domain": "framework",
+      "historical_region": "五行形",
+      "summary_en": "The text treats elemental categories as composite forms and allows different shapes within each category.",
+      "summary_zh": "五形象说讨论综合形体，并非所有形体都以同一标准衡量。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-004",
+      "pdf_page_zero_based": 37,
+      "section": "五形象說",
+      "domain": "temperament_history",
+      "historical_region": "金形",
+      "summary_en": "The metal archetype is associated with firmness in the historical account.",
+      "summary_zh": "原文在金形论述中使用刚毅观念。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-005",
+      "pdf_page_zero_based": 37,
+      "section": "五形象說",
+      "domain": "temperament_history",
+      "historical_region": "火形",
+      "summary_en": "The fire archetype is associated with decisiveness in the historical account.",
+      "summary_zh": "原文在火形论述中使用机果观念。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-006",
+      "pdf_page_zero_based": 38,
+      "section": "五形象說",
+      "domain": "social_status",
+      "historical_region": "金形",
+      "summary_en": "The verse links a fully realized metal archetype with renown.",
+      "summary_zh": "金形诗将入格与名扬相联。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-007",
+      "pdf_page_zero_based": 38,
+      "section": "五形象說",
+      "domain": "life_stages",
+      "historical_region": "木形",
+      "summary_en": "The wood archetype verse contains an auspicious reference to later life.",
+      "summary_zh": "木形诗中有晚景吉祥的意象。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-008",
+      "pdf_page_zero_based": 38,
+      "section": "五形象說",
+      "domain": "livelihood",
+      "historical_region": "水形",
+      "summary_en": "The water archetype verse includes a traditional association with lifelong prosperity.",
+      "summary_zh": "水形诗中有平生富足的传统意象。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-009",
+      "pdf_page_zero_based": 38,
+      "section": "五形象說",
+      "domain": "temperament_history",
+      "historical_region": "火形",
+      "summary_en": "The historical text associates its composite fire archetype with impatience and restless behavior.",
+      "summary_zh": "火形论述含躁急、举止不定等传统评价。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-010",
+      "pdf_page_zero_based": 39,
+      "section": "五形象說",
+      "domain": "temperament_history",
+      "historical_region": "土形",
+      "summary_en": "The earth archetype verse invokes steadiness and trustworthiness as traditional ideals.",
+      "summary_zh": "土形诗以安详、信义等观念描述传统理想。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-011",
+      "pdf_page_zero_based": 39,
+      "section": "論形",
+      "domain": "framework",
+      "historical_region": "形体",
+      "summary_en": "The chapter uses natural imagery to explain the classical idea of bodily form.",
+      "summary_zh": "论形以天地自然意象解释传统形体观。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    },
+    {
+      "id": "MY-ARCHIVE-B03-012",
+      "pdf_page_zero_based": 39,
+      "section": "論神",
+      "domain": "framework",
+      "historical_region": "神、氣、形",
+      "summary_en": "The chapter treats form, vitality and spirit as interconnected within its historical theory.",
+      "summary_zh": "论神讨论形、血、气、神相互关联的古代理论。",
+      "source_status": "assistant_visual_scan_review_paraphrase",
+      "eligibility": "historical_archive_only",
+      "personal_inference": false
+    }
+  ],
+  "limitations": [
+    "Composite historical archetypes are not valid personal character assessments.",
+    "No runtime changes; no independent human review."
+  ]
+}
